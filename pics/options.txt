@@ -1,0 +1,21 @@
+# Vario
+climbThresholdCps [20,100] 50
+zeroThresholdCps [-20,20] 5
+sinkThresholdCps [-400,-100] -200
+crossoverCps [300,800] 400
+
+# Kalman Filter
+accelVariance [10,100] 50
+zMeasVariance [100,500] 300
+
+# Miscellaneous
+backlitSecs [5,60] 30
+utcOffsetMins [-720,720] 480
+gyroOffsetLimit1000DPS [25,200] 150
+trackIntervalSecs [1,60] 3
+gpsStableDOP [2,10] 6
+glideRatioIIR [0,99] 90
+trackStartThresholdm [0,100] 1
+magDeclinationdeg [-60,60] 0
+speakerVolume [0,3] 2
+logType [0=none,1=gps,2=ibg] 0
