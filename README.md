@@ -30,9 +30,8 @@ luggage as per airline requirements.
 for example. Got lazy because of my use of a 3000mAH 18650 battery :-).
 If you're content with driving a piezo speaker, can save some power 
 by omitting the audio amplifier.
-9. Software uses esp-idf build environment with Arduino as a component. See 
-https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md
-So we can take advantage of Arduino-ESP32 code for gpios, spi interface, web server etc.
+9. Software uses esp-idf build environment with Arduino as a component, so that we can take advantage of Arduino-ESP32 code for the spi and gpio interfaces and the web server.  See 
+https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project - it will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files.
 
 ### Build notes
 Uses esp-idf build
