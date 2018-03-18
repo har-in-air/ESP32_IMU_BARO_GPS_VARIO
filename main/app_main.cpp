@@ -123,7 +123,9 @@ static void display_task(void *pvParameter) {
 			IsGpsNavUpdated = false;
          counter++;
          memcpy(&navpvt, (void*)&NavPvt, sizeof(NAV_PVT)); 
-         float horzVelmmps = sqrt(navpvt.nav.velNorthmmps*navpvt.nav.velNorthmmps + navpvt.nav.velEastmmps*navpvt.nav.velEastmmps);
+         float vn = (float)navpvt.nav.velNorthmmps;
+         float ve = (float)navpvt.nav.velEastmmps;
+         float horzVelmmps = sqrt(vn*vn + ve*ve);
          if (navpvt.nav.velDownmmps > 0) {
             glideRatioNew = horzVelmmps/navpvt.nav.velDownmmps;
             glideRatio = (glideRatio*(float)opt.misc.glideRatioIIR + glideRatioNew*(float)(100-opt.misc.glideRatioIIR))/100.0f;
