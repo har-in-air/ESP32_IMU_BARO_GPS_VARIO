@@ -127,7 +127,7 @@ static void display_task(void *pvParameter) {
          float ve = (float)navpvt.nav.velEastmmps;
          float horzVelmmps = sqrt(vn*vn + ve*ve);
          if (navpvt.nav.velDownmmps > 0) {
-            glideRatioNew = horzVelmmps/navpvt.nav.velDownmmps;
+            glideRatioNew = horzVelmmps/(float)navpvt.nav.velDownmmps;
             glideRatio = (glideRatio*(float)opt.misc.glideRatioIIR + glideRatioNew*(float)(100-opt.misc.glideRatioIIR))/100.0f;
             }
 
