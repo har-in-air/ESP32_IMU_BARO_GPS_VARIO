@@ -1,0 +1,19 @@
+# vario
+climbThresholdCps 50 
+zeroThresholdCps 5
+sinkThresholdCps -200
+crossoverCps 400
+
+# kalman filter
+accelVariance  50
+zMeasVariance  300
+
+# miscellaneous
+backlitSecs 10
+utcOffsetMins 330
+trackIntervalSecs 1
+gyroOffsetLimit1000DPS 180
+glideRatioIIR 90
+gpsStableDOP 4
+trackStartThresholdm 15
+
