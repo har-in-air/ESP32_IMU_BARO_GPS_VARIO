@@ -71,6 +71,8 @@ I used a ublox compatible gps module from Banggood (see screenshot in /pics dire
 
 I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
 
+For an external audio amplifier, you could go with the XPT8871, available on ebay and aliexpress. I used the MAX4410 because I had a few samples, and an already assembled breakout board from a previous project.
+
 ## Credits
 1. Spiffs code from https://github.com/loboris/ESP32_spiffs_example
 2. Sine-wave generation with ESP32 DAC modified from https://github.com/krzychb/dac-cosine
