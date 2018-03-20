@@ -1,4 +1,5 @@
-### tested on ubuntu 16.04lts
+### ubuntu 16.04lts console
+### all these test modules run on binary data logs downloaded from the gpsvario via wifi. 
 
 gcc -o gpslog2gpx gpslog2gpx.c
 ./gpslog2gpx ~/Downloads/datalog
