@@ -1,3 +1,5 @@
+// code modified from https://github.com/krzychb/dac-cosine
+
 #include "common.h"
 #include "config.h"
 
