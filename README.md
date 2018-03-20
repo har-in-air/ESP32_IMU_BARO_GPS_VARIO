@@ -71,6 +71,13 @@ I used a ublox compatible gps module from Banggood (see screenshot in /pics dire
 
 I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
 
+## Credits
+1. Spiffs code from https://github.com/loboris/ESP32_spiffs_example
+2. Sine-wave generation with ESP32 DAC modified from https://github.com/krzychb/dac-cosine
+3. Web server library from https://github.com/Pedroalbuquerque/ESP32WebServer
+3. Web server top level page handling, css styling modified from  https://github.com/G6EJD/ESP32-ESP8266-File-Download-Upload-Delete-Stream-and-Directory
+4. MPU9250 initialization sequence modified from https://github.com/bolderflight/MPU9250/blob/master/MPU9250.cpp
+
 ## Issues
 
 
