@@ -38,10 +38,10 @@ Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of Ard
 ### 'make menuconfig' changes from default values
 
 #### SPIFFS configuration
-1.Base address 0x180000
-2.65536 (64Kbytes) partition size
-3.4096 logical block size
-4.page size = 256
+1. Base address 0x180000
+2. 65536 (64Kbytes) partition size
+3. 4096 logical block size
+4. page size = 256
 
 #### Custom partition table
 partitions.csv
@@ -49,8 +49,8 @@ partitions.csv
 Run 'make flashfs' once to create and flash the spiffs partition image.
 
 #### Arduino configuration
-1.Autostart arduino setup and loop : disable
-2.Disable mutex locks for HAL : enable
+1. Autostart arduino setup and loop : disable
+2. Disable mutex locks for HAL : enable
 
 #### ESP32 configuration
 1. 80MHz clock
