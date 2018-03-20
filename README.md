@@ -10,25 +10,24 @@ a 128Mbit serial SPI flash. This is useful for offline analysis and development 
 access point and web server. So you can access the datalogs/configuration in the field with a smartphone.
 5. 128x64 LCD display of GPS altitude, climb/sink rate, distance from start/to waypoint, ground speed,
 glide ratio, course/compass heading, bearing to start/waypoint, GPS derived clock, elapsed-time, battery, speaker, and data logging status.
-6. Variometer audio feedback is more pleasing thanks to the esp32 onboard DAC and audio amplifier driving
+6. Variometer audio feedback is more pleasant thanks to the esp32 onboard DAC and external audio amplifier driving
 a cellphone speaker with sine-wave tones.
 
 ## Specifications
 1. MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 2. MS5611 barometric pressure sensor, sampled at 50Hz
-3. Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud
+3. Ublox compatible M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud
 4. ESP32 WROOM rev 1 module
 5. 128x64 reflective LCD display with serial spi interface.
 6. MAX4410 audio amplifier driving salvaged 8ohm cellphone speaker.
-7. For the power supply, I use a store-bought single-cell 18650 
+7. For the power supply, I use a single-cell 18650 
 power bank. I added an extra connector wired directly to the battery terminals. This allows me to 
 detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
-my hand-wired gpsvario in checked-in luggage (no battery), with the power bank in my carry-on 
+my hand-wired gpsvario in checked-in luggage (no battery, no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
 8. Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
  optimized. I haven't bothered to add a software controlled power switch for the gps module,
-for example. Got lazy because of my use of a 3000mAH 18650 battery :-).
-If you're content with driving a piezo speaker, can save some power 
+for example. If you're content with driving a piezo speaker, can save some power 
 by omitting the audio amplifier, and using square-wave piezo drive.
 
 ## Software Build notes
@@ -60,17 +59,17 @@ Run 'make flashfs' once to create and flash the spiffs partition image.
 #### PHY configuration 
 1. Wifi tx power reduced to 13dB from 20dB. This reduces the 
 current spikes on wifi transmit bursts, so no need for a honking big capacitor on the 
-esp32 vcc line. This is not a problem for our application - if you're configuring the gpsvario 
-with a pc or smartphone, the two are going to be no more than a few feet apart.
+esp32 vcc line. The lower transmission power is not a problem for our application - if you're configuring the gpsvario 
+from your pc/smartphone, the two units are going to be no more than a few feet apart.
 
 #### Freertos tick rate
 Increased to 200Hz from 100Hz, allows minimum tick delay 5mS instead of 10mS, reduces overhead of regular task yield
 during server data download etc.
 
 ## Hardware
-I used a ublox compatible gps module from Banggood. Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while other cheaper modules do (with a larger patch antenna). Plus, it doesn't save configuration settings to flash or eeprom. So it needs to be configured on  initialization each time.
+I used a ublox compatible gps module from Banggood (see screenshot in /pics directory). Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while cheaper modules do (with a larger patch antenna). Plus, it doesn't save configuration settings to flash or eeprom. So it needs to be configured on  initialization each time.
 
-I've uploaded a screenshot of an alternative ublox m8n compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
+I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
 
 ## Issues
 
