@@ -33,39 +33,38 @@ by omitting the audio amplifier, and using square-wave piezo drive.
 9. Software uses esp-idf build environment with Arduino as a component, so that we can take advantage of Arduino-ESP32 code for the spi and gpio interfaces and the web server.  See 
 https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project - it will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files.
 
-### Build notes
+## Build notes
 Uses esp-idf build commit ffd4187883d69c5c39f2a1961fda06b51ed998fd
 
 Uses arduino component version=0.0.1
 
 make menuconfig changes from default values
 
-####Spiffs configuration
+### Spiffs configuration
 Base address 0x180000, 65536 (64Kbytes) partition size, 4096 logical block
 size, page size = 256
 
-####Custom partition table
+### Custom partition table
 partitions.csv
 
-####Arduino configuration
+### Arduino configuration
 Autostart arduino setup and loop : disable
 Disable mutex locks for HAL : enable
 
-####ESP32 configuration
+### ESP32 configuration
 80MHz clock, main task stack size increased to 16384 to accommodate ESP32Webserver
 
-####PHY configuration 
+### PHY configuration 
 wifi tx power reduced to 13dB from 20dB. This reduces the 
 current spikes on wifi transmit bursts, so no need for a honking big capacitor on the 
 esp32 vcc line. This is not a problem for our application - if you're configuring the gpsvario 
 with a pc or smartphone, the two are going to be no more than a few feet apart.
 
-####Freertos tick rate
+### Freertos tick rate
 Increased to 200Hz from 100Hz
 allows minimum tick delay 5mS instead of 10mS, reduces overhead of regular task yield
 during server data download etc.
 
-
-### Issues
+## Issues
 
 
