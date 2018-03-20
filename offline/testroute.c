@@ -15,6 +15,10 @@ WAYPOINT_DATA* pWayptData = &WaypointData;
 
 int32_t gps_haversineDistancem(float lat1deg, float lon1deg, float lat2deg, float lon2deg);
 
+// Expects FormatGEO formatted .wpt output files from xcplanner (xcplanner.appspot.com).
+// Edit the file to add waypoint radius (in meters) to each waypoint. If the radius is not found, 
+// a default user-configurable radius is used. 
+
 int main(int argc, char* argv[]) {
    if (argc != 2) {
       printf("usage : %s <formatgeo.wpt>\r\n", argv[0]);

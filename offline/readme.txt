@@ -21,3 +21,6 @@ gcc -o logsplit logsplit.c
 
 // separates ibg logs wherever the timestamp of two consecutive logs differs by more than the specified value
 // milliseconds (e.g. 300). Also splits wherever there is a change from ibg log to gps track log or vice versa.
+
+gcc -o testroute testroute.c -lm
+./testroute <xcplanner_formatgeo_output_file>.wpt
