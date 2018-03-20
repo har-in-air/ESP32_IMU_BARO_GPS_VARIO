@@ -13,7 +13,7 @@ glide ratio, course/compass heading, bearing to start/waypoint, GPS derived cloc
 6. Variometer audio feedback is more pleasing thanks to the esp32 onboard DAC and audio amplifier driving
 a cellphone speaker with sine-wave tones.
 
-## Technical specifications
+## Specifications
 1. MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 2. MS5611 barometric pressure sensor, sampled at 50Hz
 3. Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud
@@ -21,8 +21,8 @@ a cellphone speaker with sine-wave tones.
 5. 128x64 reflective LCD display with serial spi interface.
 6. MAX4410 audio amplifier driving salvaged 8ohm cellphone speaker.
 7. For the power supply, I use a store-bought single-cell 18650 
-power bank with an extra connector connecting directly to the battery terminals. This allows me to 
-detach the power bank and use it for other purposes, e.g. recharging my phone etc. And I can put 
+power bank. I added an extra connector wired directly to the battery terminals. This allows me to 
+detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
 my hand-wired gpsvario in checked-in luggage (no battery), with the power bank in my carry-on 
 luggage as per airline requirements.
 8. Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
@@ -30,40 +30,47 @@ luggage as per airline requirements.
 for example. Got lazy because of my use of a 3000mAH 18650 battery :-).
 If you're content with driving a piezo speaker, can save some power 
 by omitting the audio amplifier, and using square-wave piezo drive.
-9. Software uses esp-idf build environment with Arduino as a component, so that we can take advantage of Arduino-ESP32 code for the spi and gpio interfaces and the web server.  See 
-https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project - it will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files.
 
-## Build notes
-Uses esp-idf build commit ffd4187883d69c5c39f2a1961fda06b51ed998fd
+## Software Build notes
+Built with esp-idf build commit ffd4187883d69c5c39f2a1961fda06b51ed998fd
 
-Uses arduino component version=0.0.1
+Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of Arduino-ESP32 code for the Web server, and spi/gpio interfaces. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. After adding the arduino component navigate to the /components/arduino/libraries directory and delete the SPIFFs sub-directory. I'm using SPIFFs code from https://github.com/loboris/ESP32_spiffs_example, and the Arduino code clashes with this.
 
-make menuconfig changes from default values
+### 'make menuconfig' changes from default values
 
-### Spiffs configuration
-Base address 0x180000, 65536 (64Kbytes) partition size, 4096 logical block
-size, page size = 256
+#### SPIFFS configuration
+1.Base address 0x180000
+2.65536 (64Kbytes) partition size
+3.4096 logical block size
+4.page size = 256
 
-### Custom partition table
+#### Custom partition table
 partitions.csv
 
-### Arduino configuration
-Autostart arduino setup and loop : disable
-Disable mutex locks for HAL : enable
+Run 'make flashfs' once to create and flash the spiffs partition image.
 
-### ESP32 configuration
-80MHz clock, main task stack size increased to 16384 to accommodate ESP32Webserver
+#### Arduino configuration
+1.Autostart arduino setup and loop : disable
+2.Disable mutex locks for HAL : enable
 
-### PHY configuration 
-wifi tx power reduced to 13dB from 20dB. This reduces the 
+#### ESP32 configuration
+1. 80MHz clock
+2. Main task stack size increased to 16384 to accommodate ESP32Webserver
+
+#### PHY configuration 
+1. Wifi tx power reduced to 13dB from 20dB. This reduces the 
 current spikes on wifi transmit bursts, so no need for a honking big capacitor on the 
 esp32 vcc line. This is not a problem for our application - if you're configuring the gpsvario 
 with a pc or smartphone, the two are going to be no more than a few feet apart.
 
-### Freertos tick rate
-Increased to 200Hz from 100Hz
-allows minimum tick delay 5mS instead of 10mS, reduces overhead of regular task yield
+#### Freertos tick rate
+Increased to 200Hz from 100Hz, allows minimum tick delay 5mS instead of 10mS, reduces overhead of regular task yield
 during server data download etc.
+
+## Hardware
+I used a ublox compatible gps module from Banggood. Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while other cheaper modules do (with a larger patch antenna). Plus, it doesn't save configuration settings to flash or eeprom. So it needs to be configured on  initialization each time.
+
+I've uploaded a screenshot of an alternative ublox m8n compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and the documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
 
 ## Issues
 
