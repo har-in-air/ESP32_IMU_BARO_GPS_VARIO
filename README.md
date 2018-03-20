@@ -70,7 +70,7 @@ during server data download etc.
 ## Hardware
 I used a ublox compatible gps module from Banggood. Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while other cheaper modules do (with a larger patch antenna). Plus, it doesn't save configuration settings to flash or eeprom. So it needs to be configured on  initialization each time.
 
-I've uploaded a screenshot of an alternative ublox m8n compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and the documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
+I've uploaded a screenshot of an alternative ublox m8n compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
 
 ## Issues
 
