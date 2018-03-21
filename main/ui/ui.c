@@ -6,10 +6,13 @@
 #include "gps.h"
 #include "ms5611.h"
 #include "options.h"
+#include "route.h"
 #include "cct.h"
+#include <math.h>
 
 #define TAG "ui"
 
+bool IsRouteActive = false;
 bool IsSpeakerEnabled  = true;
 bool IsGpsFixStable = true;
 bool IsTrackActive = true;
@@ -18,8 +21,6 @@ bool IsLogging = false;
 bool IsFlashDisplayRequired = false;
 bool IsGpsHeading = true;
 
-int32_t StartLatDeg7, StartLonDeg7;
-uint32_t StartTowmS;
 
 void ui_printLatitude(int page, int col, int32_t nLat) {
 	char szBuf[12];
@@ -458,8 +459,38 @@ void ui_trackTime(int32_t startmS, int32_t currentmS, int32_t* pHrs, int32_t* pM
    }
 
 
+void ui_printRouteSegment(int page, int col, int start, int end) {
+   if (start == end) {
+      lcd_printf(false, page,col,"--");
+      }
+   else {
+      lcd_printf(false, page, col,"%02d",start);
+	   }
+    lcd_printf(false,page, col+54,"%02d",end);
+    }
+
 
 void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk) {
+   float lat = FLOAT_DEG(pn->nav.latDeg7);
+   float lon = FLOAT_DEG(pn->nav.lonDeg7);
+   int32_t altm = (pn->nav.heightMSLmm + 500)/1000;
+   int32_t dop = (pn->nav.posDOP+50)/100;
+   if ((!IsGpsFixStable) && (dop < opt.misc.gpsStableDOP)) {
+      IsGpsFixStable = true;
+      ptrk->startLatDeg = lat;
+      ptrk->startLonDeg = lon; 
+      ptrk->startAltm = ptrk->maxAltm =  altm;
+      ptrk->maxClimbrateCps = -999;
+      ptrk->maxSinkrateCps = 999;
+      }    
+   if (IsGpsFixStable) {
+      ptrk->distanceFromStartm = gps_haversineDistancem(lat, lon, ptrk->startLatDeg, ptrk->startLonDeg);
+      if ((!IsTrackActive) && (ptrk->distanceFromStartm >= opt.misc.trackStartThresholdm)) {
+         IsTrackActive = true;
+         ptrk->startTowmS = pn->nav.timeOfWeekmS;
+         }
+      }
+
   // uint32_t marker = cct_setMarker();
    lcd_clearFrame();
    if (opt.misc.logType == LOGTYPE_IBG) {
@@ -469,23 +500,36 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk) {
    if (opt.misc.logType == LOGTYPE_GPS) {
       lcd_printSz(0,60, IsTrackActive ? "GPS" : "gps");
       }
-   int bv = (int)(adc_batteryVoltage()+50)/100;
-   ui_printPosDOP(6,100, (pn->nav.posDOP+50)/100);
-   ui_printBatteryStatus(7, 110, bv);
+   ui_printPosDOP(6,100, dop);
+   int batv = (int)(adc_batteryVoltage()+50)/100;
+   ui_printBatteryStatus(7, 110, batv);
    ui_printSpkrStatus(7,100, IsSpeakerEnabled);
-   ui_printAltitude(0,0,(pn->nav.heightMSLmm + 500)/1000);
+   ui_printAltitude(0,0,altm);
    lcd_printSz(1,45,"M");
-   ui_printDistance(0,82,0);
-   lcd_printSz(1,116,"KM");
-   ui_printClimbRate(2,0,INTEGER_ROUNDUP(iirClimbrateCps));
+   if (altm > ptrk->maxAltm) ptrk->maxAltm = altm;
+   ui_printClimbRate(2,0,INTEGER_ROUNDUP(IIRClimbrateCps));
    lcd_printSz(3,34,"MS");
+   if (IIRClimbrateCps > ptrk->maxClimbrateCps) ptrk->maxClimbrateCps = IIRClimbrateCps;
+   if (IIRClimbrateCps < ptrk->maxSinkrateCps) ptrk->maxSinkrateCps = IIRClimbrateCps;
+
    int gpsClimbrate = pn->nav.velDownmmps < 0 ? (pn->nav.velDownmmps - 50)/100 : (pn->nav.velDownmmps + 50)/100;
    lcd_printf(false,2,55, "%c%d.%d", gpsClimbrate >= 0 ? '+' : '-', ABS(gpsClimbrate)/10, ABS(gpsClimbrate)%10);
-   int horzVelKph = (pn->nav.groundSpeedmmps*36)/10000;
+   int32_t vn = pn->nav.velNorthmmps;
+   int32_t ve = pn->nav.velEastmmps;
+   float horzVelmmps = sqrt((float)(vn*vn + ve*ve));
+//   int horzVelKph = (pn->nav.groundSpeedmmps*36)/10000;
+   int32_t horzVelKph = (int32_t)(horzVelmmps*0.0036f + 0.5f);
    ui_printVelocity(4,0,horzVelKph);
    lcd_printSz(5,34,"KH");
-//   ui_printGlideRatio(6,0, iirClimbrateCps < 0 ? (int)(grNew*10.0f) : 9999);
-   ui_printGlideRatio(6,0, iirClimbrateCps < 0 ? (int)(glideRatio*10.0f) : 9999);
+   static float glideRatio = 1.0f;
+   if (pn->nav.velDownmmps > 0) {
+      float glideRatioNew = horzVelmmps/(float)pn->nav.velDownmmps;
+      glideRatio = (glideRatio*(float)opt.misc.glideRatioIIR + glideRatioNew*(float)(100-opt.misc.glideRatioIIR))/100.0f;
+      ui_printGlideRatio(6,0,(int)(glideRatio*10.0f + 0.5f));
+      }
+   else {
+      ui_printGlideRatio(6,0,1000);
+      }
    lcd_printSz(7,23,"GR");
    int year,month,day,hour,minute;
    gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
@@ -501,13 +545,23 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk) {
       ui_printCompassHeadingAnalog(true,4,55,horzVelKph, headingDeg);
       }
    else{
-      int32_t headingDeg = INTEGER_ROUNDUP(yawDeg);// magnetic compass heading
+      int32_t headingDeg = INTEGER_ROUNDUP(YawDeg);// magnetic compass heading
       headingDeg  -= (int32_t)opt.misc.magDeclinationdeg; 
       headingDeg = (headingDeg + 360)%360;
       ui_printCompassHeadingAnalog(false,4,55,0, headingDeg);
-      } 
-   int bearingDeg = gps_bearingDeg(pn->nav.latDeg7,pn->nav.lonDeg7, ptrk->startLatDeg7, ptrk->startLonDeg7);
+      }
+   int32_t bearingDeg, distancem;
+   if (IsRouteActive) { 
+      bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[ptrk->nextWptInx].latDeg, pRoute->wpt[ptrk->nextWptInx].lonDeg);
+      distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[ptrk->nextWptInx].latDeg, pRoute->wpt[ptrk->nextWptInx].lonDeg);
+      }
+   else {
+      bearingDeg = gps_bearingDeg(lat, lon, ptrk->startLatDeg, ptrk->startLonDeg);
+      distancem = ptrk->distanceFromStartm;
+      }
    ui_printBearingAnalog(4,55, bearingDeg);
+   ui_printDistance(0, 82, distancem);
+   lcd_printSz(1,116,"KM");
    
    if (IsFlashDisplayRequired) {
       IsFlashDisplayRequired = false;

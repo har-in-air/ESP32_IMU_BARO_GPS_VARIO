@@ -354,8 +354,8 @@ void gps_updateFlashLogRecord() {
 	      FlashLogGPSRecord.trkpt.utcSecond = NavPvt.nav.utcSecond;	
 	      FlashLogGPSRecord.trkpt.nanoSeconds = NavPvt.nav.nanoSeconds;	
 	      FlashLogGPSRecord.trkpt.heightMSLmm = NavPvt.nav.heightMSLmm;
-	      FlashLogGPSRecord.trkpt.lonDeg7 = NavPvt.nav.lonDeg7;
-	      FlashLogGPSRecord.trkpt.latDeg7 = NavPvt.nav.latDeg7;	
+	      FlashLogGPSRecord.trkpt.lonDeg7 =  NavPvt.nav.lonDeg7;
+	      FlashLogGPSRecord.trkpt.latDeg7 =  NavPvt.nav.latDeg7;	
 	      flashlog_writeGPSRecord(&FlashLogGPSRecord); 
          }
 		}		
@@ -364,14 +364,14 @@ void gps_updateFlashLogRecord() {
 
 
 // great-circle distance using WGS-84 average earth radius
-int32_t gps_haversineDistancem(int32_t lat1deg, int32_t lon1deg, int32_t lat2deg, int32_t lon2deg)  {
+int32_t gps_haversineDistancem(float lat1deg, float lon1deg, float lat2deg, float lon2deg)  {
    float  dlatrad, dlonrad, lat1rad, lat2rad, sindlat, sindlon, a, c, distancem;
 
-	dlatrad = ((float)(lat2deg - lat1deg))*PI_DIV_180/10000000.0f;
-	dlonrad = ((float)(lon2deg - lon1deg))*PI_DIV_180/10000000.0f;
+	dlatrad = (lat2deg - lat1deg)*PI_DIV_180;
+	dlonrad = (lon2deg - lon1deg)*PI_DIV_180;
 
-   lat1rad = ((float)lat1deg)*PI_DIV_180/10000000.0f;
-   lat2rad = ((float)lat2deg)*PI_DIV_180/10000000.0f;
+   lat1rad = lat1deg*PI_DIV_180;
+   lat2rad = lat2deg*PI_DIV_180;
 
    sindlat = sin(dlatrad/2.0f);
    sindlon = sin(dlonrad/2.0f);
@@ -383,16 +383,16 @@ int32_t gps_haversineDistancem(int32_t lat1deg, int32_t lon1deg, int32_t lat2deg
    }
 
  
-int32_t gps_bearingDeg(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2) {
-	float flat1,flat2,fdlon,x,y,b;
+int32_t gps_bearingDeg(float lat1, float lon1, float lat2, float lon2) {
+	float lat1rad,lat2rad,dlonrad,x,y,b;
 	int32_t bearing;
 	
-	fdlon = ((float)(lon2 - lon1))*PI_DIV_180;
-	flat1 = ((float)lat1)*PI_DIV_180;
-	flat2 = ((float)lat2)*PI_DIV_180;
+	dlonrad = (lon2 - lon1)*PI_DIV_180;
+	lat1rad = lat1*PI_DIV_180;
+	lat2rad = lat2*PI_DIV_180;
 	
-	x =  cos(flat1)*sin(flat2) - sin(flat1)*cos(flat2)*cos(fdlon);
-	y = sin(fdlon)*cos(flat2);
+	x =  cos(lat1rad)*sin(lat2rad) - sin(lat1rad)*cos(lat2rad)*cos(dlonrad);
+	y = sin(dlonrad)*cos(lat2rad);
 	b = atan2(y,x);
 	b += TWO_PI;	
 	if (b >= TWO_PI) b -= TWO_PI; // convert to [0, 2*pi] radians

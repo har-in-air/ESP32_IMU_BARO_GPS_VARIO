@@ -21,12 +21,18 @@
 #define MIN_COMPASS_HEADING		0
 #define MAX_COMPASS_HEADING		359
 
+#define FLOAT_DEG(val)  (((float)val)/10000000.0f)
+
 typedef struct TRACK_ {
-   int32_t startLatDeg7;
-   int32_t startLonDeg7;
-   int32_t startAltm;
+   float startLatDeg;
+   float startLonDeg;
+   float startAltm;
+   int32_t maxAltm;
+   float maxClimbrateCps;
+   float maxSinkrateCps;
    int32_t startTowmS;
    int32_t distanceFromStartm;
+   int     nextWptInx;
 } TRACK;
 
 
@@ -45,8 +51,10 @@ void ui_printTrackTime(int page, int col, int nHrs, int nMin);
 void ui_printLongitude(int page, int col, int32_t nLon);
 void ui_printLatitude(int page, int col, int32_t nLat);
 void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk);
+void ui_printRouteSegment(int page, int col, int start, int end);
 
 extern bool IsSpeakerEnabled;
+extern bool IsRouteActive;
 extern bool IsGpsFixStable;
 extern bool IsTrackActive;
 extern bool IsLcdBkltEnabled;
@@ -54,6 +62,9 @@ extern bool IsLogging;
 extern bool IsServer;
 extern bool IsFlashDisplayRequired;
 extern bool IsGpsHeading;
+
+extern volatile float YawDeg;
+extern volatile float IIRClimbrateCps;
 
 #endif
 

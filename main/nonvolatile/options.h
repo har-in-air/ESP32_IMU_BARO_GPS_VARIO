@@ -25,6 +25,7 @@ typedef struct MISC_PARAMS_ {
    int16_t  magDeclinationdeg;
    int16_t  speakerVolume;
    int16_t  logType;
+   int16_t  waypointRadiusm;
 } MISC_PARAMS;
 
 typedef struct OPTIONS_ {

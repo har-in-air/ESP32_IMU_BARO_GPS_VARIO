@@ -130,6 +130,11 @@ int opt_init(void) {
          opt.misc.logType = atoi(pkeys[key].szValue);
          CLAMP(opt.misc.logType, LOGTYPE_NONE, LOGTYPE_IBG);
          }
+      else
+      if (!strcmp(pkeys[key].szName, "waypointRadiusm")) {
+         opt.misc.waypointRadiusm = atoi(pkeys[key].szValue);
+         CLAMP(opt.misc.waypointRadiusm, WAYPOINT_RADIUS_MIN, WAYPOINT_RADIUS_MAX);
+         }
       }
    free (pkeys);
 
@@ -153,6 +158,7 @@ int opt_init(void) {
       ESP_LOGI(TAG,"magDeclinationdeg = %d", opt.misc.magDeclinationdeg);
       ESP_LOGI(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
       ESP_LOGI(TAG,"logType = %d", opt.misc.logType);
+      ESP_LOGI(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
 #endif
    return 0;
 	}
@@ -181,6 +187,7 @@ void opt_setDefaults() {
 	opt.misc.magDeclinationdeg = MAG_DECLINATION_DEFAULT;
 	opt.misc.speakerVolume = SPEAKER_VOLUME_DEFAULT;
 	opt.misc.logType = LOGTYPE_NONE;
+	opt.misc.waypointRadiusm = WAYPOINT_RADIUS_DEFAULT;
    }
 
 
@@ -285,6 +292,10 @@ int opt_save(VARIO_PARAMS* pVario,KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc)
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -17;
 
+    sprintf(buf,"waypointRadiusm [%d,%d] %d\r\n",WAYPOINT_RADIUS_MIN, WAYPOINT_RADIUS_MAX, opt.misc.waypointRadiusm);
+    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
+    if (nwrote != strlen(buf)) return -17;
+
     fclose(fdwr);
 
 #ifdef OPT_DEBUG
@@ -308,6 +319,7 @@ int opt_save(VARIO_PARAMS* pVario,KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc)
       ESP_LOGI(TAG,"magDeclinationdeg = %d", opt.misc.magDeclinationdeg);
       ESP_LOGI(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
       ESP_LOGI(TAG,"logType = %d", opt.misc.logType);
+      ESP_LOGI(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
 #endif
    return 0;
    }

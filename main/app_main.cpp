@@ -45,18 +45,14 @@ ESP32WebServer server(80);
 
 volatile int LedState = 0;
 volatile int BacklitCounter = 0;
-volatile float kfAltitudeCm, kfClimbrateCps,iirClimbrateCps, glideRatio,glideRatioNew;
-volatile float yawDeg, pitchDeg, rollDeg;
+volatile float KFAltitudeCm, KFClimbrateCps,IIRClimbrateCps;
+volatile float YawDeg, PitchDeg, RollDeg;
 
 volatile SemaphoreHandle_t DrdySemaphore;
 volatile bool DrdyFlag = false;
 
 bool IsServer = false;
 
-uint32_t clockPrevious;
-uint32_t clockNow;
-float 	imuTimeDeltaUSecs; // time between imu samples, in microseconds
-float 	kfTimeDeltaUSecs; // time between kalman filter updates, in microseconds
  
 
 void pinConfig() {	
@@ -91,20 +87,20 @@ void pinConfig() {
 
 
 static void server_task(void *pvParameter){
-  server.on("/",         server_homePage);
-  server.on("/dir",      server_listDir);
-  server.on("/upload",   server_fileUpload);
-  server.on("/fupload",  HTTP_POST,[](){ server.send(200);}, server_handleFileUpload);
-  server.on("/download", server_fileDownload);
-  server.on("/delete",   server_fileDelete);
-  server.on("/datalog",  server_downloadDataLog);
+   server.on("/",         server_homePage);
+   server.on("/dir",      server_listDir);
+   server.on("/upload",   server_fileUpload);
+   server.on("/fupload",  HTTP_POST,[](){ server.send(200);}, server_handleFileUpload);
+   server.on("/download", server_fileDownload);
+   server.on("/delete",   server_fileDelete);
+   server.on("/datalog",  server_downloadDataLog);
 
-  server.begin();
-  while(1) {
-     server.handleClient(); 
-     delayMs(10); // yield to idle task
-     }
-  }
+   server.begin();
+   while(1) {
+      server.handleClient(); 
+      delayMs(10); // yield to idle task
+      }
+   }
 
 
 static void display_task(void *pvParameter) {
@@ -113,40 +109,21 @@ static void display_task(void *pvParameter) {
    TRACK  track;
    IsGpsFixStable = false;
    IsLogging = false;
+   IsRouteActive = false;
    IsTrackActive = false;
    IsLcdBkltEnabled = false;
    IsSpeakerEnabled = true;
-   glideRatio = 1.0f;
+   track.nextWptInx = 0;
 
 	while(1) {
 		if (IsGpsNavUpdated) {
 			IsGpsNavUpdated = false;
          counter++;
          memcpy(&navpvt, (void*)&NavPvt, sizeof(NAV_PVT)); 
-         float vn = (float)navpvt.nav.velNorthmmps;
-         float ve = (float)navpvt.nav.velEastmmps;
-         float horzVelmmps = sqrt(vn*vn + ve*ve);
-         if (navpvt.nav.velDownmmps > 0) {
-            glideRatioNew = horzVelmmps/(float)navpvt.nav.velDownmmps;
-            glideRatio = (glideRatio*(float)opt.misc.glideRatioIIR + glideRatioNew*(float)(100-opt.misc.glideRatioIIR))/100.0f;
-            }
 
          if (counter >= 3) {
             counter = 0;
             // display update interval 0.3s
-            if ((!IsGpsFixStable) && ((navpvt.nav.posDOP+50)/100 < opt.misc.gpsStableDOP)) {
-               IsGpsFixStable = true;
-               track.startLatDeg7 = navpvt.nav.latDeg7;
-               track.startLonDeg7 = navpvt.nav.lonDeg7;
-               track.startAltm = (navpvt.nav.heightMSLmm+500)/1000;
-               }    
-            if (IsGpsFixStable) {
-               track.distanceFromStartm = gps_haversineDistancem(track.startLatDeg7,track.startLonDeg7,navpvt.nav.latDeg7,navpvt.nav.lonDeg7);
-               if ((!IsTrackActive) && (track.distanceFromStartm >= opt.misc.trackStartThresholdm)) {
-                  IsTrackActive = true;
-                  track.startTowmS = navpvt.nav.timeOfWeekmS;
-                  }
-               }
             ui_updateFlightDisplay(&navpvt,&track);
             }
 			}
@@ -171,8 +148,8 @@ void IRAM_ATTR drdyHandler(void) {
 	DrdyFlag = true;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	xSemaphoreGiveFromISR(DrdySemaphore, &xHigherPriorityTaskWoken);
-    if( xHigherPriorityTaskWoken == pdTRUE) {
-        portYIELD_FROM_ISR(); // this wakes up imubaro_task immediately instead of on next FreeRTOS tick
+   if( xHigherPriorityTaskWoken == pdTRUE) {
+      portYIELD_FROM_ISR(); // this wakes up imubaro_task immediately instead of on next FreeRTOS tick
 		}
 	//LED_TOGGLE();
 	}
@@ -258,12 +235,15 @@ static void vario_task(void *pvParameter) {
    float gxNEDdps, gyNEDdps, gzNEDdps, axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED;
 
 	ESP_LOGI(TAG, "vario task started");
+   uint32_t clockPrevious;
+   uint32_t clockNow;
+   float 	imuTimeDeltaUSecs; // time between imu samples, in microseconds
+   float 	kfTimeDeltaUSecs = 0.0f; // time between kalman filter updates, in microseconds
+
    // setup time markers for imu, baro and kalman filter
 	clockNow = clockPrevious = XTHAL_GET_CCOUNT();
    int drdyCounter = 0;   
    int baroCounter = 0;
-   float kfTimeDeltaUSecs = 0.0f;
-   float imuTimeDeltaUSecs;
 	DrdySemaphore = xSemaphoreCreateBinary();
 	attachInterrupt(pinDRDYINT, drdyHandler, RISING);
 
@@ -290,8 +270,8 @@ static void vario_task(void *pvParameter) {
       // the orientation quaternion
 		int useAccel = ((asqd > 562500.0f) && (asqd < 1562500.0f)) ? 1 : 0;	
       int useMag = true;
-		imu_mahonyAHRSupdate9DOF(useAccel, useMag,imuTimeDeltaUSecs/1000000.0f, DEG2RAD(gxNEDdps), DEG2RAD(gyNEDdps), DEG2RAD(gzNEDdps), axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED);
-	   imu_quaternion2YawPitchRoll(q0,q1,q2,q3, (float*)&yawDeg, (float*)&pitchDeg, (float*)&rollDeg);
+		imu_mahonyAHRSupdate9DOF(useAccel, useMag,((float)imuTimeDeltaUSecs)/1000000.0f, DEG2RAD(gxNEDdps), DEG2RAD(gyNEDdps), DEG2RAD(gzNEDdps), axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED);
+	   imu_quaternion2YawPitchRoll(q0,q1,q2,q3, (float*)&YawDeg, (float*)&PitchDeg, (float*)&RollDeg);
       float gravityCompensatedAccel = imu_gravityCompensatedAccel(axNEDmG, ayNEDmG, azNEDmG, q0, q1, q2, q3);
       ringbuf_addSample(gravityCompensatedAccel); 
 		kfTimeDeltaUSecs += imuTimeDeltaUSecs;
@@ -305,11 +285,11 @@ static void vario_task(void *pvParameter) {
             // z sample is from when pressure conversion was triggered, not read (i.e. 10mS ago). 
             // So we need to average the acceleration samples from the 20mS interval before that
 				float zAccelAverage = ringbuf_averageOldestSamples(10); 
-				kalmanFilter3_update(ZCmSample, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
-            // use damped climbrate for lcd display and for glide ratio computation
-            iirClimbrateCps = iirClimbrateCps*0.9f + 0.1f*kfClimbrateCps; 
+				kalmanFilter3_update(ZCmSample, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
+            // use damped climbrate for lcd display
+            IIRClimbrateCps = IIRClimbrateCps*0.9f + 0.1f*KFClimbrateCps; 
             kfTimeDeltaUSecs = 0.0f;
-				int32_t audioCps = INTEGER_ROUNDUP(kfClimbrateCps);
+				int32_t audioCps = INTEGER_ROUNDUP(KFClimbrateCps);
 				if (IsSpeakerEnabled) {
                beeper_beep(audioCps);                
                }
@@ -354,8 +334,8 @@ static void vario_task(void *pvParameter) {
          drdyCounter = 0;
 #ifdef IMU_DEBUG
          //ESP_LOGI(TAG,"%dus",eus);
-			//ESP_LOGI(TAG,"\r\nY = %d P = %d R = %d", (int)yawDeg, (int)pitchDeg, (int)rollDeg);
-			//ESP_LOGI(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)kfAltitudeCm, (int)kfClimbrateCps);
+			//ESP_LOGI(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
+			//ESP_LOGI(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
 #endif			
 
         // ESP_LOGI(TAG,"ax %.1f ay %.1f az %.1f", axmG, aymG, azmG);
@@ -456,9 +436,9 @@ extern "C" void app_main() {
       lcd_printlnf(false,0,"HTTP Server Mode");
       lcd_printlnf(false,1,"AP \"ESP32GpsVario\"");
       lcd_printlnf(false,2,"Configure");
-      lcd_printlnf(true ,3," 192.168.4.1");
+      lcd_printlnf(false,3," 192.168.4.1");
       lcd_printlnf(false,4,"Datalog");
-      lcd_printlnf(false,5," 192.168.4.1/datalog");
+      lcd_printlnf(true, 5," 192.168.4.1/datalog");
 		ESP_LOGI(TAG, "Wifi access point ESP32GpsVario starting...");
       WiFi.mode(WIFI_AP);
       WiFi.softAP("ESP32GpsVario");

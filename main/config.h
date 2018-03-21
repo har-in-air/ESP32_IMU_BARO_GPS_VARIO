@@ -181,6 +181,10 @@
 #define LOGTYPE_GPS   1
 #define LOGTYPE_IBG   2
 
+#define WAYPOINT_RADIUS_MIN         5
+#define WAYPOINT_RADIUS_MAX      20000
+#define WAYPOINT_RADIUS_DEFAULT   50
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // COMPILED CONFIGURATION PARAMETERS ( cannot be changed with web configuration )

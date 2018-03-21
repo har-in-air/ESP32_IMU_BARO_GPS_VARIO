@@ -97,8 +97,8 @@ void gps_stateMachine();
 int  gps_config(void);
 void gps_updateFlashLogRecord();
 
-int32_t gps_haversineDistancem(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2);
-int32_t gps_bearingDeg(int32_t lat1, int32_t lon1, int32_t lat2, int32_t lon2);
+int32_t gps_haversineDistancem(float lat1, float lon1, float lat2, float lon2);
+int32_t gps_bearingDeg(float lat1, float lon1, float lat2, float lon2);
 void gps_localDateTime(NAV_PVT* pn, int* plYear, int* plMonth, int* plDay, int* plHour, int* plMinute);
 
 #endif
