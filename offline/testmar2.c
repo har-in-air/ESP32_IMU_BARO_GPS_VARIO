@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
                   velHorz /= 10.0f; // in cm/s
                   float velkph = (velHorz*3600.0f)/100000.0f;
                   if (kalmanFilterInitialized) {
-                     printf("%.1fm %.1fbcm/s %.1fgcm/s %.1fkph %.1f:1\r\n", baroAltCm/100.0f, iirClimbrateCps, -velDown/10.0f,velkph, velDown > 0.0f ? glideRatio : 0.0f);
+                     printf("%.1fm %.1fbcm/s %.1fgcm/s %.1fkph %.1f:1 %.1fvunc\r\n", baroAltCm/100.0f, iirClimbrateCps, -velDown/10.0f,velkph, velDown > 0.0f ? glideRatio : 0.0f, (float)gps.velAccuracymmps/10.0f);
                      }
                   } 
                }
