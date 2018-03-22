@@ -217,7 +217,7 @@ static void vario_taskConfig() {
 
    ms5611_averagedSample(4);
    ESP_LOGI(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
-   lcd_printlnf(true,0,"Baro ALT %dm TEMP %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
+   lcd_printlnf(true,0,"Baro %dm %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
    kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, ZCmAvg, 0.0f, 0.0f);
    delayMs(2000);
    lcd_printlnf(true,1,"GPS Vario start...");
@@ -446,11 +446,11 @@ extern "C" void app_main() {
       }
    else {
       lcd_clear();
+      vario_taskConfig();   	
+	   xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, 20, NULL, 1);
 	   xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);
       // ui_task lower priority than gps_task
 	   xTaskCreatePinnedToCore(&ui_task, "uitask", 4096, NULL, 10, NULL, 0); 
-      vario_taskConfig();   	
-	   xTaskCreatePinnedToCore(&vario_task, "variotask", 2048, NULL, 20, NULL, 1);
       }
 
 	while(1) {
