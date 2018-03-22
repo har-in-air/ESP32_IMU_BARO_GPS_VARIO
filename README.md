@@ -1,5 +1,6 @@
 # ESP32 GPS Variometer
 
+## Features
 1. Variometer zero-lag response with a Kalman filter fusing acceleration data from an IMU module and altitude data from a barometric pressure sensor.
 2. High-speed data logging option for IMU (accelerometer, gyrosocope and magnetometer), barometer and gps 
 readings. 500Hz for IMU data, 50Hz for barometric altitude data, and 10Hz for gps data. Data is logged to
@@ -38,48 +39,54 @@ Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of Ard
 ### 'make menuconfig' changes from default values
 
 #### SPIFFS configuration
-1. Base address 0x180000
-2. 65536 (64Kbytes) partition size
-3. 4096 logical block size
-4. page size = 256
+1. Base address : 0x180000
+2. Partition size : 65536 (64Kbytes)
+3. Logical block size : 4096 
+4. Page size : 256
 
 #### Custom partition table
 partitions.csv
 
-Run 'make flashfs' once to create and flash the spiffs partition image.
+(Run 'make flashfs' once to create and flash the spiffs partition image)
 
 #### Arduino configuration
 1. Autostart arduino setup and loop : disable
 2. Disable mutex locks for HAL : enable
 
 #### ESP32 configuration
-1. 80MHz clock
-2. Main task stack size increased to 16384 to accommodate ESP32Webserver
+1. Clock frequency : 80MHz clock (reduces power consumption)
+2. Main task stack size : 16384 (increased to accommodate ESP32Webserver)
 
 #### PHY configuration 
-1. Wifi tx power reduced to 13dB from 20dB. This reduces the 
-current spikes on wifi transmit bursts, so no need for a honking big capacitor on the 
+1. Wifi tx power : 13dB 
+This reduces the current spikes on wifi transmit bursts, so no need for a honking big capacitor on the 
 esp32 vcc line. The lower transmission power is not a problem for our application - if you're configuring the gpsvario 
 from your pc/smartphone, the two units are going to be no more than a few feet apart.
 
-#### Freertos tick rate
-Increased to 200Hz from 100Hz, allows minimum tick delay 5mS instead of 10mS, reduces overhead of regular task yield
+#### Freertos
+1. Tickrate : 200Hz
+Allows minimum tick delay 5mS instead of 10mS, reduces overhead of regular task yield
 during server data download etc.
 
 ## Hardware
-I used a ublox compatible gps module from Banggood (see screenshot in /pics directory). Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while cheaper modules do (with a larger patch antenna). Plus, it doesn't save configuration settings to flash or eeprom. So it needs to be configured on  initialization each time.
+I used a ublox compatible gps module from Banggood (see screenshot in /pics directory). Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while cheaper modules do (with a larger patch antenna). And it doesn't save configuration settings to flash or eeprom, so it needs to be configured on initialization each time.
 
-I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm) and Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
+I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm). Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
 
 For an external audio amplifier, you could go with the XPT8871, available on ebay and aliexpress. I used the MAX4410 because I had a few samples, and an already assembled breakout board from a previous project.
 
+## Usage
+1. For downloading binary data logs, put the gpsvario into server mode, connect to the WiFi access point 'ESP32GpsVario' and access the url 'http://192.168.4.1/datalog' via a web browser. The binary datalog file can contain a mix of high-speed IBG (imu+baro+gps) data samples, and normal GPS track logs. There is some sample software in the /offline directory for splitting the binary datalog into separate IBG and GPS datalogs, and for converting GPS logs into .gpx text files that you can load in Google Earth or other GPS track visualization software.
+2. For configuring the gpsvario, put it into server mode, access the url 'http://192.168.4.1' and download the options.txt file from the gpsvario. Edit it as required, and upload the file back to the gpsvario.
+3. Use xcplanner (xcplanner.appspot.com) to generate a route with waypoints in FormatGEO format as a *.wpt text file. Note that xcplanner does not specify waypoint radii. You can edit the .wpt file to add the waypoint radius (in meters) at the end of each waypoint entry line. If the waypoint radius is not specified, the gpsvario will apply a user-configurable standard waypoint radius. Upload the *.wpt file to the gpsvario using the website upload file function. 
+
 ## Credits
-1. Spiffs code from https://github.com/loboris/ESP32_spiffs_example
+1. Spiffs code - https://github.com/loboris/ESP32_spiffs_example
 2. Sine-wave generation with ESP32 DAC modified from https://github.com/krzychb/dac-cosine
-3. Web server library from https://github.com/Pedroalbuquerque/ESP32WebServer
-3. Web server top level page handling, css styling modified from  https://github.com/G6EJD/ESP32-ESP8266-File-Download-Upload-Delete-Stream-and-Directory
+3. Web server library - https://github.com/Pedroalbuquerque/ESP32WebServer
+3. Web server top level page handling, css style modified from  https://github.com/G6EJD/ESP32-ESP8266-File-Download-Upload-Delete-Stream-and-Directory
 4. MPU9250 initialization sequence modified from https://github.com/bolderflight/MPU9250/blob/master/MPU9250.cpp
 
 ## Issues
-
+Preliminary, unstable, work in progress ... 
 
