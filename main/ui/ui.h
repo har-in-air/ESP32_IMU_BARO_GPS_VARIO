@@ -24,14 +24,21 @@
 #define FLOAT_DEG(val)  (((float)val)/10000000.0f)
 
 typedef struct TRACK_ {
-   float startLatDeg;
-   float startLonDeg;
+   int   year;
+   int   month;
+   int   day;
+   int   hour;
+   int   minute;
+   float startLatdeg;
+   float startLondeg;
    float startAltm;
    int32_t maxAltm;
    float maxClimbrateCps;
    float maxSinkrateCps;
    int32_t startTowmS;
    int32_t distanceFromStartm;
+   int32_t elapsedHours;
+   int32_t elapsedMinutes;
    int     nextWptInx;
 } TRACK;
 
@@ -52,6 +59,9 @@ void ui_printLongitude(int page, int col, int32_t nLon);
 void ui_printLatitude(int page, int col, int32_t nLat);
 void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk);
 void ui_printRouteSegment(int page, int col, int start, int end);
+int  ui_saveLog(TRACK* pTrk);
+void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHrs, int32_t* pMins);
+void ui_alarmWaypointReached();
 
 extern bool IsSpeakerEnabled;
 extern bool IsRouteActive;

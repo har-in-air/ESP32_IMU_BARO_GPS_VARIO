@@ -1,22 +1,12 @@
 #include <Arduino.h>
 #include <WiFi.h>              
-#include <ESP32WebServer.h>    // https://github.com/Pedroalbuquerque/ESP32WebServer
+#include <ESP32WebServer.h>
 #include "server.h"
 
 extern "C" {
 #include "common.h"
 #include "config.h"
-#include <errno.h>
-#include <sys/fcntl.h>
-#include "esp_vfs.h"
-#include "esp_vfs_fat.h"
-#include "esp_log.h"
 #include "spiffs_vfs.h"
-#include <ctype.h>
-#include "driver/uart.h"
-#include "soc/gpio_reg.h"
-#include "soc/io_mux_reg.h"
-
 #include "gps.h"
 #include "lcd7565.h"
 #include "cct.h"
@@ -36,6 +26,7 @@ extern "C" {
 #include "calib.h"
 #include "btn.h"
 #include "ui.h"
+#include "route.h"
 #include "options.h"
 }
 
@@ -98,12 +89,12 @@ static void server_task(void *pvParameter){
    server.begin();
    while(1) {
       server.handleClient(); 
-      delayMs(10); // yield to idle task
+      delayMs(5);
       }
    }
 
 
-static void display_task(void *pvParameter) {
+static void ui_task(void *pvParameter) {
    int counter = 0;
    NAV_PVT navpvt;
    TRACK  track;
@@ -113,7 +104,16 @@ static void display_task(void *pvParameter) {
    IsTrackActive = false;
    IsLcdBkltEnabled = false;
    IsSpeakerEnabled = true;
-   track.nextWptInx = 0;
+   pRoute->nextWptInx = 0;
+   pRoute->numWpts = 0;
+
+   if (rte_selectRoute() == 0) {
+      lcd_clear();
+      int32_t rteDistance = rte_totalDistance();
+      lcd_printlnf(true,0,"Route %.2fkm", ((float)rteDistance)/1000.0f);
+      delayMs(2000);
+      IsRouteActive = true;
+      }
 
 	while(1) {
 		if (IsGpsNavUpdated) {
@@ -149,22 +149,22 @@ void IRAM_ATTR drdyHandler(void) {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	xSemaphoreGiveFromISR(DrdySemaphore, &xHigherPriorityTaskWoken);
    if( xHigherPriorityTaskWoken == pdTRUE) {
-      portYIELD_FROM_ISR(); // this wakes up imubaro_task immediately instead of on next FreeRTOS tick
+      portYIELD_FROM_ISR(); // this wakes up vario_task immediately instead of on next FreeRTOS tick
 		}
 	//LED_TOGGLE();
 	}
 
 
 static void vario_taskConfig() {
-   lcd_printlnf(true,0,"IMU config");
+   lcd_printlnf(true,0,"MPU9250 config");
    if (mpu9250_config() < 0) {
       ESP_LOGE(TAG, "error MPU9250 config");
-		lcd_printlnf(true,0,"IMU config failed");
+		lcd_printlnf(true,0,"MPU9250 config failed");
       while (1) {delayMs(100);};
       }
 
    btn_clear();
-   // if calib.txt was not found, accel and mag calibration is enforced automatically
+   // if calib.txt not found, enforce accel and mag calibration and write new calib.txt
    bool isAccelMagCalibRequired = !IsCalibrated;
    int counter = 300;
    while ((!isAccelMagCalibRequired) && counter--) {
@@ -216,12 +216,11 @@ static void vario_taskConfig() {
 		}	
 
    ms5611_averagedSample(4);
-   ESP_LOGI(TAG,"Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
-   lcd_printlnf(true,0,"ALT %dm TEMP %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
+   ESP_LOGI(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
+   lcd_printlnf(true,0,"Baro ALT %dm TEMP %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
    kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, ZCmAvg, 0.0f, 0.0f);
    delayMs(2000);
-   lcd_clear();
-   lcd_printlnf(true,0,"GPS VARIO start ...");
+   lcd_printlnf(true,1,"GPS Vario start...");
 	ms5611_initializeSampleStateMachine();
 	vspi_setClockFreq(VSPI_CLK_HIGH_FREQHZ); // high clock frequency ok for sensor readout & flash writes
    beeper_config();
@@ -235,12 +234,10 @@ static void vario_task(void *pvParameter) {
    float gxNEDdps, gyNEDdps, gzNEDdps, axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED;
 
 	ESP_LOGI(TAG, "vario task started");
-   uint32_t clockPrevious;
-   uint32_t clockNow;
+   uint32_t clockPrevious, clockNow; // time markers for imu, baro and kalman filter
    float 	imuTimeDeltaUSecs; // time between imu samples, in microseconds
    float 	kfTimeDeltaUSecs = 0.0f; // time between kalman filter updates, in microseconds
 
-   // setup time markers for imu, baro and kalman filter
 	clockNow = clockPrevious = XTHAL_GET_CCOUNT();
    int drdyCounter = 0;   
    int baroCounter = 0;
@@ -251,11 +248,12 @@ static void vario_task(void *pvParameter) {
   		xSemaphoreTake(DrdySemaphore, portMAX_DELAY);
 	   clockNow = XTHAL_GET_CCOUNT();
       uint32_t marker =  cct_setMarker();
-	   imuTimeDeltaUSecs = cct_intervalUs(clockPrevious, clockNow);
+	   imuTimeDeltaUSecs = cct_intervalUs(clockPrevious, clockNow); // time in us since last sample
 	   clockPrevious = clockNow;
       drdyCounter++;
       baroCounter++;
       mpu9250_getGyroAccelMagData( &gxdps, &gydps, &gzdps, &axmG, &aymG, &azmG, &mx, &my, &mz);
+      // translate from sensor axes to AHRS NED (north-east-down) right handed coordinate frame      
       axNEDmG = -aymG;
       ayNEDmG = -axmG;
       azNEDmG = azmG;
@@ -265,9 +263,9 @@ static void vario_task(void *pvParameter) {
       mxNED =  mx;
       myNED =  my;
       mzNED =  mz;
+      // Use accelerometer data for determining the orientation quaternion only when accel 
+      // vector magnitude is in [0.75g, 1.25g] window.
       float asqd = axNEDmG*axNEDmG + ayNEDmG*ayNEDmG + azNEDmG*azNEDmG;
-      // constrain use of accelerometer data to the window [0.75G, 1.25G] for determining
-      // the orientation quaternion
 		int useAccel = ((asqd > 562500.0f) && (asqd < 1562500.0f)) ? 1 : 0;	
       int useMag = true;
 		imu_mahonyAHRSupdate9DOF(useAccel, useMag,((float)imuTimeDeltaUSecs)/1000000.0f, DEG2RAD(gxNEDdps), DEG2RAD(gyNEDdps), DEG2RAD(gzNEDdps), axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED);
@@ -278,17 +276,17 @@ static void vario_task(void *pvParameter) {
 
 		if (baroCounter >= 5) { // 5*2mS = 10mS elapsed, this is the sampling period for MS5611, 
 			baroCounter = 0;     // alternating between pressure and temperature samples
-         // one altitude sample is calculated for every new pair of pressure & temperature samples
 			int zMeasurementAvailable = ms5611_sampleStateMachine(); 
+         // one altitude sample is calculated for a pair of pressure & temperature samples
 			if ( zMeasurementAvailable ) { 
             // need average earth-z acceleration over the 20mS interval between z samples
             // z sample is from when pressure conversion was triggered, not read (i.e. 10mS ago). 
             // So we need to average the acceleration samples from the 20mS interval before that
 				float zAccelAverage = ringbuf_averageOldestSamples(10); 
 				kalmanFilter3_update(ZCmSample, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
+            kfTimeDeltaUSecs = 0.0f;
             // use damped climbrate for lcd display
             IIRClimbrateCps = IIRClimbrateCps*0.9f + 0.1f*KFClimbrateCps; 
-            kfTimeDeltaUSecs = 0.0f;
 				int32_t audioCps = INTEGER_ROUNDUP(KFClimbrateCps);
 				if (IsSpeakerEnabled) {
                beeper_beep(audioCps);                
@@ -304,8 +302,7 @@ static void vario_task(void *pvParameter) {
          }           
 	   if ((opt.misc.logType == LOGTYPE_IBG) && FlashLogMutex) {
 		   if (xSemaphoreTake( FlashLogMutex, portMAX_DELAY )) {      
-            FlashLogIBGRecord.hdr.magic = FLASHLOG_IBG_MAGIC
-;
+            FlashLogIBGRecord.hdr.magic = FLASHLOG_IBG_MAGIC;
 			  	FlashLogIBGRecord.imu.gxNEDdps = gxNEDdps;
 			   FlashLogIBGRecord.imu.gyNEDdps = gyNEDdps;
 			   FlashLogIBGRecord.imu.gzNEDdps = gzNEDdps;
@@ -363,8 +360,9 @@ extern "C" void app_main() {
 	ESP_LOGI(TAG, "esp32gpsvario compiled on %s at %s", __DATE__, __TIME__);
 	pinConfig();
 
-   // initialize SPIFFS file system and read calibration and configuration parameters
+   // initialize SPIFFS file system 
    vfs_spiffs_register();
+   // read calibration parameters from calib.txt, configuration parameters from options.txt
    calib_init();
    opt_init();
 
@@ -382,7 +380,7 @@ extern "C" void app_main() {
    lcd_printlnf(false,0,"%s %s", __DATE__, __TIME__);
    lcd_printlnf(true,1,"BAT %d.%03dV", batteryVoltagemV/1000, batteryVoltagemV%1000);
 
-   // VSPI bus used for imu, baro and flash
+   // VSPI bus used for imu, baro and serial 128Mbit flash
    // start with low clock frequency for sensor configuration
    vspi_config(pinVSCLK, pinVMOSI, pinVMISO,VSPI_CLK_CONFIG_FREQHZ);
 	if (flashlog_init() < 0) {
@@ -391,7 +389,7 @@ extern "C" void app_main() {
 		while (1) {delayMs(100);}
 		}
 
-	lcd_printlnf(true,2,"Flash %08d",  FlashLogFreeAddress);
+	lcd_printlnf(true,2,"SPI Flash %d%% Full",  (FlashLogFreeAddress*100)/FLASH_SIZE_BYTES );
    delayMs(2000);
    btn_clear();
    if (FlashLogFreeAddress) {
@@ -413,7 +411,7 @@ extern "C" void app_main() {
 		   lcd_printlnf(true,3,"Erasing...");
 		   flashlog_erase();
 		   ESP_LOGI(TAG, "Done");
-		   lcd_printlnf(false,2,"Flash %08d", FlashLogFreeAddress);		
+      	lcd_printlnf(false,2,"SPI Flash %d%% Full",  (FlashLogFreeAddress*100)/FLASH_SIZE_BYTES );
 		   lcd_printlnf(true,3,"Flash Erased");
          }
       }
@@ -448,11 +446,11 @@ extern "C" void app_main() {
       }
    else {
       lcd_clear();
+	   xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);
+      // ui_task lower priority than gps_task
+	   xTaskCreatePinnedToCore(&ui_task, "uitask", 4096, NULL, 10, NULL, 0); 
       vario_taskConfig();   	
 	   xTaskCreatePinnedToCore(&vario_task, "variotask", 2048, NULL, 20, NULL, 1);
-	   xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);
-      // display_task lower priority than gps_task
-	   xTaskCreatePinnedToCore(&display_task, "displaytask", 2048, NULL, 10, NULL, 0); 
       }
 
 	while(1) {

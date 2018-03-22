@@ -56,15 +56,14 @@ void server_listDir(){
    DIR *dir = NULL;
    struct dirent *ent;
    char type;
-   char path[] = "/spiffs/";
    char size[9];
-   char tpath[255];
+   char tpath[100];
    struct stat sb;
    int statok;
 #ifdef WEBCFG_DEBUG
-   ESP_LOGI(TAG,"LIST of DIR [%s]\r\n", path);
+   ESP_LOGI(TAG,"LIST of DIR [/spiffs/]\r\n");
 #endif
-   dir = opendir(path);
+   dir = opendir("/spiffs/");
    if (dir) {
       server_sendHTMLHeader();
       webpage += F("<center><h3 class='rcorners_m'>Directory Contents</h3></center><br>");
@@ -75,9 +74,8 @@ void server_listDir(){
          if (webpage.length() > 1000) {
             server_sendHTMLContent();
             }
-    	   sprintf(tpath, path);
-         if (path[strlen(path)-1] != '/') strcat(tpath,"/");
-         strcat(tpath,ent->d_name);
+    	   sprintf(tpath, "/spiffs/");
+         strcat(tpath, ent->d_name);
 		   statok = stat(tpath, &sb);
 			if (ent->d_type == DT_REG) {
 				type = 'f';
