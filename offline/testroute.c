@@ -8,8 +8,8 @@
 
 #define MIN(x,y)                 ((x) < (y) ? (x) : (y))
 
-WAYPOINT_DATA WaypointData;
-WAYPOINT_DATA* pWayptData = &WaypointData;
+ROUTE Route;
+ROUTE* pRoute = &Route;
 
 #define CONTINUE() {printf("error at line %d\r\n", __LINE__); continue;} 
 
@@ -27,10 +27,10 @@ int main(int argc, char* argv[]) {
    rte_loadRoute(argv[1]);
 
    int32_t routeDistance = 0;
-   for (int winx = 0; winx < pWayptData->numWpts; winx++) {
-      printf("%d : ID %s lat %f lon %f alt %f radius %f\r\n",winx, pWayptData->wpt[winx].szID, pWayptData->wpt[winx].latDeg, pWayptData->wpt[winx].lonDeg, pWayptData->wpt[winx].altM, pWayptData->wpt[winx].radiusM); 
-      if (winx < pWayptData->numWpts-1) routeDistance += gps_haversineDistancem(pWayptData->wpt[winx].latDeg,pWayptData->wpt[winx].lonDeg,
-pWayptData->wpt[winx+1].latDeg,pWayptData->wpt[winx+1].lonDeg);
+   for (int winx = 0; winx < pRoute->numWpts; winx++) {
+      printf("%d : ID %s lat %f lon %f alt %f radius %f\r\n",winx, pRoute->wpt[winx].szID, pRoute->wpt[winx].latdeg, pRoute->wpt[winx].londeg, pRoute->wpt[winx].altm, pRoute->wpt[winx].radiusm); 
+      if (winx < pRoute->numWpts-1) routeDistance += gps_haversineDistancem(pRoute->wpt[winx].latdeg, pRoute->wpt[winx].londeg,
+pRoute->wpt[winx+1].latdeg,pRoute->wpt[winx+1].londeg);
       }
    printf("Route distance : %.1fkm\r\n", ((float)routeDistance)/1000.0);
    return 0;
@@ -46,20 +46,14 @@ int rte_loadRoute(char* szFileName) {
    char szLine[100];
    char c;
 
-   pWayptData->numWpts = 0;
+   pRoute->numWpts = 0;
    if ((fwpt = fopen( szFileName, "r" )) == NULL){
-      //lcd_clear();
-      //lcd_printf(true,0,0,"%s not found",szFileName);
-      //delayMs(1000);
       printf("error opening file %s\r\n", szFileName);
       return -1;
       }
    rte_readLine(fwpt,szLine);
 	szToken = strtok(szLine," \r\n");
    if (strcmp(szToken, "$FormatGEO") != 0) {
-      //lcd_clear();
-      //lcd_printf(true,0,0,"Format GEO not found");
-      //delayMs(1000);
       printf("incorrect format\r\n");
       return -2;
       }
@@ -73,9 +67,9 @@ int rte_loadRoute(char* szFileName) {
 
       maxCnt = MIN(MAX_ID_CHARS-1, strlen(szToken));
       for (cnt = 0; cnt < maxCnt; cnt++) {
-         pWayptData->wpt[pWayptData->numWpts].szID[cnt] = szToken[cnt];
+         pRoute->wpt[pRoute->numWpts].szID[cnt] = szToken[cnt];
          }
-      pWayptData->wpt[pWayptData->numWpts].szID[maxCnt] = 0;
+      pRoute->wpt[pRoute->numWpts].szID[maxCnt] = 0;
 
       szToken = strtok(NULL," \t");
       if (szToken == NULL) CONTINUE();
@@ -92,7 +86,7 @@ int rte_loadRoute(char* szFileName) {
       if (sscanf(szToken, "%f",&sec) != 1) CONTINUE();
       lat = sec/3600.0f + ((float)min)/60.0f + (float)deg;
       if ((c == 'S') || (c == 's')) lat = -lat;
-      pWayptData->wpt[pWayptData->numWpts].latDeg = lat;
+      pRoute->wpt[pRoute->numWpts].latdeg = lat;
 
       szToken = strtok(NULL," \t");
       if (szToken == NULL) CONTINUE();
@@ -109,22 +103,22 @@ int rte_loadRoute(char* szFileName) {
       if (sscanf(szToken, "%f",&sec) != 1) CONTINUE();
       lon = sec/3600.0f + ((float)min)/60.0f + (float)deg;
       if ((c == 'W') || (c == 'w')) lon = -lon;
-      pWayptData->wpt[pWayptData->numWpts].lonDeg = lon;
+      pRoute->wpt[pRoute->numWpts].londeg = lon;
 
       szToken = strtok(NULL," \t\r\n");
       if (szToken == NULL) CONTINUE();
       if (sscanf(szToken,"%f",&alt) != 1) CONTINUE();
-      pWayptData->wpt[pWayptData->numWpts].altM = alt;
+      pRoute->wpt[pRoute->numWpts].altm = alt;
 
       szToken = strtok(NULL," \t\r\n");
       if (szToken == NULL) {
-         pWayptData->wpt[pWayptData->numWpts].radiusM = WAYPT_RADIUS_DFLT;
-         pWayptData->numWpts++;
+         pRoute->wpt[pRoute->numWpts].radiusm = WAYPT_RADIUS_DFLT;
+         pRoute->numWpts++;
          CONTINUE();
          }
       if (sscanf(szToken,"%f",&radius) != 1) CONTINUE();
-      pWayptData->wpt[pWayptData->numWpts].radiusM = radius;
-      pWayptData->numWpts++;   
+      pRoute->wpt[pRoute->numWpts].radiusm = radius;
+      pRoute->numWpts++;   
       }
     fclose(fwpt);
     return 0;
