@@ -1,3 +1,5 @@
+## Tested on Ubuntu 16.04LTS amdx64 platform
+
 gcc -o gpslog2gpx gpslog2gpx.c
 ./gpslog2pgx ~/Downloads/datalog
 
@@ -23,4 +25,4 @@ gcc -o logsplit logsplit.c
 // milliseconds (e.g. 300). Also splits wherever there is a change from ibg log to gps track log or vice versa.
 
 gcc -o testroute testroute.c -lm
-./testroute <xcplanner_formatgeo_output_file>.wpt
+./testroute example.wpt
