@@ -1,13 +1,13 @@
 ## Tested on Ubuntu 16.04LTS amdx64 platform
 
 gcc -o gpslog2gpx gpslog2gpx.c
-./gpslog2pgx ~/Downloads/datalog
+./gpslog2gpxx ~/Downloads/datalog
 
 gcc -o ibglog2gpx ibglog2gpx.c
-./ibglog2pgx ~/Downloads/datalog
+./ibglog2gpxx ~/Downloads/datalog
 
 gcc -o parseIBG parseIBG.c
-./parseIBG ~/Downloads/datalg
+./parseIBG ~/Downloads/datalog
 
 gcc -o ibglogsplit ibglogsplit.c
 ./ibglogsplit ~/Downloads/datalog 300     
@@ -23,6 +23,9 @@ gcc -o logsplit logsplit.c
 
 // separates ibg logs wherever the timestamp of two consecutive logs differs by more than the specified value
 // milliseconds (e.g. 300). Also splits wherever there is a change from ibg log to gps track log or vice versa.
+
+gcc -o testmar2 testmar2.c kalmanfilter3.c imu.c ringbuf.c -lm
+./testmar2 ~/Downloads/datalog-mar2
 
 gcc -o testroute testroute.c -lm
 ./testroute example.wpt
