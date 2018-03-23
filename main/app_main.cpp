@@ -106,6 +106,7 @@ static void ui_task(void *pvParameter) {
    IsSpeakerEnabled = true;
    pRoute->nextWptInx = 0;
    pRoute->numWpts = 0;
+   EndTrack = false;
 
    if (rte_selectRoute() == 0) {
       lcd_clear();
@@ -127,7 +128,19 @@ static void ui_task(void *pvParameter) {
             ui_updateFlightDisplay(&navpvt,&track);
             }
 			}
-		delayMs(10);
+      if (IsTrackActive && EndTrack) {
+         IsTrackActive = false;
+         lcd_clear();
+         lcd_printlnf(false, 0, "%4d/%02d/%02d %02d:%02d", track.year, track.month, track.day, track.hour, track.minute);
+         lcd_printlnf(false, 1, "Duration %02d:%02d", track.elapsedHours, track.elapsedMinutes);
+         lcd_printlnf(false, 2, "Alt s %4dm max %4dm", track.startAltm, track.maxAltm);
+         lcd_printlnf(false, 3, "Max Climb +%.1fm/s", track.maxClimbrateCps/100.0f);
+         lcd_printlnf(true, 4, "Max Sink %.1fm/s", track.maxSinkrateCps/100.0f);
+         ui_saveLog(&track);
+         while(1) delayMs(100);
+         }
+
+		delayMs(5);
 		}
 	}	
 
@@ -492,7 +505,8 @@ extern "C" void app_main() {
       if (Btn0Pressed) {
          Btn0Pressed = 0;
          ESP_LOGI(TAG,"Btn 0");
-         opt.misc.logType = (opt.misc.logType+1)%3;
+         //opt.misc.logType = (opt.misc.logType+1)%3;
+         EndTrack = true;
          }
 
       delayMs(30);

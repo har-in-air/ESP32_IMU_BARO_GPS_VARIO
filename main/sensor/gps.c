@@ -339,7 +339,7 @@ void gps_updateFlashLogRecord() {
 		}
    else 
 	if ((opt.misc.logType == LOGTYPE_GPS) && IsTrackActive) {
-      counter++;
+      counter++;// 100mS tick
       if (counter >= (opt.misc.trackIntervalSecs*10)) {
          counter = 0;
          FlashLogGPSRecord.hdr.magic =FLASHLOG_GPS_MAGIC;

@@ -51,8 +51,8 @@ void ui_printDistance(int page, int col, int distanceM) ;
 void ui_printGlideRatio(int page, int col, int nGr);
 void ui_printVelocity(int page, int col, int nVel);
 void ui_printClimbRate(int page, int col, int nCps);
-void ui_printBearingAnalog(int page, int col, int bearing);
-void ui_printCompassHeadingAnalog(int isGps, int page, int col, int velkph, int heading);
+void ui_printBearingAnalog(int page, int col, int velkph, int bearing);
+void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading);
 void ui_printRealTime(int page, int col, int nHrs, int nMin);
 void ui_printTrackTime(int page, int col, int nHrs, int nMin);
 void ui_printLongitude(int page, int col, int32_t nLon);
@@ -72,6 +72,7 @@ extern bool IsLogging;
 extern bool IsServer;
 extern bool IsFlashDisplayRequired;
 extern bool IsGpsHeading;
+extern bool EndTrack;
 
 extern volatile float YawDeg;
 extern volatile float IIRClimbrateCps;

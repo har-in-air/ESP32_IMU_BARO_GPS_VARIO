@@ -21,7 +21,7 @@ bool IsLcdBkltEnabled = false;
 bool IsLogging = false;
 bool IsFlashDisplayRequired = false;
 bool IsGpsHeading = true;
-
+bool EndTrack = false;
 
 void ui_printLatitude(int page, int col, int32_t nLat) {
 	char szBuf[12];
@@ -159,9 +159,9 @@ void ui_printGlideRatio(int page, int col, int nGr) {
 
 #include "compass.txt"
 
-uint8_t gBuf[128];
+static uint8_t compassBuf[128];
 
-void ui_printCompassHeadingAnalog(int isGps, int page, int col, int velkph, int heading) {
+void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading) {
 	int nrow,ncol,inx;
 	int tblOffset = 0;
 	lcd_setFramePos(page - 1, col+13);
@@ -219,13 +219,13 @@ void ui_printCompassHeadingAnalog(int isGps, int page, int col, int velkph, int 
 		}
 
 	tblOffset <<= 7;
-	for (inx = 0; inx < 128; inx++) gBuf[inx] = gCompassTbl[tblOffset++];
+	for (inx = 0; inx < 128; inx++) compassBuf[inx] = gCompassTbl[tblOffset++];
 
 	inx = 0;
 	for (nrow = 0; nrow < 4; nrow++)  {
 		lcd_setFramePos(page+nrow, col);
 	 	for (ncol = 0; ncol < 32; ncol++){
-         FrameBuf[128*FramePage + FrameCol+ ncol] = gBuf[inx++];
+         FrameBuf[128*FramePage + FrameCol+ ncol] = compassBuf[inx++];
          }
 		}
 	}
@@ -233,9 +233,13 @@ void ui_printCompassHeadingAnalog(int isGps, int page, int col, int velkph, int 
 
 #include "bearing.txt"
 
-void ui_printBearingAnalog(int page, int col, int bearing) {
+void ui_printBearingAnalog(int page, int col,int velkph, int bearing) {
 	int  nrow,ncol,inx;
    int tblOffset;
+   // if very low velocity, gps heading is uncertain, do not display
+	if (velkph < 2) { 
+		return;
+	   }
 	bearing = bearing % 360;
 	if (bearing <= 11) tblOffset = 0;
 	else
@@ -271,14 +275,14 @@ void ui_printBearingAnalog(int page, int col, int bearing) {
 	else tblOffset = 0;
 	tblOffset <<= 5;
 
-	for (inx = 0; inx < 16; inx++) gBuf[40+inx] |= gBearingTbl[tblOffset++];
-	for (inx = 0; inx < 16; inx++) gBuf[72+inx] |= gBearingTbl[tblOffset++];
+	for (inx = 0; inx < 16; inx++) compassBuf[40+inx] |= gBearingTbl[tblOffset++];
+	for (inx = 0; inx < 16; inx++) compassBuf[72+inx] |= gBearingTbl[tblOffset++];
 
 	inx = 0;
 	for (nrow = 0; nrow < 4; nrow++)  {
 		lcd_setFramePos(page+nrow, col);
 	 	for (ncol = 0; ncol < 32; ncol++) {
-         FrameBuf[128*FramePage + FrameCol + ncol] = gBuf[inx++];
+         FrameBuf[128*FramePage + FrameCol + ncol] = compassBuf[inx++];
          }
 		}
 	}
@@ -464,11 +468,11 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
    ui_printRealTime(2,93,hour,minute);
 
-   if (!IsGpsHeading) {
-      int32_t headingDeg = INTEGER_ROUNDUP(YawDeg);// magnetic compass heading
-      headingDeg  -= (int32_t)opt.misc.magDeclinationdeg; 
-      headingDeg = (headingDeg + 360)%360;
-      ui_printCompassHeadingAnalog(false,4,55,0, headingDeg);
+   if (!IsGpsHeading) { // magnetic compass heading
+      int32_t compassDeg = INTEGER_ROUNDUP(YawDeg);
+      compassDeg  -= (int32_t)opt.misc.magDeclinationdeg; 
+      compassDeg = (compassDeg + 360)%360;
+      ui_printHeadingAnalog(false,4,55,0, compassDeg);
       }
 
    if (IsGpsFixStable) {
@@ -506,18 +510,21 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       ui_printTrackTime(4,93,pTrk->elapsedHours,pTrk->elapsedMinutes);
       int32_t bearingDeg, distancem;
+      int32_t gpsCourseHeadingDeg = pn->nav.headingDeg5/100000; // gps course-over-ground heading
+      gpsCourseHeadingDeg = (gpsCourseHeadingDeg + 360)%360;
       if (IsGpsHeading) {
-         int32_t headingDeg = pn->nav.headingDeg5/100000; // gps course heading
-         ui_printCompassHeadingAnalog(true,4,55,horzVelKph, headingDeg);
+         ui_printHeadingAnalog(true,4,55,horzVelKph, gpsCourseHeadingDeg);
          }
       if (IsRouteActive) { // show bearing and distance to next waypoint
          if (pRoute->nextWptInx >= pRoute->numWpts) {
-            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg);
+            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg) - gpsCourseHeadingDeg;
+            bearingDeg = (bearingDeg + 360)%360;
             distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg);
             ui_printRouteSegment(3, 52, pRoute->numWpts-1, pRoute->numWpts-1);
             }
          else {
-            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg);
+            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg) - gpsCourseHeadingDeg;
+            bearingDeg = (bearingDeg + 360)%360;
             distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg);
             ui_printRouteSegment(3, 52, pRoute->nextWptInx-1, pRoute->nextWptInx);
             if (distancem < pRoute->wpt[pRoute->nextWptInx].radiusm) {
@@ -526,13 +533,14 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
                }
             }
          }
-      else { // no route loaded, show bearing and distance to start
-         bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg);
+      else { // no route, show bearing and distance to start
+         bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg) - gpsCourseHeadingDeg;
+         bearingDeg = (bearingDeg + 360)%360;
          distancem = pTrk->distanceFromStartm;
-         ui_printBearingAnalog(4,55, bearingDeg);
-         ui_printDistance(0, 82, distancem);
-         lcd_printSz(1,116,"KM");
          }
+      ui_printBearingAnalog(4,55, horzVelKph, bearingDeg);
+      ui_printDistance(0, 82, distancem);
+      lcd_printSz(1,116,"KM");
       }
    
 
@@ -580,7 +588,7 @@ int ui_saveLog(TRACK* pTrk) {
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
-   sprintf(buf,"Max Sinkrate  -%.1fm/s\r\n", pTrk->maxSinkrateCps/100.0f);
+   sprintf(buf,"Max Sinkrate  %.1fm/s\r\n", pTrk->maxSinkrateCps/100.0f);
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
