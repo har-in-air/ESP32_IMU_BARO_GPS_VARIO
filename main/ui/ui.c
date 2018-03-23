@@ -170,7 +170,7 @@ void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading
       FrameBuf[128*FramePage + FrameCol+1] = 0x3C;
       FrameBuf[128*FramePage + FrameCol+2] = 0x7C;
       FrameBuf[128*FramePage + FrameCol+3] = 0x3C;  
-      // if very low velocity, gps heading is uncertain, blank out display
+      // if very low velocity, gps heading is uncertain, do not display
 	   if (velkph < 2) { 
 		   tblOffset = 16;
 	   	}
@@ -236,7 +236,7 @@ void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading
 void ui_printBearingAnalog(int page, int col,int velkph, int bearing) {
 	int  nrow,ncol,inx;
    int tblOffset;
-   // if very low velocity, gps heading is uncertain, do not display
+   // if very low velocity, gps heading is uncertain, do not display bearing
 	if (velkph < 2) { 
 		return;
 	   }
@@ -275,8 +275,10 @@ void ui_printBearingAnalog(int page, int col,int velkph, int bearing) {
 	else tblOffset = 0;
 	tblOffset <<= 5;
 
-	for (inx = 0; inx < 16; inx++) compassBuf[40+inx] |= gBearingTbl[tblOffset++];
-	for (inx = 0; inx < 16; inx++) compassBuf[72+inx] |= gBearingTbl[tblOffset++];
+	//for (inx = 0; inx < 16; inx++) compassBuf[40+inx] |= gBearingTbl[tblOffset++];
+	//for (inx = 0; inx < 16; inx++) compassBuf[72+inx] |= gBearingTbl[tblOffset++];
+	for (inx = 0; inx < 16; inx++) compassBuf[40+inx] = gBearingTbl[tblOffset++];
+	for (inx = 0; inx < 16; inx++) compassBuf[72+inx] = gBearingTbl[tblOffset++];
 
 	inx = 0;
 	for (nrow = 0; nrow < 4; nrow++)  {
@@ -300,8 +302,8 @@ void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
 
 	lcd_setFramePos(page+1,col+22);
    if (nHrs/12){
-      lcd_putChar('P');
-	   lcd_putChar('M');
+      lcd_putChar('p');
+	   lcd_putChar('m');
 		if (nHrs == 12) {
 			szBuf[1] = '2';
          szBuf[0] = '1';
@@ -315,14 +317,14 @@ void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
       	}
    	else
    	if (nHrs < 10)	{
-         lcd_putChar('A');
-	      lcd_putChar('M');
+         lcd_putChar('a');
+	      lcd_putChar('m');
 		   szBuf[1] = nHrs+48;
 		   szBuf[0] = ' ';
 		   }
    	else {
-         lcd_putChar('A');
-	      lcd_putChar('M');
+         lcd_putChar('a');
+	      lcd_putChar('m');
 		   szBuf[1] = (nHrs%10)+48;
 		   szBuf[0] = (nHrs/10)+48;
          }
@@ -403,10 +405,10 @@ void ui_printPosDOP(int page, int col, int dop) {
    }
 
 
-void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHrs, int32_t* pMins) {
+void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHours, int32_t* pMinutes) {
    int32_t elapsedSecs = ((currentmS - startmS)+500)/1000;
-   *pHrs = elapsedSecs/60;
-   *pMins = elapsedSecs%60;
+   *pHours = elapsedSecs/3600;
+   *pMinutes = (elapsedSecs%3600)/60;
    }
 
 
@@ -442,7 +444,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       IsGpsFixStable = true;
       pTrk->startLatdeg = lat;
       pTrk->startLondeg = lon; 
-      pTrk->startAltm = pTrk->maxAltm = (pn->nav.heightMSLmm + 500)/1000;
+      pTrk->startAltm =  (pn->nav.heightMSLmm + 500)/1000;
+      pTrk->maxAltm = pTrk->startAltm;
       pTrk->maxClimbrateCps = -999;
       pTrk->maxSinkrateCps = 999;
       }    
@@ -460,9 +463,9 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    ui_printBatteryStatus(7, 111, batv);
    ui_printSpkrStatus(7,100, IsSpeakerEnabled);
    ui_printAltitude(0,0,altm);
-   lcd_printSz(1,45,"M");
+   lcd_printSz(1,45,"m");
    ui_printClimbRate(2,0,INTEGER_ROUNDUP(IIRClimbrateCps));
-   lcd_printSz(3,34,"MS");
+   lcd_printSz(3,34,"ms");
 
    int year,month,day,hour,minute;
    gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
@@ -491,7 +494,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       float horzVelmmps = sqrt((float)(vn*vn + ve*ve));
       int32_t horzVelKph = (int32_t)(horzVelmmps*0.0036f + 0.5f);
       ui_printVelocity(4,0,horzVelKph);
-      lcd_printSz(5,34,"KH");
+      lcd_printSz(5,34,"kh");
       static float glideRatio = 1.0f;
       if (pn->nav.velDownmmps > 0) {
          float glideRatioNew = horzVelmmps/(float)pn->nav.velDownmmps;
@@ -501,7 +504,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       else {
          ui_printGlideRatio(6,0,1000);
          }
-      lcd_printSz(7,23,"GR");
+      lcd_printSz(7,23,"gr");
       if (IsTrackActive) {
          if (altm > pTrk->maxAltm) pTrk->maxAltm = altm;
          if (IIRClimbrateCps > pTrk->maxClimbrateCps) pTrk->maxClimbrateCps = IIRClimbrateCps;
@@ -510,12 +513,12 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       ui_printTrackTime(4,93,pTrk->elapsedHours,pTrk->elapsedMinutes);
       int32_t bearingDeg, distancem;
-      int32_t gpsCourseHeadingDeg = pn->nav.headingDeg5/100000; // gps course-over-ground heading
+      int32_t gpsCourseHeadingDeg = pn->nav.headingMotionDeg5/100000; // gps course-over-ground heading
       gpsCourseHeadingDeg = (gpsCourseHeadingDeg + 360)%360;
       if (IsGpsHeading) {
          ui_printHeadingAnalog(true,4,55,horzVelKph, gpsCourseHeadingDeg);
          }
-      if (IsRouteActive) { // show bearing and distance to next waypoint
+      if (IsRouteActive) { // show relative bearing and distance to next waypoint
          if (pRoute->nextWptInx >= pRoute->numWpts) {
             bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg) - gpsCourseHeadingDeg;
             bearingDeg = (bearingDeg + 360)%360;
@@ -533,14 +536,14 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
                }
             }
          }
-      else { // no route, show bearing and distance to start
+      else { // no route, show relative bearing and distance to start
          bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg) - gpsCourseHeadingDeg;
          bearingDeg = (bearingDeg + 360)%360;
          distancem = pTrk->distanceFromStartm;
          }
       ui_printBearingAnalog(4,55, horzVelKph, bearingDeg);
       ui_printDistance(0, 82, distancem);
-      lcd_printSz(1,116,"KM");
+      lcd_printSz(1,116,"km");
       }
    
 

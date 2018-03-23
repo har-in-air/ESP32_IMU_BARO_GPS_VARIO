@@ -120,11 +120,10 @@ static void ui_task(void *pvParameter) {
 		if (IsGpsNavUpdated) {
 			IsGpsNavUpdated = false;
          counter++;
-         memcpy(&navpvt, (void*)&NavPvt, sizeof(NAV_PVT)); 
-
          if (counter >= 5) {
             counter = 0;
             // display update interval 0.5s
+            memcpy(&navpvt, (void*)&NavPvt, sizeof(NAV_PVT)); 
             ui_updateFlightDisplay(&navpvt,&track);
             }
 			}
@@ -402,7 +401,7 @@ extern "C" void app_main() {
 		while (1) {delayMs(100);}
 		}
 
-	lcd_printlnf(true,2,"SPI Flash %d%% Full",  (FlashLogFreeAddress*100)/FLASH_SIZE_BYTES );
+	lcd_printlnf(true,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
    delayMs(2000);
    btn_clear();
    if (FlashLogFreeAddress) {
@@ -424,7 +423,7 @@ extern "C" void app_main() {
 		   lcd_printlnf(true,3,"Erasing...");
 		   flashlog_erase();
 		   ESP_LOGI(TAG, "Done");
-      	lcd_printlnf(false,2,"SPI Flash %d%% Full",  (FlashLogFreeAddress*100)/FLASH_SIZE_BYTES );
+      	lcd_printlnf(false,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
 		   lcd_printlnf(true,3,"Flash Erased");
          }
       }

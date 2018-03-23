@@ -31,7 +31,7 @@ typedef struct TRACK_ {
    int   minute;
    float startLatdeg;
    float startLondeg;
-   float startAltm;
+   int32_t startAltm;
    int32_t maxAltm;
    float maxClimbrateCps;
    float maxSinkrateCps;
