@@ -140,7 +140,7 @@ void lcd_printf(bool immed, int page, int col, char* format, ...)    {
    if (immed) lcd_sendFrame();
    }	
 
-void lcd_printlnf(bool immed, int page, char* format, ...)    {
+void lcd_printlnf(bool immed, int page, const char* format, ...)    {
 	char szbuf[22];
    va_list args;
    va_start(args,format);

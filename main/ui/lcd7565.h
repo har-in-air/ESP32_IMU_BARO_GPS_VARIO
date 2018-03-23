@@ -69,7 +69,7 @@ void lcd_sendCmd(uint8_t cmd);
 void lcd_printSz(int page, int c,  char* sz);
 void lcd_printSzX2(int page, int c,  char* sz);
 void lcd_printf(bool immed, int page, int c, char* format, ...);
-void lcd_printlnf(bool immed, int page, char* format, ...);
+void lcd_printlnf(bool immed, int page, const char* format, ...);
 
 
 // 11x16 numeric font +,-,space

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "config.h"
 #include "ui.h"
+#include "options.h"
 #include "route.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
@@ -125,10 +126,10 @@ int rte_loadRoute(char* szFileName) {
       pRoute->wpt[pRoute->numWpts].altm = alt;
 
       szToken = strtok(NULL," \t\r\n");
-      if (szToken == NULL) {
-         pRoute->wpt[pRoute->numWpts].radiusm = WAYPT_RADIUS_DFLT;
+      if (szToken == NULL) { // no radius found, use radius value from options.txt
+         pRoute->wpt[pRoute->numWpts].radiusm = opt.misc.waypointRadiusm;
          pRoute->numWpts++;
-         CONTINUE();
+         continue; 
          }
       if (sscanf(szToken,"%f",&radius) != 1) CONTINUE();
       pRoute->wpt[pRoute->numWpts].radiusm = radius;

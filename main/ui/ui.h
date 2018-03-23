@@ -4,10 +4,10 @@
 #include "gps.h"
 
 #define MIN_VELOCITY_KPH	0
-#define MAX_VELOCITY_KPH	990
+#define MAX_VELOCITY_KPH	999
 
 #define MIN_GLIDE_RATIO		0
-#define MAX_GLIDE_RATIO		99
+#define MAX_GLIDE_RATIO		999
 
 #define MIN_ALTITUDE_M 		-999
 #define MAX_ALTITUDE_M 		9999
@@ -75,6 +75,7 @@ extern bool IsGpsHeading;
 
 extern volatile float YawDeg;
 extern volatile float IIRClimbrateCps;
+extern volatile float KFAltitudeCm;
 
 #endif
 

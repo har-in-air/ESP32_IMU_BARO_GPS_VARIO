@@ -121,9 +121,9 @@ static void ui_task(void *pvParameter) {
          counter++;
          memcpy(&navpvt, (void*)&NavPvt, sizeof(NAV_PVT)); 
 
-         if (counter >= 3) {
+         if (counter >= 5) {
             counter = 0;
-            // display update interval 0.3s
+            // display update interval 0.5s
             ui_updateFlightDisplay(&navpvt,&track);
             }
 			}
@@ -156,7 +156,7 @@ void IRAM_ATTR drdyHandler(void) {
 
 
 static void vario_taskConfig() {
-   lcd_printlnf(true,0,"MPU9250 config");
+   //lcd_printlnf(true,0,"MPU9250 config");
    if (mpu9250_config() < 0) {
       ESP_LOGE(TAG, "error MPU9250 config");
 		lcd_printlnf(true,0,"MPU9250 config failed");
@@ -182,7 +182,7 @@ static void vario_taskConfig() {
          lcd_printlnf(true,0,"Accel calib in %ds",counter+1);
          delayMs(1000);	
          }
-      lcd_printf(true,0,0, "Calibrating Accel...");
+      lcd_printlnf(true,0, "Calibrating Accel...");
       if (mpu9250_calibrateAccel() < 0) {
  	      lcd_printlnf(true,0,"Accel calib failed");
          while (1) {delayMs(100);};
@@ -208,7 +208,7 @@ static void vario_taskConfig() {
    if (mpu9250_calibrateGyro() < 0) {
  	   lcd_printlnf(true,0,"Gyro calib failed");
       }
- 	lcd_printlnf(true,0,"Baro config");
+ 	//lcd_printlnf(true,0,"Baro config");
 	if (ms5611_config() < 0) {
 		ESP_LOGE(TAG, "error MS5611 config");
 		lcd_printlnf(true,0, "Baro config failed");
@@ -216,11 +216,11 @@ static void vario_taskConfig() {
 		}	
 
    ms5611_averagedSample(4);
-   ESP_LOGI(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
-   lcd_printlnf(true,0,"Baro %dm %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
+   //ESP_LOGI(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
+   //lcd_printlnf(true,0,"Baro %dm %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
    kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, ZCmAvg, 0.0f, 0.0f);
-   delayMs(2000);
-   lcd_printlnf(true,1,"GPS Vario start...");
+   //delayMs(2000);
+   lcd_printlnf(true,0,"GPS Vario start...");
 	ms5611_initializeSampleStateMachine();
 	vspi_setClockFreq(VSPI_CLK_HIGH_FREQHZ); // high clock frequency ok for sensor readout & flash writes
    beeper_config();
@@ -450,7 +450,7 @@ extern "C" void app_main() {
 	   xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, 20, NULL, 1);
 	   xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);
       // ui_task lower priority than gps_task
-	   xTaskCreatePinnedToCore(&ui_task, "uitask", 4096, NULL, 10, NULL, 0); 
+	   xTaskCreatePinnedToCore(&ui_task, "uitask", 8192, NULL, 10, NULL, 0); 
       }
 
 	while(1) {
