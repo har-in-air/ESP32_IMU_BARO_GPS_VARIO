@@ -491,6 +491,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       int32_t vn = pn->nav.velNorthmmps;
       int32_t ve = pn->nav.velEastmmps;
+      int32_t gpsCourseHeadingDeg = 90 - (int32_t)(atan2((float)vn, (float)ve)*_180_DIV_PI); // course over ground (motion heading)
+      gpsCourseHeadingDeg = (gpsCourseHeadingDeg + 360)%360;
       float horzVelmmps = sqrt((float)(vn*vn + ve*ve));
       int32_t horzVelKph = (int32_t)(horzVelmmps*0.0036f + 0.5f);
       ui_printVelocity(4,0,horzVelKph);
@@ -513,8 +515,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       ui_printTrackTime(4,93,pTrk->elapsedHours,pTrk->elapsedMinutes);
       int32_t bearingDeg, distancem;
-      int32_t gpsCourseHeadingDeg = pn->nav.headingMotionDeg5/100000; // gps course-over-ground heading
-      gpsCourseHeadingDeg = (gpsCourseHeadingDeg + 360)%360;
+      //int32_t gpsCourseHeadingDeg = pn->nav.headingMotionDeg5/100000; // this gives junk readings
       if (IsGpsHeading) {
          ui_printHeadingAnalog(true,4,55,horzVelKph, gpsCourseHeadingDeg);
          }

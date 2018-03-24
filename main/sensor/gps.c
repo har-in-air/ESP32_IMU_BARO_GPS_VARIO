@@ -47,10 +47,21 @@ const uint8_t CfgGNSS[] =
 0x00,0x00,0x00,0x01,0x01,0x05,0x00,0x03,0x00,0x00,0x00,0x01,0x01,0x06,0x08,
 0x0E,0x00,0x00,0x00,0x01,0x01,0x3C,0xAD};
 
+/* pedestrian mode
 const uint8_t CfgNAV5[] = 
 {0xB5,0x62,0x06,0x24,0x24,0x00,0xFF,0xFF,0x08,0x02,0x00,0x00,0x00,0x00,0x10,
 0x27,0x00,0x00,0x05,0x00,0xFA,0x00,0xFA,0x00,0x64,0x00,0x5E,0x01,0x00,0x3C,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x85,0x2B};
+*/
+
+// aircraft < 4G, utc gps
+const uint8_t CfgNAV5[] = 
+{0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x02, 
+0x00, 0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 
+0xFA, 0x00, 0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x00, 
+0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 
+0x00, 0x00, 0x51, 0x10};
+
 
 const uint8_t CfgPRT[] = 
 {0xB5,0x62,0x06,0x00,0x14,0x00,0x01,0x00,0x00,0x00,0xD0,0x08,0x00,0x00,0x00,
@@ -87,17 +98,17 @@ const uint8_t CfgEnableNAVPVT[] =
 
 static void ubx_config9600() {
    uart_set_baudrate(UartNum, 9600);
-   delayMs(20); 
+   delayMs(10); 
    uart_write_bytes(UartNum, (const char*)CfgPRT, sizeof(CfgPRT));
    uart_wait_tx_done(UartNum, 100/portTICK_RATE_MS);
    uart_set_baudrate(UartNum, 115200); 
-   delayMs(20);
+   delayMs(10);
    }
 
 
 static void ubx_config115200() {
    uart_set_baudrate(UartNum, 115200); 
-   delayMs(20);
+   delayMs(10);
    uart_write_bytes(UartNum, (const char*)CfgDisableGGA, sizeof(CfgDisableGGA));
    uart_wait_tx_done(UartNum, 50/portTICK_RATE_MS);
    uart_write_bytes(UartNum, (const char*)CfgDisableGLL, sizeof(CfgDisableGLL));
@@ -302,13 +313,6 @@ void gps_stateMachine()  {
                   gps_updateFlashLogRecord();        
                   IsGpsNavUpdated = 1;
                   //ESP_LOGI(TAG, "NAV_PVT tow %d",NavPvt.timeOfWeekmS);
-                  //LedState = !LedState;
-                  //if (LedState) {
-                  //   LED_ON(); 
-                  //   }
-                  //else {
-                  //   LED_OFF();
-                  //   }
 	               PktReceivedBytes = 0;
 	           	   GpsState = GPS_STATE_IDLE;
 					   }
@@ -339,7 +343,7 @@ void gps_updateFlashLogRecord() {
 		}
    else 
 	if ((opt.misc.logType == LOGTYPE_GPS) && IsTrackActive) {
-      counter++;// 100mS tick
+      counter++;// 100mS gps fix interval 
       if (counter >= (opt.misc.trackIntervalSecs*10)) {
          counter = 0;
          FlashLogGPSRecord.hdr.magic =FLASHLOG_GPS_MAGIC;
@@ -397,7 +401,7 @@ int32_t gps_bearingDeg(float lat1, float lon1, float lat2, float lon2) {
 	b += TWO_PI;	
 	if (b >= TWO_PI) b -= TWO_PI; // convert to [0, 2*pi] radians
 	b *= _180_DIV_PI;  // translate to [0,360] degrees
-	bearing = (int32_t)(b >= 0.0f ? b + 0.5f : b - 0.5f);
+	bearing = (int32_t)(b + 0.5f);
 	CLAMP(bearing,0,359);
 	return bearing;
 	}
