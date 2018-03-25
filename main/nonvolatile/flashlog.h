@@ -100,8 +100,7 @@ extern uint32_t            FlashLogFreeAddress;
 
 int   flashlog_init(void);
 int   flashlog_isEmpty(void);
-void 	flashlog_eraseChip(void);
-void 	flashlog_erase(void);
+void 	flashlog_erase(uint32_t untilAddress);
 int 	flashlog_writeIBGRecord(FLASHLOG_IBG_RECORD* pRecord);
 int 	flashlog_readIBGRecord(uint32_t addr, FLASHLOG_IBG_RECORD* pRecord);
 uint32_t flashlog_getFreeAddress();

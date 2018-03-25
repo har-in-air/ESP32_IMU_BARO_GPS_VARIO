@@ -10,26 +10,16 @@ SemaphoreHandle_t FlashLogMutex = NULL;
 
 #define TAG "flashlog"
 
-void flashlog_eraseChip(void) {
+
+void flashlog_erase(uint32_t untilAddress) {
 	spiflash_globalUnprotect();
-   uint32_t lastSectorAddress = FLASH_SIZE_BYTES & 0xFFFFF000; // sector size = 4096
+   if (untilAddress == 0) untilAddress = FLASH_SIZE_BYTES; // manually force erase of entire chip
+   uint32_t lastSectorAddress = untilAddress & 0xFFFFF000; // sector size = 4096
 	for (uint32_t sectorAddress = 0; sectorAddress <= lastSectorAddress; sectorAddress += 4096) {
 		spiflash_sectorErase(sectorAddress);
 		delayMs(50);
 		}
-	ESP_LOGI(TAG,"Chip erased");
-   FlashLogFreeAddress = 0;
-   }
-
-
-void flashlog_erase(void) {
-	spiflash_globalUnprotect();
-   uint32_t lastSectorAddress = FlashLogFreeAddress & 0xFFFFF000; // sector size = 4096
-	for (uint32_t sectorAddress = 0; sectorAddress <= lastSectorAddress; sectorAddress += 4096) {
-		spiflash_sectorErase(sectorAddress);
-		delayMs(50);
-		}
-	ESP_LOGI(TAG,"Log erased");
+	ESP_LOGI(TAG,"Erased");
    FlashLogFreeAddress = 0;
    }
 

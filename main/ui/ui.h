@@ -42,6 +42,7 @@ typedef struct TRACK_ {
    int     nextWptInx;
 } TRACK;
 
+#define RANGE_360(d)  (((d)+360)%360) // 0 - 359 degrees
 
 void ui_printPosDOP(int page, int col, int dop);				
 void ui_printBatteryStatus(int page, int col, int bV);
@@ -52,7 +53,7 @@ void ui_printGlideRatio(int page, int col, int nGr);
 void ui_printVelocity(int page, int col, int nVel);
 void ui_printClimbRate(int page, int col, int nCps);
 void ui_printBearingAnalog(int page, int col, int velkph, int bearing);
-void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading);
+void ui_printHeadingAnalog(int page, int col, int velkph, int heading);
 void ui_printRealTime(int page, int col, int nHrs, int nMin);
 void ui_printTrackTime(int page, int col, int nHrs, int nMin);
 void ui_printLongitude(int page, int col, int32_t nLon);

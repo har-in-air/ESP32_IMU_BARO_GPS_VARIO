@@ -404,33 +404,33 @@ extern "C" void app_main() {
 	lcd_printlnf(true,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
    delayMs(2000);
    btn_clear();
-   if (FlashLogFreeAddress) {
-   	ESP_LOGI(TAG,"Press BTN0 within 3 seconds to erase flash");
-	   LED_ON();
-      bool isEraseRequired = false;
-      int counter = 300;
-      while (counter--) {
-   	   lcd_printlnf(true,3,"BTN0 Erase %ds",(counter+50)/100);
-	      if (!BTN0()) {
-		      ESP_LOGI(TAG,"BTN0 PRESSED");
-            isEraseRequired = true;
-            break;
-            }
-         delayMs(10);	
-		   }
-      if (isEraseRequired) {
-		   ESP_LOGI(TAG, "Erasing flash...");
-		   lcd_printlnf(true,3,"Erasing...");
-		   flashlog_erase();
-		   ESP_LOGI(TAG, "Done");
-      	lcd_printlnf(false,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
-		   lcd_printlnf(true,3,"Flash Erased");
+   
+	ESP_LOGI(TAG,"Press BTN0 within 3 seconds to erase flash");
+   LED_ON();
+   bool isEraseRequired = false;
+   int counter = 300;
+   while (counter--) {
+	   lcd_printlnf(true,3,"BTN0 Erase %ds",(counter+50)/100);
+      if (!BTN0()) {
+	      ESP_LOGI(TAG,"BTN0 PRESSED");
+         isEraseRequired = true;
+         break;
          }
+      delayMs(10);	
+	   }
+   if (isEraseRequired) {
+	   ESP_LOGI(TAG, "Erasing flash...");
+	   lcd_printlnf(true,3, FlashLogFreeAddress ? "Erasing logs" : "Erasing flash");
+      flashlog_erase(FlashLogFreeAddress);
+
+	   ESP_LOGI(TAG, "Done");
+   	lcd_printlnf(false,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
+	   lcd_printlnf(true,3,"Erased");
       }
    delayMs(1000);
    IsServer = false;
 	ESP_LOGI(TAG,"Press BTN0 within 3 seconds to start http server");
-   int counter = 300;
+   counter = 300;
    while (counter--) {
 	   lcd_printlnf(true,3,"BTN0 Server %ds",(counter+50)/100);
       if (!BTN0()) {
@@ -477,17 +477,17 @@ extern "C" void app_main() {
          if (BacklitCounter <= 0) LCD_BKLT_OFF();
          }
       if (BtnRPressed) {
-         BtnRPressed = 0;
+         btn_clear();
          ESP_LOGI(TAG,"Btn R");
          IsSpeakerEnabled = !IsSpeakerEnabled; // toggle speaker mute
          }
       if (BtnLPressed) {
-         BtnLPressed = 0;
+         btn_clear();
          ESP_LOGI(TAG,"Btn L");
          IsGpsHeading = !IsGpsHeading; // toggle between gps course heading and compass heading
          }
       if (BtnMPressed) {
-         BtnMPressed = 0;
+         btn_clear();
          ESP_LOGI(TAG,"Btn M");
          if (opt.misc.logType == LOGTYPE_IBG) {
             if (!IsLogging) {
@@ -502,10 +502,13 @@ extern "C" void app_main() {
             }
          }
       if (Btn0Pressed) {
-         Btn0Pressed = 0;
+         btn_clear();
          ESP_LOGI(TAG,"Btn 0");
          //opt.misc.logType = (opt.misc.logType+1)%3;
-         EndTrack = true;
+         if (IsTrackActive)  {
+            EndTrack = true;
+            IsSpeakerEnabled = false;
+            }
          }
 
       delayMs(30);

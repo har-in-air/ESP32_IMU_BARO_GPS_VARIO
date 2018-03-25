@@ -161,12 +161,12 @@ void ui_printGlideRatio(int page, int col, int nGr) {
 
 static uint8_t compassBuf[128];
 
-void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading) {
+void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg) {
 	int nrow,ncol,inx;
 	int tblOffset = 0;
 	lcd_setFramePos(page - 1, col+13);
 
-   if (isGps) {
+   if (IsGpsHeading) {
       FrameBuf[128*FramePage + FrameCol+1] = 0x3C;
       FrameBuf[128*FramePage + FrameCol+2] = 0x7C;
       FrameBuf[128*FramePage + FrameCol+3] = 0x3C;  
@@ -184,37 +184,37 @@ void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading
       }
 
    if (!tblOffset)  {
-		if (heading <= 11) tblOffset = 0;
+		if (headingdeg <= 11) tblOffset = 0;
 		else
-		if (heading <= 34) tblOffset = 1;
+		if (headingdeg <= 34) tblOffset = 1;
 		else
-		if (heading <= 56) tblOffset = 2;
+		if (headingdeg <= 56) tblOffset = 2;
 		else
-		if (heading <= 79) tblOffset = 3;
+		if (headingdeg <= 79) tblOffset = 3;
 		else
-		if (heading <= 101) tblOffset = 4;
+		if (headingdeg <= 101) tblOffset = 4;
 		else
-		if (heading <= 124) tblOffset = 5;
+		if (headingdeg <= 124) tblOffset = 5;
 		else
-		if (heading <= 146) tblOffset = 6;
+		if (headingdeg <= 146) tblOffset = 6;
 		else
-		if (heading <= 169) tblOffset = 7;
+		if (headingdeg <= 169) tblOffset = 7;
 		else
-		if (heading <= 191) tblOffset = 8;
+		if (headingdeg <= 191) tblOffset = 8;
 		else
-		if (heading <= 214) tblOffset = 9;
+		if (headingdeg <= 214) tblOffset = 9;
 		else
-		if (heading <= 236) tblOffset = 10;
+		if (headingdeg <= 236) tblOffset = 10;
 		else
-		if (heading <= 259) tblOffset = 11;
+		if (headingdeg <= 259) tblOffset = 11;
 		else
-		if (heading <= 281) tblOffset = 12;
+		if (headingdeg <= 281) tblOffset = 12;
 		else
-		if (heading <= 304) tblOffset = 13;
+		if (headingdeg <= 304) tblOffset = 13;
 		else
-		if (heading <= 326) tblOffset = 14;
+		if (headingdeg <= 326) tblOffset = 14;
 		else
-		if (heading <= 349) tblOffset = 15;
+		if (headingdeg <= 349) tblOffset = 15;
 		else tblOffset = 0;
 		}
 
@@ -233,50 +233,48 @@ void ui_printHeadingAnalog(int isGps, int page, int col, int velkph, int heading
 
 #include "bearing.txt"
 
-void ui_printBearingAnalog(int page, int col,int velkph, int bearing) {
+void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) {
 	int  nrow,ncol,inx;
    int tblOffset;
-   // if very low velocity, gps heading is uncertain, do not display bearing
-	if (velkph < 2) { 
+	if (IsGpsHeading && (velkph < 2)) { 
+      // if very low velocity, gps heading is uncertain, do not display bearing
 		return;
 	   }
-	bearing = bearing % 360;
-	if (bearing <= 11) tblOffset = 0;
+	bearingdeg = bearingdeg % 360;
+	if (bearingdeg <= 11) tblOffset = 0;
 	else
-	if (bearing <= 34) tblOffset = 1;
+	if (bearingdeg <= 34) tblOffset = 1;
 	else
-	if (bearing <= 56) tblOffset = 2;
+	if (bearingdeg <= 56) tblOffset = 2;
 	else
-	if (bearing <= 79) tblOffset = 3;
+	if (bearingdeg <= 79) tblOffset = 3;
 	else
-	if (bearing <= 101) tblOffset = 4;
+	if (bearingdeg <= 101) tblOffset = 4;
 	else
-	if (bearing <= 124) tblOffset = 5;
+	if (bearingdeg <= 124) tblOffset = 5;
 	else
-	if (bearing <= 146) tblOffset = 6;
+	if (bearingdeg <= 146) tblOffset = 6;
 	else
-	if (bearing <= 169) tblOffset = 7;
+	if (bearingdeg <= 169) tblOffset = 7;
 	else
-	if (bearing <= 191) tblOffset = 8;
+	if (bearingdeg <= 191) tblOffset = 8;
 	else
-	if (bearing <= 214) tblOffset = 9;
+	if (bearingdeg <= 214) tblOffset = 9;
 	else
-	if (bearing <= 236) tblOffset = 10;
+	if (bearingdeg <= 236) tblOffset = 10;
 	else
-	if (bearing <= 259) tblOffset = 11;
+	if (bearingdeg <= 259) tblOffset = 11;
 	else
-	if (bearing <= 281) tblOffset = 12;
+	if (bearingdeg <= 281) tblOffset = 12;
 	else
-	if (bearing <= 304) tblOffset = 13;
+	if (bearingdeg <= 304) tblOffset = 13;
 	else
-	if (bearing <= 326) tblOffset = 14;
+	if (bearingdeg <= 326) tblOffset = 14;
 	else
-	if (bearing <= 349) tblOffset = 15;
+	if (bearingdeg <= 349) tblOffset = 15;
 	else tblOffset = 0;
 	tblOffset <<= 5;
 
-	//for (inx = 0; inx < 16; inx++) compassBuf[40+inx] |= gBearingTbl[tblOffset++];
-	//for (inx = 0; inx < 16; inx++) compassBuf[72+inx] |= gBearingTbl[tblOffset++];
 	for (inx = 0; inx < 16; inx++) compassBuf[40+inx] = gBearingTbl[tblOffset++];
 	for (inx = 0; inx < 16; inx++) compassBuf[72+inx] = gBearingTbl[tblOffset++];
 
@@ -417,9 +415,9 @@ void ui_printRouteSegment(int page, int col, int start, int end) {
       lcd_printf(false, page,col,"--");
       }
    else {
-      lcd_printf(false, page, col,"%02d",start);
+      lcd_printf(false, page, col,"%2d",start);
 	   }
-    lcd_printf(false,page, col+24,"%02d",end);
+    lcd_printf(false,page, col+24,"%2d",end);
     }
 
 
@@ -468,17 +466,20 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    lcd_printSz(3,34,"ms");
 
    int year,month,day,hour,minute;
-   gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
-   ui_printRealTime(2,93,hour,minute);
-
-   if (!IsGpsHeading) { // magnetic compass heading
-      int32_t compassDeg = INTEGER_ROUNDUP(YawDeg);
-      compassDeg  -= (int32_t)opt.misc.magDeclinationdeg; 
-      compassDeg = (compassDeg + 360)%360;
-      ui_printHeadingAnalog(false,4,55,0, compassDeg);
+   if (pn->nav.numSV > 0) {
+      gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
+      ui_printRealTime(2,93,hour,minute);
       }
 
-   if (IsGpsFixStable) {
+   int32_t compassHeadingDeg = 0;
+   if (!IsGpsHeading) { // magnetic compass heading
+      compassHeadingDeg = INTEGER_ROUNDUP(YawDeg);
+      compassHeadingDeg -= (int32_t)opt.misc.magDeclinationdeg; 
+      compassHeadingDeg = RANGE_360(compassHeadingDeg);
+      ui_printHeadingAnalog(4,55,0, compassHeadingDeg);
+      }
+
+   if ((pn->nav.numSV > 3) && IsGpsFixStable) {
       pTrk->distanceFromStartm = gps_haversineDistancem(lat, lon, pTrk->startLatdeg, pTrk->startLondeg);
       if ((!IsTrackActive) && (pTrk->distanceFromStartm >= opt.misc.trackStartThresholdm)) {
          IsTrackActive = true;
@@ -491,20 +492,20 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       int32_t vn = pn->nav.velNorthmmps;
       int32_t ve = pn->nav.velEastmmps;
-      int32_t gpsCourseHeadingDeg = 90 - (int32_t)(atan2((float)vn, (float)ve)*_180_DIV_PI); // course over ground (motion heading)
-      gpsCourseHeadingDeg = (gpsCourseHeadingDeg + 360)%360;
+      int32_t gpsCourseHeadingDeg = 90 - (int32_t)(atan2((float)vn, (float)ve)*_180_DIV_PI); // course over ground (motion headingdeg)
+      gpsCourseHeadingDeg = RANGE_360(gpsCourseHeadingDeg);
       float horzVelmmps = sqrt((float)(vn*vn + ve*ve));
       int32_t horzVelKph = (int32_t)(horzVelmmps*0.0036f + 0.5f);
       ui_printVelocity(4,0,horzVelKph);
       lcd_printSz(5,34,"kh");
       static float glideRatio = 1.0f;
-      if (pn->nav.velDownmmps > 0) {
+      if (pn->nav.velDownmmps > 0) { // sinking, display glideratio
          float glideRatioNew = horzVelmmps/(float)pn->nav.velDownmmps;
          glideRatio = (glideRatio*(float)opt.misc.glideRatioIIR + glideRatioNew*(float)(100-opt.misc.glideRatioIIR))/100.0f;
          ui_printGlideRatio(6,0,(int)(glideRatio*10.0f + 0.5f));
          }
       else {
-         ui_printGlideRatio(6,0,1000);
+         ui_printGlideRatio(6,0,1000);// climbing, display ++
          }
       lcd_printSz(7,23,"gr");
       if (IsTrackActive) {
@@ -517,18 +518,18 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       int32_t bearingDeg, distancem;
       //int32_t gpsCourseHeadingDeg = pn->nav.headingMotionDeg5/100000; // this gives junk readings
       if (IsGpsHeading) {
-         ui_printHeadingAnalog(true,4,55,horzVelKph, gpsCourseHeadingDeg);
+         ui_printHeadingAnalog(4,55,horzVelKph, gpsCourseHeadingDeg);
          }
-      if (IsRouteActive) { // show relative bearing and distance to next waypoint
+      if (IsRouteActive) { // show bearingdeg relative to course/compass headingdeg and distance to next waypoint
          if (pRoute->nextWptInx >= pRoute->numWpts) {
-            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg) - gpsCourseHeadingDeg;
-            bearingDeg = (bearingDeg + 360)%360;
+            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg) - (IsGpsHeading ?  gpsCourseHeadingDeg : compassHeadingDeg);
+            bearingDeg = RANGE_360(bearingDeg);
             distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg);
             ui_printRouteSegment(3, 52, pRoute->numWpts-1, pRoute->numWpts-1);
             }
          else {
-            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg) - gpsCourseHeadingDeg;
-            bearingDeg = (bearingDeg + 360)%360;
+            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg) - (IsGpsHeading ?  gpsCourseHeadingDeg : compassHeadingDeg);
+            bearingDeg = RANGE_360(bearingDeg);
             distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg);
             ui_printRouteSegment(3, 52, pRoute->nextWptInx-1, pRoute->nextWptInx);
             if (distancem < pRoute->wpt[pRoute->nextWptInx].radiusm) {
@@ -537,9 +538,9 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
                }
             }
          }
-      else { // no route, show relative bearing and distance to start
-         bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg) - gpsCourseHeadingDeg;
-         bearingDeg = (bearingDeg + 360)%360;
+      else { // no route, show bearingdeg relative to course/compassheading and distance to start
+         bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg) - (IsGpsHeading ? gpsCourseHeadingDeg : compassHeadingDeg);
+         bearingDeg = RANGE_360(bearingDeg);
          distancem = pTrk->distanceFromStartm;
          }
       ui_printBearingAnalog(4,55, horzVelKph, bearingDeg);
