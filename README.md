@@ -33,7 +33,8 @@ for example. If you're content with driving a piezo speaker, can save some power
 by omitting the audio amplifier, and using square-wave piezo drive.
 
 ## Software Build notes
-Compiled on Ubuntu 16.04LTS amdx64 platform with esp-idf (git log : commit 84788230392d0918d3add78d9ccf8c2bb7de3152)
+Compiled on Ubuntu 16.04LTS amdx64 platform 
+(esp-idf git log : commit 84788230392d0918d3add78d9ccf8c2bb7de3152, 2018 Mar 21)
 
 Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of Arduino-ESP32 code for the Web server, and spi/gpio interfaces. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. After adding the arduino component navigate to the /components/arduino/libraries directory and delete the SPIFFs sub-directory. I'm using SPIFFs code from https://github.com/loboris/ESP32_spiffs_example, and the Arduino code clashes with this.
 
