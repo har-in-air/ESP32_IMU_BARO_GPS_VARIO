@@ -42,8 +42,8 @@ extern OPTIONS opt;
 #define MAX_OPTIONS 20
 
 int opt_init(void);
-int opt_save(VARIO_PARAMS* pVario, KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc );
-void opt_setDefaults();
+int opt_save(void);
+void opt_setDefaults(void);
 
 #endif
 

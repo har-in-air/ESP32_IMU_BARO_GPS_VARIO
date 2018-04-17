@@ -2,21 +2,18 @@
 #include <ESP32WebServer.h>    // https://github.com/Pedroalbuquerque/ESP32WebServer
 #include "server.h"
 
-// top level page handling, css and concept adaptedfrom
+// top level page handling, css and concept adapted from
 // https://github.com/G6EJD/ESP32-ESP8266-File-Download-Upload-Delete-Stream-and-Directory
 
 extern "C" {
 #include "common.h"
 #include "config.h"
-#include <errno.h>
-#include <sys/fcntl.h>
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
-#include "esp_log.h"
 #include "spiffs_vfs.h"
-#include <ctype.h>
 #include "flashlog.h"
 #include "spiflash.h"
+#include "options.h"
 }
 
 #define TAG "server"

@@ -85,7 +85,6 @@ static void server_task(void *pvParameter){
    server.on("/download", server_fileDownload);
    server.on("/delete",   server_fileDelete);
    server.on("/datalog",  server_downloadDataLog);
-
    server.begin();
    while(1) {
       server.handleClient(); 
@@ -104,17 +103,8 @@ static void ui_task(void *pvParameter) {
    IsTrackActive = false;
    IsLcdBkltEnabled = false;
    IsSpeakerEnabled = true;
-   pRoute->nextWptInx = 0;
-   pRoute->numWpts = 0;
    EndTrack = false;
 
-   if (rte_selectRoute() == 0) {
-      lcd_clear();
-      int32_t rteDistance = rte_totalDistance();
-      lcd_printlnf(true,0,"Route %.2fkm", ((float)rteDistance)/1000.0f);
-      delayMs(2000);
-      IsRouteActive = true;
-      }
 
 	while(1) {
 		if (IsGpsNavUpdated) {
@@ -135,7 +125,7 @@ static void ui_task(void *pvParameter) {
          lcd_printlnf(false, 2, "Alt s %4dm max %4dm", track.startAltm, track.maxAltm);
          lcd_printlnf(false, 3, "Max Climb +%.1fm/s", track.maxClimbrateCps/100.0f);
          lcd_printlnf(true, 4, "Max Sink %.1fm/s", track.maxSinkrateCps/100.0f);
-         ui_saveLog(&track);
+         ui_saveLog(&navpvt, &track);
          while(1) delayMs(100);
          }
 
@@ -168,6 +158,7 @@ void IRAM_ATTR drdyHandler(void) {
 
 
 static void vario_taskConfig() {
+   lcd_clear();
    //lcd_printlnf(true,0,"MPU9250 config");
    if (mpu9250_config() < 0) {
       ESP_LOGE(TAG, "error MPU9250 config");
@@ -446,7 +437,7 @@ extern "C" void app_main() {
       lcd_printlnf(false,0,"HTTP Server Mode");
       lcd_printlnf(false,1,"AP \"ESP32GpsVario\"");
       lcd_printlnf(false,2,"Configure");
-      lcd_printlnf(false,3," 192.168.4.1");
+      lcd_printlnf(false,3," 192.168.4.1/config");
       lcd_printlnf(false,4,"Datalog");
       lcd_printlnf(true, 5," 192.168.4.1/datalog");
 		ESP_LOGI(TAG, "Wifi access point ESP32GpsVario starting...");
@@ -457,7 +448,21 @@ extern "C" void app_main() {
 	   xTaskCreatePinnedToCore(&server_task, "servertask", 16384, NULL, 20, NULL, 1);
       }
    else {
-      lcd_clear();
+      ui_screenInit();
+      ui_displayOptions();
+      btn_clear();
+      while (ui_optionsEventHandler() == 0) {
+         btn_debounce();
+         delayMs(30);
+         }
+
+      if (rte_selectRoute() == 0) {
+         int32_t rteDistance = rte_totalDistance();
+         lcd_clear();
+         lcd_printlnf(true,0,"Route %.2fkm", ((float)rteDistance)/1000.0f);
+         delayMs(2000);
+         IsRouteActive = true;
+         }
       vario_taskConfig();   	
 	   xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, 20, NULL, 1);
 	   xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);

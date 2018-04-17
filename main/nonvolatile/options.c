@@ -17,7 +17,7 @@ int opt_init(void) {
    fdrd = fopen("/spiffs/options.txt", "r");
    if (fdrd == NULL) {
       ESP_LOGI(TAG,"options.txt file not found, creating with defaults");
-      opt_save(&opt.vario, &opt.kf, &opt.misc);
+      opt_save();
       return 0;
       }
 
@@ -118,7 +118,7 @@ int opt_init(void) {
       else
       if (!strcmp(pkeys[key].szName, "magDeclinationdeg")) {
          opt.misc.magDeclinationdeg = atoi(pkeys[key].szValue);
-         CLAMP(opt.misc.magDeclinationdeg, MAG_DECLINATION_MIN, MAG_DECLINATION_MAX);
+         CLAMP(opt.misc.magDeclinationdeg, MAG_DECLINATION_DEG_MIN, MAG_DECLINATION_DEG_MAX);
          }
       else
       if (!strcmp(pkeys[key].szName, "speakerVolume")) {
@@ -133,7 +133,7 @@ int opt_init(void) {
       else
       if (!strcmp(pkeys[key].szName, "waypointRadiusm")) {
          opt.misc.waypointRadiusm = atoi(pkeys[key].szValue);
-         CLAMP(opt.misc.waypointRadiusm, WAYPOINT_RADIUS_MIN, WAYPOINT_RADIUS_MAX);
+         CLAMP(opt.misc.waypointRadiusm, WAYPOINT_RADIUS_M_MIN, WAYPOINT_RADIUS_M_MAX);
          }
       }
    free (pkeys);
@@ -184,15 +184,15 @@ void opt_setDefaults() {
 	opt.misc.gpsStableDOP = GPS_STABLE_DOP_DEFAULT;
 	opt.misc.gyroOffsetLimit1000DPS = GYRO_OFFSET_LIMIT_1000DPS_DEFAULT;
 	opt.misc.trackStartThresholdm = TRACK_START_THRESHOLD_M_DEFAULT;
-	opt.misc.magDeclinationdeg = MAG_DECLINATION_DEFAULT;
+	opt.misc.magDeclinationdeg = MAG_DECLINATION_DEG_DEFAULT;
 	opt.misc.speakerVolume = SPEAKER_VOLUME_DEFAULT;
 	opt.misc.logType = LOGTYPE_NONE;
-	opt.misc.waypointRadiusm = WAYPOINT_RADIUS_DEFAULT;
+	opt.misc.waypointRadiusm = WAYPOINT_RADIUS_M_DEFAULT;
    }
 
 
 
-int opt_save(VARIO_PARAMS* pVario,KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc) {
+int opt_save() {
     FILE *fdwr;
     char buf[80];
     ssize_t nwrote;
@@ -230,12 +230,12 @@ int opt_save(VARIO_PARAMS* pVario,KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc)
     if (nwrote != strlen(buf)) return -7;
 
     sprintf(buf,"accelVariance [%d,%d] %d\r\n",
-         KF_ACCEL_VARIANCE_MIN,KF_ACCEL_VARIANCE_MAX,opt.kf.accelVariance);
+         KF_ACCEL_VARIANCE_MIN,KF_ACCEL_VARIANCE_MAX, opt.kf.accelVariance);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -8;
 
     sprintf(buf,"zMeasVariance [%d,%d] %d\r\n\r\n",
-         KF_ZMEAS_VARIANCE_MIN,KF_ZMEAS_VARIANCE_MAX,opt.kf.zMeasVariance);
+         KF_ZMEAS_VARIANCE_MIN,KF_ZMEAS_VARIANCE_MAX, opt.kf.zMeasVariance);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -9;
 
@@ -249,7 +249,7 @@ int opt_save(VARIO_PARAMS* pVario,KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc)
     if (nwrote != strlen(buf)) return -11;
 
     sprintf(buf,"utcOffsetMins [%d,%d] %d\r\n",
-         UTC_OFFSET_MINS_MIN, UTC_OFFSET_MINS_MAX,opt.misc.utcOffsetMins);
+         UTC_OFFSET_MINS_MIN, UTC_OFFSET_MINS_MAX, opt.misc.utcOffsetMins);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -12;
 
@@ -274,25 +274,25 @@ int opt_save(VARIO_PARAMS* pVario,KALMAN_FILTER_PARAMS* pKF, MISC_PARAMS* pMisc)
     if (nwrote != strlen(buf)) return -16;
 
     sprintf(buf,"trackStartThresholdm [%d,%d] %d\r\n",
-         TRACK_START_THRESHOLD_M_MIN,TRACK_START_THRESHOLD_M_MAX,opt.misc.trackStartThresholdm);
+         TRACK_START_THRESHOLD_M_MIN,TRACK_START_THRESHOLD_M_MAX, opt.misc.trackStartThresholdm);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -17;
 
     sprintf(buf,"magDeclinationdeg [%d,%d] %d\r\n",
-          MAG_DECLINATION_MIN, MAG_DECLINATION_MAX, opt.misc.magDeclinationdeg);
+          MAG_DECLINATION_DEG_MIN, MAG_DECLINATION_DEG_MAX, opt.misc.magDeclinationdeg);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -17;
 
     sprintf(buf,"speakerVolume [%d,%d] %d\r\n",
-          SPEAKER_VOLUME_MIN, SPEAKER_VOLUME_MAX,opt.misc.speakerVolume);
+          SPEAKER_VOLUME_MIN, SPEAKER_VOLUME_MAX, opt.misc.speakerVolume);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -17;
 
-    sprintf(buf,"logType [0=none,1=gps,2=ibg] %d\r\n",opt.misc.logType);
+    sprintf(buf,"logType [0=none,1=gps,2=ibg] %d\r\n", opt.misc.logType);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -17;
 
-    sprintf(buf,"waypointRadiusm [%d,%d] %d\r\n",WAYPOINT_RADIUS_MIN, WAYPOINT_RADIUS_MAX, opt.misc.waypointRadiusm);
+    sprintf(buf,"waypointRadiusm [%d,%d] %d\r\n",WAYPOINT_RADIUS_M_MIN, WAYPOINT_RADIUS_M_MAX, opt.misc.waypointRadiusm);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -17;
 

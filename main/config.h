@@ -35,7 +35,8 @@
 #define pinGpsCTS  (-1)
 
 #define GPS_UART_NUM          UART_NUM_1
-#define UART_RX_BUFFER_SIZE   512
+//#define UART_RX_BUFFER_SIZE   512
+#define UART_RX_BUFFER_SIZE   256
 
 #define pinBtn0		(0)
 
@@ -106,11 +107,11 @@
 #define GLIDE_RATIO_IIR_DEFAULT        90
 #define GLIDE_RATIO_IIR_MAX            99
 
-// position DOP required before gps registers start position
-// used for automatic track logging and track time display
-#define GPS_STABLE_DOP_MIN             2
+// position DOP required before gpsvario registers start position
+// for automatic track logging
+#define GPS_STABLE_DOP_MIN             3
 #define GPS_STABLE_DOP_DEFAULT         6
-#define GPS_STABLE_DOP_MAX             10
+#define GPS_STABLE_DOP_MAX             15
 
 // vario thresholds in cm/sec for generating different
 // audio tones. Between the sink threshold and the zero threshold,
@@ -148,29 +149,29 @@
 #define KF_ZMEAS_VARIANCE_MAX                500
 
 
-// if you find that gyro calibration fails when you leave
+// If you find that gyro calibration fails when you leave
 // the unit undisturbed, possibly your unit has an MPU9250 device
-// with a higher gyro bias on one or more axes. So try 
-// increasing this limit  until you find the calibration works consistently.
+// with a high gyro bias on one or more axes. Try increasing this limit  
+// until you find the calibration works consistently.
 
 #define GYRO_OFFSET_LIMIT_1000DPS_DEFAULT   	150
 #define GYRO_OFFSET_LIMIT_1000DPS_MIN       	25
 #define GYRO_OFFSET_LIMIT_1000DPS_MAX		   200
 
 
-// track logging and track time display will start when the gps
-// detects a position at least threshold m away from the start
+// Track logging and track elapsed time display will start when the gps
+// detects a position at least <threshold> m away from the start
 // position
 #define TRACK_START_THRESHOLD_M_MIN           0
 #define TRACK_START_THRESHOLD_M_DEFAULT       20
 #define TRACK_START_THRESHOLD_M_MAX           100
 
-
+// Local magnetic declination in degrees
 // For correction, subtract declination from compass reading
 // West declination is negative
-#define MAG_DECLINATION_MIN      -60
-#define MAG_DECLINATION_DEFAULT  0
-#define MAG_DECLINATION_MAX      60
+#define MAG_DECLINATION_DEG_MIN      -60
+#define MAG_DECLINATION_DEG_DEFAULT  0
+#define MAG_DECLINATION_DEG_MAX      60
 
 #define SPEAKER_VOLUME_MIN       0
 #define SPEAKER_VOLUME_DEFAULT   2
@@ -178,12 +179,12 @@
 
 
 #define LOGTYPE_NONE  0
-#define LOGTYPE_GPS   1
-#define LOGTYPE_IBG   2
+#define LOGTYPE_GPS   1 // gps track log with intervals from 1-60s
+#define LOGTYPE_IBG   2 // high speed imu+baro+gps data samples log
 
-#define WAYPOINT_RADIUS_MIN         5
-#define WAYPOINT_RADIUS_MAX      20000
-#define WAYPOINT_RADIUS_DEFAULT   50
+#define WAYPOINT_RADIUS_M_MIN         5
+#define WAYPOINT_RADIUS_M_MAX      20000
+#define WAYPOINT_RADIUS_M_DEFAULT   50
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -199,9 +200,9 @@
 // below crossoverCps
 #define VARIO_CROSSOVER_FREQHZ    	1600
 
-// uncomment this if you want the current beep/tone to be interrupted and
-// a new tone generated when there is a 'significant' change in climb/sink rate
-// this will give you faster apparent vario response, but could also be 
+// Uncomment this if you want the current beep/tone to be interrupted and
+// a new tone generated when there is a 'significant' change in climb/sink rate.
+// This will give you faster apparent vario response, but could also be 
 // confusing/irritating if you are in choppy air
 //#define VARIO_INTERRUPT_BEEPS
 

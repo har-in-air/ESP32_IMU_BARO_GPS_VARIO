@@ -1,6 +1,7 @@
 #include "common.h"
 #include "config.h"
 #include "lcd7565.h"
+#include "btn.h"
 #include "ui.h"
 #include "myadc.h"
 #include "gps.h"
@@ -22,6 +23,11 @@ bool IsLogging = false;
 bool IsFlashDisplayRequired = false;
 bool IsGpsHeading = true;
 bool EndTrack = false;
+
+static int ParChanged = 0;
+static int ScreenParOffset = 0;
+static int ParDisplaySel = 0;
+static int ParSel = 0;
 
 void ui_printLatitude(int page, int col, int32_t nLat) {
 	char szBuf[12];
@@ -484,11 +490,11 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       if ((!IsTrackActive) && (pTrk->distanceFromStartm >= opt.misc.trackStartThresholdm)) {
          IsTrackActive = true;
          pTrk->startTowmS = pn->nav.timeOfWeekmS;
-         pTrk->year = pn->nav.utcYear;
-         pTrk->month = pn->nav.utcMonth;
-         pTrk->day = pn->nav.utcDay;
-         pTrk->hour = pn->nav.utcHour;
-         pTrk->minute = pn->nav.utcMinute;
+         pTrk->year = year;
+         pTrk->month = month;
+         pTrk->day = day;
+         pTrk->hour = hour;
+         pTrk->minute = minute;
          }
       int32_t vn = pn->nav.velNorthmmps;
       int32_t ve = pn->nav.velEastmmps;
@@ -560,7 +566,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    }
 
 
-int ui_saveLog(TRACK* pTrk) {
+int ui_saveLog(NAV_PVT* pn, TRACK* pTrk) {
    FILE *fdwr;
    char buf[80];
    ssize_t nwrote;
@@ -569,7 +575,7 @@ int ui_saveLog(TRACK* pTrk) {
    fdwr = fopen(buf, "wb");
    if (fdwr == NULL) return -1;
 
-   sprintf(buf,"UTC Start %04d/%04d/%04d %02d:%02d\r\n", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
+   sprintf(buf,"Start %04d/%02d/%02d %02d:%02d\r\n", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
@@ -577,15 +583,15 @@ int ui_saveLog(TRACK* pTrk) {
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
-   sprintf(buf,"Start Latitude %f Longitude %f\r\n", pTrk->startLatdeg, pTrk->startLondeg);
+   sprintf(buf,"Start Latitude %f Longitude %f Altitude %dm\r\n", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
-   sprintf(buf,"Start altitude  %dm\r\n",(int)(pTrk->startAltm+0.5f));
+   sprintf(buf,"End Latitude %f Longitude %f Altitude %dm\r\n", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
-   sprintf(buf,"Max altitude  %dm\r\n", (int)(pTrk->maxAltm+0.5f));
+   sprintf(buf,"Max Altitude  %dm\r\n", (int)(pTrk->maxAltm+0.5f));
    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
    if (nwrote != strlen(buf)) return -2;
 
@@ -598,6 +604,242 @@ int ui_saveLog(TRACK* pTrk) {
    if (nwrote != strlen(buf)) return -2;
 
    fclose(fdwr);
+   return 0;
+   }
+
+
+void ui_screenInit() {
+   ParChanged = 0;
+   ScreenParOffset = 0;
+   ParDisplaySel = 0;
+   ParSel = 0;
+   }
+
+char szLogType[3][5] = {"NONE", " GPS", " IBG"};
+
+void ui_displayOptions(void) {
+  int row;
+  lcd_clear();
+  for (row = 0; row < 8; row++) {
+    if ((ScreenParOffset + row) == ParSel) {
+       lcd_printf(false, row, 0, ParDisplaySel ? "*" : "o");
+       }
+    else {
+       lcd_printf(false, row, 0, " ");
+       }
+    }
+
+  row = 0;
+  if (ScreenParOffset < 1) {
+    lcd_printf(false, row, 7, "Climb threshold  %3d", opt.vario.climbThresholdCps); row++;
+    }
+  if (ScreenParOffset < 2) {
+    lcd_printf(false, row, 7, "Zero threshold   %3d", opt.vario.zeroThresholdCps); row++;
+    }
+  if (ScreenParOffset < 3){
+    lcd_printf(false, row, 7, "Sink threshold  %4d", opt.vario.sinkThresholdCps); row++;
+    }
+  if (ScreenParOffset < 4) {
+     lcd_printf(false, row, 7, "XOver threshold %4d", opt.vario.crossoverCps); row++;
+     }   
+  if (ScreenParOffset < 5) {
+     lcd_printf(false, row, 7, "Accel variance    %2d", opt.kf.accelVariance); row++;
+     }
+  if (ScreenParOffset < 6) {
+     lcd_printf(false, row, 7, "Zmeas variance   %3d", opt.kf.zMeasVariance); row++;
+     }
+  if (ScreenParOffset < 7) {
+     lcd_printf(false, row, 7, "UTC offset     %4d",  opt.misc.utcOffsetMins); row++;
+     }
+  if (ScreenParOffset < 8) {
+     lcd_printf(false, row, 7, "Backlight secs    %2d",  opt.misc.backlitSecs); row++;
+     }
+  if (ScreenParOffset < 9) {
+     lcd_printf(false, row, 7, "Track Threshold  %3d",  opt.misc.trackStartThresholdm); row++;
+     }
+  if (ScreenParOffset < 10) {
+     lcd_printf(false, row, 7, "Track Interval    %2d",  opt.misc.trackIntervalSecs); row++;
+     }
+  if (ScreenParOffset < 11) {
+     lcd_printf(false, row, 7, "GlideRatio IIR    %2d",  opt.misc.glideRatioIIR); row++;
+     }
+  if (ScreenParOffset < 12) {
+     lcd_printf(false, row, 7, "GPS Stable DOP    %2d",  opt.misc.gpsStableDOP); row++;
+     }
+  if (ScreenParOffset < 13) {
+     lcd_printf(false, row, 7, "Gyro Offset Max  %3d",  opt.misc.gyroOffsetLimit1000DPS); row++;
+     }
+  if (ScreenParOffset < 14) {
+     lcd_printf(false, row, 7, "Mag Declination  %3d",  opt.misc.magDeclinationdeg); row++;
+     }
+  if (ScreenParOffset < 15) {
+     lcd_printf(false, row, 7, "Speaker Volume     %1d",  opt.misc.speakerVolume); row++;
+     }
+  if (ScreenParOffset < 16) {
+     lcd_printf(false, row, 7, "Log Type        %s",  szLogType[opt.misc.logType]); row++;
+     }
+  if (ScreenParOffset < 16) {
+     lcd_printf(false, row, 7, "Waypt radius   %5d",  opt.misc.waypointRadiusm); row++;
+     }
+  lcd_sendFrame();
+  }
+
+
+int ui_optionsEventHandler(void)  {
+   if (Btn0Pressed) {
+      btn_clear();
+		if (ParChanged) {
+  			ParChanged = 0;
+         lcd_clear();
+         lcd_printlnf(true, 0, "Saving options");
+         opt_save();
+         delayMs(1000);
+  		   }
+      return 1;
+      }
+  
+   if (BtnMPressed)	{
+      btn_clear();
+	   ParDisplaySel = !ParDisplaySel;
+      ui_displayOptions();
+      return 0;
+      }
+	
+   if (BtnLPressed) {   
+      btn_clear();
+		if (ParDisplaySel) {
+		   ParChanged = 1;
+	      switch (ParSel) {	
+			   case SEL_CLIMB_THRESHOLD : if (opt.vario.climbThresholdCps >= VARIO_CLIMB_THRESHOLD_CPS_MIN+5) opt.vario.climbThresholdCps -= 5;
+			   default :
+			   break;
+				 	
+			   case SEL_ZERO_THRESHOLD : if (opt.vario.zeroThresholdCps >= VARIO_ZERO_THRESHOLD_CPS_MIN+5) opt.vario.zeroThresholdCps -= 5; 
+	         break; 
+	
+			   case SEL_SINK_THRESHOLD : if (opt.vario.sinkThresholdCps >= VARIO_SINK_THRESHOLD_CPS_MIN+5) opt.vario.sinkThresholdCps -= 5; 
+	         break; 
+
+			   case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps >= VARIO_CROSSOVER_CPS_MIN+10) opt.vario.crossoverCps -= 10; 
+	         break; 
+
+			   case SEL_ACCEL_VAR : if (opt.kf.accelVariance >= KF_ACCEL_VARIANCE_MIN+5) opt.kf.accelVariance -= 5; 
+	         break; 
+
+			   case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance >= KF_ZMEAS_VARIANCE_MIN+10) opt.kf.zMeasVariance -= 10; 
+	         break; 
+
+			   case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins >= UTC_OFFSET_MINS_MIN+15) opt.misc.utcOffsetMins -= 15; 
+	         break; 
+
+			   case SEL_BKLIGHT_SECS : if (opt.misc.backlitSecs >= BACKLIT_SECS_MIN+5) opt.misc.backlitSecs -= 5; 
+	         break; 
+
+			   case SEL_TRACK_THRESHOLD : if (opt.misc.trackStartThresholdm >= TRACK_START_THRESHOLD_M_MIN+5 ) opt.misc.trackStartThresholdm -= 5; 
+	         break; 
+
+			   case SEL_TRACK_INTERVAL : if (opt.misc.trackIntervalSecs > TRACK_INTERVAL_SECS_MIN) opt.misc.trackIntervalSecs--; 
+	         break; 
+
+			   case SEL_GLIDE_IIR : if (opt.misc.glideRatioIIR > GLIDE_RATIO_IIR_MIN) opt.misc.glideRatioIIR--; 
+	         break; 
+
+			   case SEL_GPS_STABLE_DOP : if (opt.misc.gpsStableDOP > GPS_STABLE_DOP_MIN) opt.misc.gpsStableDOP--; 
+	         break; 
+
+			   case SEL_GYRO_OFFSET_MAX : if (opt.misc.gyroOffsetLimit1000DPS >= GYRO_OFFSET_LIMIT_1000DPS_MIN+10) opt.misc.gyroOffsetLimit1000DPS -= 10; 
+	         break; 
+
+			   case SEL_MAG_DECLINATION : if (opt.misc.magDeclinationdeg > MAG_DECLINATION_DEG_MIN) opt.misc.magDeclinationdeg--; 
+	         break; 
+
+			   case SEL_SPKR_VOL : if (opt.misc.speakerVolume > SPEAKER_VOLUME_MIN ) opt.misc.speakerVolume--; 
+	         break; 
+
+			   case SEL_LOG_TYPE : if (opt.misc.logType > LOGTYPE_NONE ) opt.misc.logType--; 
+	         break; 
+
+			   case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm >= WAYPOINT_RADIUS_M_MIN+10  ) opt.misc.waypointRadiusm -= 10; 
+	         break; 
+	         }
+		  }
+		else { // ParDisplaySel == 0
+         if (ParSel > 0) ParSel--;
+         if (ScreenParOffset > ParSel) {
+             ScreenParOffset = ParSel;
+            }
+		   }
+      ui_displayOptions();
+      return 0;
+      }
+   
+   if (BtnRPressed) {   
+      btn_clear();
+		if (ParDisplaySel) {
+		   ParChanged = 1;
+         switch (ParSel) { 
+		   case SEL_CLIMB_THRESHOLD : if (opt.vario.climbThresholdCps <= VARIO_CLIMB_THRESHOLD_CPS_MAX-5) opt.vario.climbThresholdCps += 5;
+			   default :
+			   break;
+				 	
+			   case SEL_ZERO_THRESHOLD : if (opt.vario.zeroThresholdCps <= VARIO_ZERO_THRESHOLD_CPS_MAX-5) opt.vario.zeroThresholdCps += 5; 
+	         break; 
+	
+			   case SEL_SINK_THRESHOLD : if (opt.vario.sinkThresholdCps <= VARIO_SINK_THRESHOLD_CPS_MAX-5) opt.vario.sinkThresholdCps += 5; 
+	         break; 
+
+			   case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps <= VARIO_CROSSOVER_CPS_MAX-10) opt.vario.crossoverCps += 10; 
+	         break; 
+
+			   case SEL_ACCEL_VAR : if (opt.kf.accelVariance <= KF_ACCEL_VARIANCE_MAX-5) opt.kf.accelVariance += 5; 
+	         break; 
+
+			   case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance <= KF_ZMEAS_VARIANCE_MAX-10) opt.kf.zMeasVariance += 10; 
+	         break; 
+
+			   case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins <= UTC_OFFSET_MINS_MAX-15) opt.misc.utcOffsetMins += 15; 
+	         break; 
+
+			   case SEL_BKLIGHT_SECS : if (opt.misc.backlitSecs < BACKLIT_SECS_MAX) opt.misc.backlitSecs++; 
+	         break; 
+
+			   case SEL_TRACK_THRESHOLD : if (opt.misc.trackStartThresholdm <= TRACK_START_THRESHOLD_M_MAX-5 ) opt.misc.trackStartThresholdm += 5; 
+	         break; 
+
+			   case SEL_TRACK_INTERVAL : if (opt.misc.trackIntervalSecs < TRACK_INTERVAL_SECS_MAX) opt.misc.trackIntervalSecs++; 
+	         break; 
+
+			   case SEL_GLIDE_IIR : if (opt.misc.glideRatioIIR < GLIDE_RATIO_IIR_MAX) opt.misc.glideRatioIIR++; 
+	         break; 
+
+			   case SEL_GPS_STABLE_DOP : if (opt.misc.gpsStableDOP < GPS_STABLE_DOP_MAX) opt.misc.gpsStableDOP++; 
+	         break; 
+
+			   case SEL_GYRO_OFFSET_MAX : if (opt.misc.gyroOffsetLimit1000DPS <= GYRO_OFFSET_LIMIT_1000DPS_MAX-10) opt.misc.gyroOffsetLimit1000DPS += 10; 
+	         break; 
+
+			   case SEL_MAG_DECLINATION : if (opt.misc.magDeclinationdeg < MAG_DECLINATION_DEG_MAX) opt.misc.magDeclinationdeg++; 
+	         break; 
+
+			   case SEL_SPKR_VOL : if (opt.misc.speakerVolume < SPEAKER_VOLUME_MAX ) opt.misc.speakerVolume++; 
+	         break; 
+
+			   case SEL_LOG_TYPE : if (opt.misc.logType < LOGTYPE_IBG ) opt.misc.logType++; 
+	         break; 
+
+			   case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm <= WAYPOINT_RADIUS_M_MAX-10  ) opt.misc.waypointRadiusm += 10; 
+	         break; 
+		      }
+	      }
+		else { // ParDisplaySel == 0
+         if (ParSel <  SEL_WPT_RADIUS) ParSel++;
+         if (ScreenParOffset < (ParSel-7)) {
+            ScreenParOffset = ParSel-7;
+            }  
+         }
+      ui_displayOptions();
+      return 0;
+  	   }
    return 0;
    }
 

@@ -1,5 +1,7 @@
 #include "common.h"
 #include "config.h"
+#include "lcd7565.h"
+#include "btn.h"
 #include "ui.h"
 #include "options.h"
 #include "route.h"
@@ -15,6 +17,13 @@
 ROUTE Route;
 ROUTE* pRoute = &Route;
 
+#define MAX_ROUTES 7
+int NumRoutes;
+int RouteSel;
+char RouteFileNames[MAX_ROUTES][20];
+
+int rte_handleRouteSelEvent();
+void rte_displayRouteSel();
 
 int rte_selectRoute(){
    DIR *dir = NULL;
@@ -25,7 +34,7 @@ int rte_selectRoute(){
    ESP_LOGI(TAG,"LIST of DIR [/spiffs/]\r\n");
 #endif
    dir = opendir("/spiffs/");
-   int routeOK = -1;
+   NumRoutes = 0;
    if (dir) {
       while ((ent = readdir(dir)) != NULL) {
     	   sprintf(tpath, "/spiffs/");
@@ -33,19 +42,61 @@ int rte_selectRoute(){
 		   int res = stat(tpath, &sb);
 			if ((res == 0) && (ent->d_type == DT_REG)) {
             if (strstr(tpath, ".wpt") || strstr(tpath,".WPT")){
-               routeOK = rte_loadRoute(tpath);
-               break;
+               strcpy(RouteFileNames[NumRoutes], ent->d_name);
+               ESP_LOGI(TAG,"Found route file %s", RouteFileNames[NumRoutes]);
+               NumRoutes++;
+               if (NumRoutes == MAX_ROUTES) break;
                }
 			   }
          }
       }
    else {
+      ESP_LOGE(TAG,"error opening /spiffs/");
       return -1;
       }
+   if (NumRoutes == 0) return -1;
 
-   return routeOK;
+   RouteSel = 0;
+   rte_displayRouteSel();
+   btn_clear();
+   while (rte_handleRouteSelEvent() == 0) {
+      btn_debounce();
+      delayMs(30);
+      }
+   if (RouteSel == 0) return -1;
+   sprintf(tpath, "/spiffs/");
+   strcat(tpath, RouteFileNames[RouteSel-1]);
+   return rte_loadRoute(tpath);
    }
 
+
+void rte_displayRouteSel() {
+  lcd_clear();
+  lcd_printlnf(false, 0, "R->change   0->sel"); 
+  lcd_printlnf(false, 1, "%c no route", RouteSel == 0 ? '*' : ' ');
+  for (int inx = 0; inx < NumRoutes; inx++) {
+      lcd_printlnf(false, 2+inx, "%c %s", RouteSel == 1+inx ? '*' : ' ', RouteFileNames[inx]);
+      }
+  lcd_sendFrame();
+  }
+
+int rte_handleRouteSelEvent() {
+  if (BtnRPressed) {
+      btn_clear();
+      RouteSel++;
+      if (RouteSel > NumRoutes) {
+         RouteSel = 0; 
+         }
+      rte_displayRouteSel();
+      return 0;
+      }
+   else 
+   if (Btn0Pressed) {
+      btn_clear();
+      return 1;
+      }
+   else return 0;
+   }
 
 // expects FormatGEO waypoint text file ".wpt" as output by xcplanner (xcplanner.appspot.com)
 // You can edit the waypoint text file to add a waypoint radius in meters at the end of  each
@@ -62,6 +113,7 @@ int rte_loadRoute(char* szFileName) {
    char c;
 
    pRoute->numWpts = 0;
+   pRoute->nextWptInx = 0;
    if ((fwpt = fopen( szFileName, "r" )) == NULL){
       ESP_LOGI(TAG, "error opening file %s\r\n", szFileName);
       return -1;
