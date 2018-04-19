@@ -17,29 +17,37 @@ an 8ohm cellphone speaker with sine-wave tones.
 7. Flight log summaries (date, time, start and end coordinates, duration, max altitude, max climb and sink rates) are stored as text files in the spiffs file system and can be downloaded using wifi.
 
 ## Hardware notes
-1. MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
-2. MS5611 barometric pressure sensor, sampled at 50Hz
-3. Ublox compatible M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud.
+MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
+
+MS5611 barometric pressure sensor, sampled at 50Hz.
+
+Ublox compatible M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud.
 I used a gps module from Banggood (see screenshot in /pics directory). Not a great choice, it was expensive, and the smaller patch antenna meant that it doesn't get a fix in my apartment, while cheaper modules do (with a larger patch antenna). And it doesn't save configuration settings to flash or eeprom, so it needs to be configured on initialization each time.
 
 I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, am assuming the advertising is correct :-D. Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm). Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for cheap multi-constellation modules.
-4. ESP32 WROOM rev 1 module
-5. 128x64 reflective LCD display with serial spi interface.
-6. MAX4410 audio amplifier driving salvaged 8ohm cellphone speaker.
-7. For the power supply, I use a single-cell 18650 
-power bank. I added an extra connector wired directly to the battery terminals. This allows me to 
-detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
+
+ESP32 WROOM rev 1 module.
+
+128x64 reflective LCD display with serial spi interface.
+
+MAX4410 audio amplifier driving salvaged 8ohm cellphone speaker.
+
+For the power supply, I use a single-cell 18650 power bank. I added an extra connector wired directly to the battery terminals. This allows me to detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
 my hand-wired gpsvario in checked-in luggage (no battery, no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
-8. Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
+
+Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
  optimized.
-9. I used the MAX4410 audio amplifier because I had a few samples, and an already assembled breakout board from a previous project. An easily available option is the XPT8871. In either case, you can drive a piezo speaker or a cellphone 8ohm 0.5w speaker. Or, if you want to reduce current draw, you can omit the audio amplifier and drive a low voltage piezo speaker directly from the ESP32 pin using square wave drive. 
+
+I used the MAX4410 audio amplifier because I had a few samples, and an already assembled breakout board from a previous project. An easily available option is the XPT8871. In either case, you can drive a piezo speaker or a cellphone 8ohm 0.5w speaker. Or, if you want to reduce current draw, you can omit the audio amplifier and drive a low voltage piezo speaker directly from the ESP32 pin using square wave drive. 
 
 ## Software notes
 Compiled on Ubuntu 16.04LTS amdx64 platform 
 (esp-idf git log : commit 84788230392d0918d3add78d9ccf8c2bb7de3152, 2018 Mar 21)
 
-Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of Arduino-ESP32 code for the Web server, and spi/gpio interfaces. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. After adding the arduino component navigate to the /components/arduino/libraries directory and delete the SPIFFs sub-directory. I'm using SPIFFs code from https://github.com/loboris/ESP32_spiffs_example, and the Arduino code clashes with this.
+Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of Arduino-ESP32 code for the Web server, and spi/gpio interfaces. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. 
+
+After adding the arduino component, navigate to the /components/arduino/libraries directory and delete the SPIFFs sub-directory. I'm using SPIFFs code from https://github.com/loboris/ESP32_spiffs_example, and the Arduino code clashes with this.
 
 ### 'make menuconfig' changes from default values
 
