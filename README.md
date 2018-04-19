@@ -1,4 +1,4 @@
-# ESP32 GPS Variometer
+# ESP32 GPS Altimeter/Variometer
 
 ## Features
 1. Variometer zero-lag response with a Kalman filter fusing acceleration data from an IMU module and altitude data from a barometric pressure sensor.
@@ -12,8 +12,8 @@ access point and web server. So you can access the datalogs/configuration in the
 5. Load a route from one of up to 7 route files in FormatGEO .wpt format that were previously uploaded to the gpsvario.
 5. 128x64 LCD display of GPS altitude, climb/sink rate, distance from start/to waypoint, ground speed,
 glide ratio, course/compass heading, bearing to start/waypoint, GPS derived clock, elapsed-time, battery, speaker, and data logging status.
-6. Variometer audio feedback is more pleasant thanks to the esp32 onboard DAC and external audio amplifier driving
-a cellphone speaker with sine-wave tones.
+6. Variometer audio feedback uses the esp32 onboard DAC and external audio amplifier driving
+an 8ohm cellphone speaker with sine-wave tones.
 7. Flight log summaries (date, time, start and end coordinates, duration, max altitude, max climb and sink rates) are stored as text files in the spiffs file system and can be downloaded using wifi.
 
 ## Hardware notes
@@ -32,11 +32,8 @@ detach the power bank and use it for other purposes, e.g. recharging my phone. A
 my hand-wired gpsvario in checked-in luggage (no battery, no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
 8. Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
- optimized. I haven't bothered to add a software controlled power switch for the gps module,
-for example. If you're content with driving a piezo speaker, can save some power 
-by omitting the audio amplifier, and using square-wave piezo drive.
-
-For an external audio amplifier, you could go with the XPT8871, available on ebay and aliexpress. I used the MAX4410 because I had a few samples, and an already assembled breakout board from a previous project.
+ optimized.
+9. I used the MAX4410 audio amplifier because I had a few samples, and an already assembled breakout board from a previous project. An easily available option is the XPT8871. In either case, you can drive a piezo speaker or a cellphone 8ohm 0.5w speaker. Or, if you want to reduce current draw, you can omit the audio amplifier and drive a low voltage piezo speaker directly from the ESP32 pin using square wave drive. 
 
 ## Software notes
 Compiled on Ubuntu 16.04LTS amdx64 platform 
