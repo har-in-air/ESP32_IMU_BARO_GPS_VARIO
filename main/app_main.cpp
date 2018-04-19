@@ -36,7 +36,7 @@ ESP32WebServer server(80);
 
 volatile int LedState = 0;
 volatile int BacklitCounter = 0;
-volatile float KFAltitudeCm, KFClimbrateCps,IIRClimbrateCps;
+volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
 volatile float YawDeg, PitchDeg, RollDeg;
 
 volatile SemaphoreHandle_t DrdySemaphore;
@@ -288,8 +288,8 @@ static void vario_task(void *pvParameter) {
 				float zAccelAverage = ringbuf_averageOldestSamples(10); 
 				kalmanFilter3_update(ZCmSample, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
             kfTimeDeltaUSecs = 0.0f;
-            // use damped climbrate for lcd display
-            IIRClimbrateCps = IIRClimbrateCps*0.9f + 0.1f*KFClimbrateCps; 
+            // LCD display shows damped climbrate
+            DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
 				int32_t audioCps = INTEGER_ROUNDUP(KFClimbrateCps);
 				if (IsSpeakerEnabled) {
                beeper_beep(audioCps);                
@@ -381,7 +381,7 @@ extern "C" void app_main() {
    uint32_t batteryVoltagemV = adc_batteryVoltage();
    ESP_LOGI(TAG, "battery voltage = %d.%03dV", batteryVoltagemV/1000, batteryVoltagemV%1000);
    lcd_printlnf(false,0,"%s %s", __DATE__, __TIME__);
-   lcd_printlnf(true,1,"BAT %d.%03dV", batteryVoltagemV/1000, batteryVoltagemV%1000);
+   lcd_printlnf(true,1,"Battery %d.%03dV", batteryVoltagemV/1000, batteryVoltagemV%1000);
 
    // VSPI bus used for imu, baro and serial 128Mbit flash
    // start with low clock frequency for sensor configuration
@@ -392,7 +392,7 @@ extern "C" void app_main() {
 		while (1) {delayMs(100);}
 		}
 
-	lcd_printlnf(true,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
+	lcd_printlnf(true,2,"SPI flash %.2f%% full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
    delayMs(2000);
    btn_clear();
    
@@ -401,7 +401,7 @@ extern "C" void app_main() {
    bool isEraseRequired = false;
    int counter = 300;
    while (counter--) {
-	   lcd_printlnf(true,3,"BTN0 Erase %ds",(counter+50)/100);
+	   lcd_printlnf(true,3,"BTN0 erase %ds",(counter+50)/100);
       if (!BTN0()) {
 	      ESP_LOGI(TAG,"BTN0 PRESSED");
          isEraseRequired = true;
@@ -415,7 +415,7 @@ extern "C" void app_main() {
       flashlog_erase(FlashLogFreeAddress);
 
 	   ESP_LOGI(TAG, "Done");
-   	lcd_printlnf(false,2,"SPI Flash %.2f%% Full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
+   	lcd_printlnf(false,2,"SPI flash %.2f%% full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
 	   lcd_printlnf(true,3,"Erased");
       }
    delayMs(1000);
@@ -423,7 +423,7 @@ extern "C" void app_main() {
 	ESP_LOGI(TAG,"Press BTN0 within 3 seconds to start http server");
    counter = 300;
    while (counter--) {
-	   lcd_printlnf(true,3,"BTN0 Server %ds",(counter+50)/100);
+	   lcd_printlnf(true,3,"BTN0 server %ds",(counter+50)/100);
       if (!BTN0()) {
 	      ESP_LOGI(TAG,"BTN0");
 	      IsServer = 1;

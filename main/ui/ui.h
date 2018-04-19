@@ -28,19 +28,20 @@
 #define SEL_ZERO_THRESHOLD          1
 #define SEL_SINK_THRESHOLD          2
 #define SEL_CROSSOVER_THRESHOLD     3
-#define SEL_ACCEL_VAR               4
-#define SEL_ZMEAS_VAR               5
-#define SEL_UTC_OFFSET              6
-#define SEL_BKLIGHT_SECS            7
-#define SEL_TRACK_THRESHOLD         8
-#define SEL_TRACK_INTERVAL          9
-#define SEL_GLIDE_IIR               10
-#define SEL_GPS_STABLE_DOP          11
-#define SEL_GYRO_OFFSET_MAX         12
-#define SEL_MAG_DECLINATION         13
-#define SEL_SPKR_VOL                14
-#define SEL_LOG_TYPE                15
-#define SEL_WPT_RADIUS              16
+#define SEL_VARIO_DISPLAY_IIR       4
+#define SEL_ACCEL_VAR               5
+#define SEL_ZMEAS_VAR               6
+#define SEL_UTC_OFFSET              7
+#define SEL_BKLIGHT_SECS            8
+#define SEL_TRACK_THRESHOLD         9
+#define SEL_TRACK_INTERVAL          10
+#define SEL_GLIDE_IIR               11
+#define SEL_GPS_STABLE_DOP          12
+#define SEL_GYRO_OFFSET_MAX         13
+#define SEL_MAG_DECLINATION         14
+#define SEL_SPKR_VOL                15
+#define SEL_LOG_TYPE                16
+#define SEL_WPT_RADIUS              17
 
 
 typedef struct TRACK_ {
@@ -99,7 +100,7 @@ extern bool IsGpsHeading;
 extern bool EndTrack;
 
 extern volatile float YawDeg;
-extern volatile float IIRClimbrateCps;
+extern volatile float DisplayClimbrateCps;
 extern volatile float KFAltitudeCm;
 
 #endif

@@ -6,6 +6,7 @@ typedef struct VARIO_PARAMS_ {
 	int16_t  zeroThresholdCps;
 	int16_t  sinkThresholdCps;
 	int16_t  crossoverCps;
+   int16_t  varioDisplayIIR;
 } VARIO_PARAMS;
 
 

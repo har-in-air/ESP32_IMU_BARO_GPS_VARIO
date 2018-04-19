@@ -468,7 +468,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    ui_printSpkrStatus(7,100, IsSpeakerEnabled);
    ui_printAltitude(0,0,altm);
    lcd_printSz(1,45,"m");
-   ui_printClimbRate(2,0,INTEGER_ROUNDUP(IIRClimbrateCps));
+   ui_printClimbRate(2,0,INTEGER_ROUNDUP(DisplayClimbrateCps));
    lcd_printSz(3,34,"ms");
 
    int year,month,day,hour,minute;
@@ -516,8 +516,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       lcd_printSz(7,23,"gr");
       if (IsTrackActive) {
          if (altm > pTrk->maxAltm) pTrk->maxAltm = altm;
-         if (IIRClimbrateCps > pTrk->maxClimbrateCps) pTrk->maxClimbrateCps = IIRClimbrateCps;
-         if (IIRClimbrateCps < pTrk->maxSinkrateCps) pTrk->maxSinkrateCps = IIRClimbrateCps;
+         if (DisplayClimbrateCps > pTrk->maxClimbrateCps) pTrk->maxClimbrateCps = DisplayClimbrateCps;
+         if (DisplayClimbrateCps < pTrk->maxSinkrateCps) pTrk->maxSinkrateCps = DisplayClimbrateCps;
          ui_calcTrackElapsedTime(pTrk->startTowmS, pn->nav.timeOfWeekmS, &pTrk->elapsedHours, &pTrk->elapsedMinutes);
          }
       ui_printTrackTime(4,93,pTrk->elapsedHours,pTrk->elapsedMinutes);
@@ -643,42 +643,45 @@ void ui_displayOptions(void) {
      lcd_printf(false, row, 7, "XOver threshold %4d", opt.vario.crossoverCps); row++;
      }   
   if (ScreenParOffset < 5) {
+     lcd_printf(false, row, 7, "Vario display IIR %2d", opt.vario.varioDisplayIIR); row++;
+     }   
+  if (ScreenParOffset < 6) {
      lcd_printf(false, row, 7, "Accel variance    %2d", opt.kf.accelVariance); row++;
      }
-  if (ScreenParOffset < 6) {
+  if (ScreenParOffset < 7) {
      lcd_printf(false, row, 7, "Zmeas variance   %3d", opt.kf.zMeasVariance); row++;
      }
-  if (ScreenParOffset < 7) {
-     lcd_printf(false, row, 7, "UTC offset     %4d",  opt.misc.utcOffsetMins); row++;
-     }
   if (ScreenParOffset < 8) {
-     lcd_printf(false, row, 7, "Backlight secs    %2d",  opt.misc.backlitSecs); row++;
+     lcd_printf(false, row, 7, "UTC offset      %4d",  opt.misc.utcOffsetMins); row++;
      }
   if (ScreenParOffset < 9) {
-     lcd_printf(false, row, 7, "Track Threshold  %3d",  opt.misc.trackStartThresholdm); row++;
+     lcd_printf(false, row, 7, "Backlight secs    %2d",  opt.misc.backlitSecs); row++;
      }
   if (ScreenParOffset < 10) {
-     lcd_printf(false, row, 7, "Track Interval    %2d",  opt.misc.trackIntervalSecs); row++;
+     lcd_printf(false, row, 7, "Track Threshold  %3d",  opt.misc.trackStartThresholdm); row++;
      }
   if (ScreenParOffset < 11) {
-     lcd_printf(false, row, 7, "GlideRatio IIR    %2d",  opt.misc.glideRatioIIR); row++;
+     lcd_printf(false, row, 7, "Track Interval    %2d",  opt.misc.trackIntervalSecs); row++;
      }
   if (ScreenParOffset < 12) {
-     lcd_printf(false, row, 7, "GPS Stable DOP    %2d",  opt.misc.gpsStableDOP); row++;
+     lcd_printf(false, row, 7, "GlideRatio IIR    %2d",  opt.misc.glideRatioIIR); row++;
      }
   if (ScreenParOffset < 13) {
-     lcd_printf(false, row, 7, "Gyro Offset Max  %3d",  opt.misc.gyroOffsetLimit1000DPS); row++;
+     lcd_printf(false, row, 7, "GPS Stable DOP    %2d",  opt.misc.gpsStableDOP); row++;
      }
   if (ScreenParOffset < 14) {
-     lcd_printf(false, row, 7, "Mag Declination  %3d",  opt.misc.magDeclinationdeg); row++;
+     lcd_printf(false, row, 7, "Gyro Offset Max  %3d",  opt.misc.gyroOffsetLimit1000DPS); row++;
      }
   if (ScreenParOffset < 15) {
+     lcd_printf(false, row, 7, "Mag Declination  %3d",  opt.misc.magDeclinationdeg); row++;
+     }
+  if (ScreenParOffset < 16) {
      lcd_printf(false, row, 7, "Speaker Volume     %1d",  opt.misc.speakerVolume); row++;
      }
-  if (ScreenParOffset < 16) {
+  if (ScreenParOffset < 17) {
      lcd_printf(false, row, 7, "Log Type        %s",  szLogType[opt.misc.logType]); row++;
      }
-  if (ScreenParOffset < 16) {
+  if (ScreenParOffset < 18) {
      lcd_printf(false, row, 7, "Waypt radius   %5d",  opt.misc.waypointRadiusm); row++;
      }
   lcd_sendFrame();
@@ -721,6 +724,9 @@ int ui_optionsEventHandler(void)  {
 	         break; 
 
 			   case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps >= VARIO_CROSSOVER_CPS_MIN+10) opt.vario.crossoverCps -= 10; 
+	         break; 
+
+			   case SEL_VARIO_DISPLAY_IIR : if (opt.vario.varioDisplayIIR > VARIO_DISPLAY_IIR_MIN) opt.vario.varioDisplayIIR--; 
 	         break; 
 
 			   case SEL_ACCEL_VAR : if (opt.kf.accelVariance >= KF_ACCEL_VARIANCE_MIN+5) opt.kf.accelVariance -= 5; 
@@ -789,6 +795,9 @@ int ui_optionsEventHandler(void)  {
 	         break; 
 
 			   case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps <= VARIO_CROSSOVER_CPS_MAX-10) opt.vario.crossoverCps += 10; 
+	         break; 
+
+			   case SEL_VARIO_DISPLAY_IIR : if (opt.vario.varioDisplayIIR < VARIO_DISPLAY_IIR_MAX) opt.vario.varioDisplayIIR++; 
 	         break; 
 
 			   case SEL_ACCEL_VAR : if (opt.kf.accelVariance <= KF_ACCEL_VARIANCE_MAX-5) opt.kf.accelVariance += 5; 

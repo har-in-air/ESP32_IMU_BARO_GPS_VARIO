@@ -107,6 +107,10 @@
 #define GLIDE_RATIO_IIR_DEFAULT        90
 #define GLIDE_RATIO_IIR_MAX            99
 
+#define VARIO_DISPLAY_IIR_MIN          90
+#define VARIO_DISPLAY_IIR_DEFAULT      90
+#define VARIO_DISPLAY_IIR_MAX          99
+
 // position DOP required before gpsvario registers start position
 // for automatic track logging
 #define GPS_STABLE_DOP_MIN             3
