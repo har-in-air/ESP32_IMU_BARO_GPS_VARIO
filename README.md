@@ -14,7 +14,7 @@ access point and web server. So you can access the datalogs/configuration in the
 glide ratio, course/compass heading, bearing to start/waypoint, GPS derived clock, elapsed-time, battery, speaker, and data logging status.
 6. Variometer audio feedback uses the esp32 onboard DAC and external audio amplifier driving
 an 8ohm cellphone speaker with sine-wave tones.
-7. Flight summaries (date, start time, start and end coordinates, duration, max altitude, max climb and sink rates) are stored as single line entries in the file "flightlog.txt" in the spiffs file system. This text file be downloaded using wifi and opened in a spreadsheet (open as CSV file) for analysis.
+7. Flight summaries (date, start time, start and end coordinates, duration, max altitude, max climb and sink rates) are stored as single line entries in the file "flightlog.txt" in the spiffs file system. This text file can be downloaded using wifi and opened in a spreadsheet (open as CSV file) for analysis.
 
 ## Hardware notes
 MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
@@ -32,7 +32,7 @@ ESP32 WROOM rev 1 module.
 
 I used the MAX4410 audio amplifier because I had a few samples, and an already assembled breakout board from a previous project. An easily available option is the XPT8871. In either case, you can drive a piezo speaker or a cellphone 8ohm 0.5w speaker. Or, if you want to reduce current draw, you can omit the audio amplifier and drive a low voltage piezo speaker directly from the ESP32 pin using square wave drive. 
 
-For the power supply, I use a single-cell 18650 power bank. I added an extra connector wired directly to the battery terminals. This allows me to detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
+For the power supply, I used a single-cell 18650 power bank. I added an extra connector wired directly to the battery terminals. This allows me to detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
 my hand-wired gpsvario in checked-in luggage (no battery, no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
 
@@ -41,10 +41,9 @@ Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mod
 
 
 ## Software notes
-Compiled on Ubuntu 16.04LTS amdx64 platform 
-(esp-idf git log : commit 84788230392d0918d3add78d9ccf8c2bb7de3152, 2018 Mar 21)
+Build platform : Ubuntu 16.04LTS amdx64, esp-idf version : commit 84788230392d0918d3add78d9ccf8c2bb7de3152 (2018 Mar 21)
 
-Uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of available Arduino-ESP32 code - e.g. the Web server, and interfaces for spi and gpio. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the Arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. 
+The esp-idf project uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of available Arduino-ESP32 code - e.g. web server and interfaces for spi and gpio. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the Arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. 
 
 After adding the Arduino component, navigate to the /components/arduino/libraries directory and delete the SPIFFs sub-directory. I'm using SPIFFs code from https://github.com/loboris/ESP32_spiffs_example, and the Arduino spiffs library clashes with this.
 
