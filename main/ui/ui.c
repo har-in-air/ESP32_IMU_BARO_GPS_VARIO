@@ -567,43 +567,55 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
 
 
 int ui_saveLog(NAV_PVT* pn, TRACK* pTrk) {
-   FILE *fdwr;
-   char buf[80];
+   FILE *fd;
+   char szbuf[30];
+   char szEntry[110];
    ssize_t nwrote;
+   int len;
+   fd = fopen("/spiffs/flightlog.txt", "rb");
+   if (fd == NULL) {
+      fd = fopen("/spiffs/flightlog.txt", "wb");
+      sprintf(szEntry,"Year Month Day sHour sMin durHour durMin sLat sLon sAlt eLat eLon eAlt maxAlt maxClimb maxSink\r\n");
+      len = strlen(szEntry);
+		nwrote = fwrite(szEntry, 1, len, fd);
+		if (nwrote != len) {
+	    	ESP_LOGI(TAG,"Error writing comment header to flightlog.txt");
+         return -1;
+         }
+      fclose(fd);
+      }  
 
-   sprintf(buf,"/spiffs/%04d%02d%02d_%02d%02d.txt", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
-   fdwr = fopen(buf, "wb");
-   if (fdwr == NULL) return -1;
+   fd = fopen("/spiffs/flightlog.txt", "ab");
+   if (fd == NULL) {
+    	ESP_LOGI(TAG,"Error opening flightlog.txt in append mode");
+      return -2;
+      }
 
-   sprintf(buf,"Start %04d/%02d/%02d %02d:%02d\r\n", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
+   sprintf(szEntry,"%4d %2d %2d %2d %2d ", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
 
-   sprintf(buf,"Duration %02d:%02d\r\n", pTrk->elapsedHours, pTrk->elapsedMinutes);
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
+   sprintf(szbuf,"%2d %2d ", pTrk->elapsedHours, pTrk->elapsedMinutes);
+   strcat(szEntry, szbuf);
 
-   sprintf(buf,"Start Latitude %f Longitude %f Altitude %dm\r\n", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
+   sprintf(szbuf,"%f %f %4d ", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
+   strcat(szEntry, szbuf);
 
-   sprintf(buf,"End Latitude %f Longitude %f Altitude %dm\r\n", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
+   sprintf(szbuf,"%f %f %4d ", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
+   strcat(szEntry, szbuf);
 
-   sprintf(buf,"Max Altitude  %dm\r\n", (int)(pTrk->maxAltm+0.5f));
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
+   sprintf(szbuf,"%4d ", (int)(pTrk->maxAltm+0.5f));
+   strcat(szEntry, szbuf);
 
-   sprintf(buf,"Max Climbrate  +%.1fm/s\r\n", pTrk->maxClimbrateCps/100.0f);
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
+   sprintf(szbuf,"%.1f %.1f\r\n", pTrk->maxClimbrateCps/100.0f, pTrk->maxSinkrateCps/100.0f);
+   strcat(szEntry, szbuf);
 
-   sprintf(buf,"Max Sinkrate  %.1fm/s\r\n", pTrk->maxSinkrateCps/100.0f);
-   nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-   if (nwrote != strlen(buf)) return -2;
-
-   fclose(fdwr);
+   len = strlen(szEntry);   
+	nwrote = fwrite(szEntry, 1, len, fd);
+	if (nwrote != len) {
+	  	ESP_LOGI(TAG,"Error appending log data to flightlog.txt");
+      fclose(fd);
+      return -1;
+      }
+   fclose(fd);
    return 0;
    }
 

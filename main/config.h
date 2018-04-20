@@ -40,9 +40,9 @@
 
 #define pinBtn0		(0)
 
-#define pinBtnL   36
-#define pinBtnM   34
-#define pinBtnR   39
+#define pinBtnL   (36)
+#define pinBtnM   (34)
+#define pinBtnR   (39)
 
 #define BTN0()	      ((GPIO.in >> pinBtn0) & 0x1)
 
@@ -51,14 +51,14 @@
 #define BTNR()  ((GPIO.in1.val >> (pinBtnR - 32)) & 0x1)
 
 // lcd uses HSPI IOMux compatible pins
-#define pinHSCLK	   14
-#define pinHMOSI	   13 
+#define pinHSCLK	   (14)
+#define pinHMOSI	   (13) 
 #define pinHMISO     (-1)
 
-#define pinLcdCS	   12
-#define pinLcdRST    27
-#define pinLcdRS     26
-#define pinLcdBklt   33
+#define pinLcdCS	   (12)
+#define pinLcdRST    (27)
+#define pinLcdRS     (26)
+#define pinLcdBklt   (33)
 
 #define LCD_CS_HI() 	   {GPIO.out_w1ts = (1 << pinLcdCS);}
 #define LCD_CS_LO() 	   {GPIO.out_w1tc = (1 << pinLcdCS);}
@@ -71,13 +71,13 @@
 
 #define HSPI_CLK_FREQHZ 4000000
 
-#define pinLED		      2
+#define pinLED		      (2)
 
 #define LED_ON() 		   {GPIO.out_w1ts = (1 << pinLED);}
 #define LED_OFF()		   {GPIO.out_w1tc = (1 << pinLED);}
 
-#define pinAudioAmpEna       32
-#define pinAudioDAC          25
+#define pinAudioAmpEna       (32)
+#define pinAudioDAC          (25)
 
 #define AUDIO_AMP_ENABLE()   {GPIO.out1_w1ts.val = ((uint32_t)1 << (pinAudioAmpEna - 32));}
 #define AUDIO_AMP_DISABLE()  {GPIO.out1_w1tc.val = ((uint32_t)1 << (pinAudioAmpEna - 32));}
@@ -87,7 +87,7 @@
 
 
 ////////////////////////////////////////////////////////////////////
-// WEB CONFIGURATION PARAMETER DEFAULTS AND LIMITS
+// USER-CONFIGURABLE PARAMETER DEFAULTS AND LIMITS
 
 #define UTC_OFFSET_MINS_MIN        -720
 #define UTC_OFFSET_MINS_DEFAULT     330
@@ -107,14 +107,18 @@
 #define GLIDE_RATIO_IIR_DEFAULT        90
 #define GLIDE_RATIO_IIR_MAX            99
 
+// IIR filter coefficient for vario climb/sinkrate display
+// on LCD. Higher number means more damping, equivalent
+// to longer averaging
 #define VARIO_DISPLAY_IIR_MIN          90
-#define VARIO_DISPLAY_IIR_DEFAULT      90
+#define VARIO_DISPLAY_IIR_DEFAULT      95
 #define VARIO_DISPLAY_IIR_MAX          99
 
-// position DOP required before gpsvario registers start position
-// for automatic track logging
+// GPS position degree-of-precision required for registering start position
+// for automatic track logging. Lower value means a better quality fix
+// is required to register the start position.
 #define GPS_STABLE_DOP_MIN             3
-#define GPS_STABLE_DOP_DEFAULT         6
+#define GPS_STABLE_DOP_DEFAULT         8
 #define GPS_STABLE_DOP_MAX             15
 
 // vario thresholds in cm/sec for generating different
@@ -129,7 +133,7 @@
 #define VARIO_ZERO_THRESHOLD_CPS_MIN    	   -20
 #define VARIO_ZERO_THRESHOLD_CPS_MAX    	   20
 
-#define VARIO_SINK_THRESHOLD_CPS_DEFAULT  	-200
+#define VARIO_SINK_THRESHOLD_CPS_DEFAULT  	-250
 #define VARIO_SINK_THRESHOLD_CPS_MIN    	   -400
 #define VARIO_SINK_THRESHOLD_CPS_MAX    	   -100
 
@@ -148,6 +152,9 @@
 #define KF_ACCEL_VARIANCE_MIN                10
 #define KF_ACCEL_VARIANCE_MAX                100
 
+// This can be measured offline by calculating the 
+// statistical variance in cm^2 of about one second of
+// altitude (in cm) samples from the MS5611.
 #define KF_ZMEAS_VARIANCE_DEFAULT            300
 #define KF_ZMEAS_VARIANCE_MIN                100
 #define KF_ZMEAS_VARIANCE_MAX                500
@@ -192,7 +199,7 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// COMPILED CONFIGURATION PARAMETERS ( cannot be changed with web configuration )
+// COMPILED CONFIGURATION PARAMETERS
 
 // change these parameters based on the frequency bandwidth of the speaker
 #define VARIO_SPKR_MIN_FREQHZ      	400
@@ -214,6 +221,8 @@
 // VARIO_INTERRUPT_BEEPS is enabled
 #define VARIO_DISCRIMINATION_THRESHOLD_CPS    25
 
+// This is set low as the residual acceleration bias after calibration
+// is expected to have little variation/drift
 #define KF_ACCELBIAS_VARIANCE   1.0f
 
 
@@ -232,7 +241,7 @@
 
 // !! ensure these #defines are commented out after debugging, as the 
 // enclosed debug prints are in the critical run-time loop.
-#define IMU_DEBUG
+//#define IMU_DEBUG
 //#define CCT_DEBUG
 
 

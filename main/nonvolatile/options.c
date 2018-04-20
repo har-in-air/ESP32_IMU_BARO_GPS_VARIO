@@ -11,12 +11,12 @@ int opt_init(void) {
    FILE *fdrd;
    char line[80];
 
-   opt_setDefaults(); // set to defaults, override with options.txt values
+   opt_setDefaults(); // set to defaults and override with values found in options.txt
 
    ESP_LOGI(TAG,"Opening spiffs options.txt file... ");
    fdrd = fopen("/spiffs/options.txt", "r");
    if (fdrd == NULL) {
-      ESP_LOGI(TAG,"options.txt file not found, creating with defaults");
+      ESP_LOGI(TAG,"options.txt file not found, saving file with default values");
       opt_save();
       return 0;
       }
@@ -170,9 +170,10 @@ int opt_init(void) {
 	}
 
 
-// When the options.txt file is not found, a new options.txt file will be saved with 
-// default values
-// So to set defaults via web configuration, delete the options.txt file and cycle the power.
+// If the options.txt file is not found, a new options.txt file will be saved with 
+// default values.
+// So to set 'factory defaults', access the gpsvario webpage configuration and delete 
+// the options.txt file.
 
 void opt_setDefaults() {
 	opt.vario.climbThresholdCps = VARIO_CLIMB_THRESHOLD_CPS_DEFAULT;

@@ -333,9 +333,9 @@ static void vario_task(void *pvParameter) {
       if (drdyCounter >= 500) {
          drdyCounter = 0;
 #ifdef IMU_DEBUG
-         //ESP_LOGI(TAG,"%dus",eus);
-			//ESP_LOGI(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
-			//ESP_LOGI(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
+         ESP_LOGI(TAG,"%dus",eus);
+			ESP_LOGI(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
+			ESP_LOGI(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
 #endif			
 
         // ESP_LOGI(TAG,"ax %.1f ay %.1f az %.1f", axmG, aymG, azmG);
@@ -369,11 +369,12 @@ extern "C" void app_main() {
    calib_init();
    opt_init();
 
+   // configure DAC sine-wave tone generation
    audio_config(pinAudioDAC);
    // turn off wifi radio to save power
    WiFi.mode(WIFI_OFF);
 
-   // HSPI bus used for lcd interface
+   // HSPI bus used for 128x64 LCD display
    hspi_config(pinHSCLK, pinHMOSI, pinHMISO, HSPI_CLK_FREQHZ);
 	lcd_init();
    LCD_BKLT_ON();
@@ -383,7 +384,7 @@ extern "C" void app_main() {
    lcd_printlnf(false,0,"%s %s", __DATE__, __TIME__);
    lcd_printlnf(true,1,"Battery %d.%03dV", batteryVoltagemV/1000, batteryVoltagemV%1000);
 
-   // VSPI bus used for imu, baro and serial 128Mbit flash
+   // VSPI bus used for MPU9250, MS5611 and 128Mbit spi flash
    // start with low clock frequency for sensor configuration
    vspi_config(pinVSCLK, pinVMOSI, pinVMISO,VSPI_CLK_CONFIG_FREQHZ);
 	if (flashlog_init() < 0) {
@@ -484,16 +485,16 @@ extern "C" void app_main() {
       if (BtnRPressed) {
          btn_clear();
          ESP_LOGI(TAG,"Btn R");
-         IsSpeakerEnabled = !IsSpeakerEnabled; // toggle speaker mute
+         IsSpeakerEnabled = !IsSpeakerEnabled; // mute/enable speaker
          }
       if (BtnLPressed) {
          btn_clear();
          ESP_LOGI(TAG,"Btn L");
-         IsGpsHeading = !IsGpsHeading; // toggle between gps course heading and compass heading
+         IsGpsHeading = !IsGpsHeading; // toggle between gps course heading and magnetic compass heading
          }
       if (BtnMPressed) {
          btn_clear();
-         ESP_LOGI(TAG,"Btn M");
+         ESP_LOGI(TAG,"Btn M"); // start/stop high-speed IBG data logging
          if (opt.misc.logType == LOGTYPE_IBG) {
             if (!IsLogging) {
                delayMs(2000);
@@ -509,7 +510,6 @@ extern "C" void app_main() {
       if (Btn0Pressed) {
          btn_clear();
          ESP_LOGI(TAG,"Btn 0");
-         //opt.misc.logType = (opt.misc.logType+1)%3;
          if (IsTrackActive)  {
             EndTrack = true;
             IsSpeakerEnabled = false;
