@@ -580,10 +580,11 @@ int ui_saveLog(NAV_PVT* pn, TRACK* pTrk) {
 		nwrote = fwrite(szEntry, 1, len, fd);
 		if (nwrote != len) {
 	    	ESP_LOGI(TAG,"Error writing comment header to flightlog.txt");
+         fclose(fd);
          return -1;
          }
-      fclose(fd);
       }  
+   fclose(fd);
 
    fd = fopen("/spiffs/flightlog.txt", "ab");
    if (fd == NULL) {

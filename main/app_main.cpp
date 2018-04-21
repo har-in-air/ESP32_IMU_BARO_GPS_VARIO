@@ -99,7 +99,6 @@ static void ui_task(void *pvParameter) {
    TRACK  track;
    IsGpsFixStable = false;
    IsLogging = false;
-   IsRouteActive = false;
    IsTrackActive = false;
    IsLcdBkltEnabled = false;
    IsSpeakerEnabled = true;
