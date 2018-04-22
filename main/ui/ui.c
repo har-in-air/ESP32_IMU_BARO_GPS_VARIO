@@ -442,7 +442,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    // uint32_t marker = cct_setMarker();
    float lat = FLOAT_DEG(pn->nav.latDeg7);
    float lon = FLOAT_DEG(pn->nav.lonDeg7);
-   int32_t altm = IsGpsFixStable ? (pn->nav.heightMSLmm + 500)/1000 : (int32_t)(KFAltitudeCm/100.0f + 0.5f);
+   int32_t altm = ((opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS) && IsGpsFixStable) ? (pn->nav.heightMSLmm + 500)/1000 : (int32_t)(KFAltitudeCm/100.0f + 0.5f);
    int32_t dop = (pn->nav.posDOP+50)/100;
    if ((!IsGpsFixStable) && (dop < opt.misc.gpsStableDOP)) {
       IsGpsFixStable = true;
@@ -467,6 +467,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    ui_printBatteryStatus(7, 111, batv);
    ui_printSpkrStatus(7,100, IsSpeakerEnabled);
    ui_printAltitude(0,0,altm);
+   lcd_printSz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
    lcd_printSz(1,45,"m");
    ui_printClimbRate(2,0,INTEGER_ROUNDUP(DisplayClimbrateCps));
    lcd_printSz(3,34,"ms");
@@ -628,7 +629,8 @@ void ui_screenInit() {
    ParSel = 0;
    }
 
-char szLogType[3][5] = {"NONE", " GPS", " IBG"};
+const char szLogType[3][5] = {"NONE", " GPS", " IBG"};
+const char szAltDisplay[2][5] = {" GPS", "BARO"};
 
 void ui_displayOptions(void) {
   int row;
@@ -696,6 +698,9 @@ void ui_displayOptions(void) {
      }
   if (ScreenParOffset < 18) {
      lcd_printf(false, row, 7, "Waypt radius   %5d",  opt.misc.waypointRadiusm); row++;
+     }
+  if (ScreenParOffset < 19) {
+     lcd_printf(false, row, 7, "Alt display     %s",  szAltDisplay[opt.misc.altitudeDisplay]); row++;
      }
   lcd_sendFrame();
   }
@@ -780,6 +785,9 @@ int ui_optionsEventHandler(void)  {
 
 			   case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm >= WAYPOINT_RADIUS_M_MIN+10  ) opt.misc.waypointRadiusm -= 10; 
 	         break; 
+
+			   case SEL_ALTITUDE_DISPLAY : if (opt.misc.altitudeDisplay > ALTITUDE_DISPLAY_GPS  ) opt.misc.altitudeDisplay--; 
+	         break; 
 	         }
 		  }
 		else { // ParDisplaySel == 0
@@ -851,10 +859,13 @@ int ui_optionsEventHandler(void)  {
 
 			   case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm <= WAYPOINT_RADIUS_M_MAX-10  ) opt.misc.waypointRadiusm += 10; 
 	         break; 
+
+			   case SEL_ALTITUDE_DISPLAY : if (opt.misc.altitudeDisplay < ALTITUDE_DISPLAY_BARO) opt.misc.altitudeDisplay++; 
+	         break; 
 		      }
 	      }
 		else { // ParDisplaySel == 0
-         if (ParSel <  SEL_WPT_RADIUS) ParSel++;
+         if (ParSel <  SEL_ALTITUDE_DISPLAY) ParSel++;
          if (ScreenParOffset < (ParSel-7)) {
             ScreenParOffset = ParSel-7;
             }  

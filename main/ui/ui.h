@@ -42,6 +42,7 @@
 #define SEL_SPKR_VOL                15
 #define SEL_LOG_TYPE                16
 #define SEL_WPT_RADIUS              17
+#define SEL_ALTITUDE_DISPLAY        18
 
 
 typedef struct TRACK_ {

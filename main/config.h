@@ -197,6 +197,8 @@
 #define WAYPOINT_RADIUS_M_MAX      20000
 #define WAYPOINT_RADIUS_M_DEFAULT   50
 
+#define ALTITUDE_DISPLAY_GPS  0
+#define ALTITUDE_DISPLAY_BARO 1
 
 ///////////////////////////////////////////////////////////////////////////////
 // COMPILED CONFIGURATION PARAMETERS

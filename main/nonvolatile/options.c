@@ -140,6 +140,11 @@ int opt_init(void) {
          opt.misc.waypointRadiusm = atoi(pkeys[key].szValue);
          CLAMP(opt.misc.waypointRadiusm, WAYPOINT_RADIUS_M_MIN, WAYPOINT_RADIUS_M_MAX);
          }
+      else
+      if (!strcmp(pkeys[key].szName, "altitudeDisplay")) {
+         opt.misc.altitudeDisplay = atoi(pkeys[key].szValue);
+         CLAMP(opt.misc.altitudeDisplay, ALTITUDE_DISPLAY_BARO, ALTITUDE_DISPLAY_GPS);
+         }
       }
    free (pkeys);
 
@@ -165,6 +170,7 @@ int opt_init(void) {
       ESP_LOGI(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
       ESP_LOGI(TAG,"logType = %d", opt.misc.logType);
       ESP_LOGI(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
+      ESP_LOGI(TAG,"altitudeDisplay = %d", opt.misc.altitudeDisplay);
 #endif
    return 0;
 	}
@@ -196,6 +202,7 @@ void opt_setDefaults() {
 	opt.misc.speakerVolume = SPEAKER_VOLUME_DEFAULT;
 	opt.misc.logType = LOGTYPE_NONE;
 	opt.misc.waypointRadiusm = WAYPOINT_RADIUS_M_DEFAULT;
+	opt.misc.altitudeDisplay = ALTITUDE_DISPLAY_GPS;
    }
 
 
@@ -309,6 +316,10 @@ int opt_save() {
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -22;
 
+    sprintf(buf,"altitudeDisplay [%d,%d] %d\r\n", ALTITUDE_DISPLAY_GPS, ALTITUDE_DISPLAY_BARO, opt.misc.altitudeDisplay);
+    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
+    if (nwrote != strlen(buf)) return -22;
+
     fclose(fdwr);
 
 #ifdef OPT_DEBUG
@@ -334,6 +345,7 @@ int opt_save() {
       ESP_LOGI(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
       ESP_LOGI(TAG,"logType = %d", opt.misc.logType);
       ESP_LOGI(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
+      ESP_LOGI(TAG,"altitudeDisplay = %d", opt.misc.altitudeDisplay);
 #endif
    return 0;
    }
