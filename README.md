@@ -64,6 +64,9 @@ partitions.csv
 1. Autostart arduino setup and loop : disable
 2. Disable mutex locks for HAL : enable
 
+#### Compiler options
+1. Handle C++ exceptions : enable
+
 #### ESP32 configuration
 1. Clock frequency : 80MHz (reduces power consumption)
 2. Main task stack size : 16384 (increased to accommodate ESP32Webserver)
