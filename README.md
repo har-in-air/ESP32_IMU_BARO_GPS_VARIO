@@ -43,7 +43,7 @@ Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mod
 ## Software notes
 Build platform : Ubuntu 16.04LTS amdx64, esp-idf version : commit 84788230392d0918d3add78d9ccf8c2bb7de3152 (2018 Mar 21)
 
-The esp-idf project uses Arduino-ESP32 (v0.0.1) as a component, so that we can take advantage of available Arduino-ESP32 code - e.g. web server and interfaces for spi and gpio. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the Arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. 
+The esp-idf project uses Arduino-ESP32 as a component, so that we can take advantage of available Arduino-ESP32 code - e.g. web server and interfaces for spi and gpio. See https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md for instructions on how to add the Arduino component to an esp-idf project. It will appear as an 'arduino' sub-directory in the project /components directory. I haven't added the files to this repository due to the size and number of files. 
 
 After adding the Arduino component, navigate to the /components/arduino/libraries directory and delete the SPIFFs sub-directory. I'm using SPIFFs code from https://github.com/loboris/ESP32_spiffs_example, and the Arduino spiffs library clashes with this.
 
