@@ -38,11 +38,11 @@
 //#define UART_RX_BUFFER_SIZE   512
 #define UART_RX_BUFFER_SIZE   256
 
-#define pinBtn0		(0)
+#define pinBtn0		 0
 
-#define pinBtnL   (36)
-#define pinBtnM   (34)
-#define pinBtnR   (39)
+#define pinBtnL    36
+#define pinBtnM    34
+#define pinBtnR    39
 
 #define BTN0()	      ((GPIO.in >> pinBtn0) & 0x1)
 
@@ -51,33 +51,37 @@
 #define BTNR()  ((GPIO.in1.val >> (pinBtnR - 32)) & 0x1)
 
 // lcd uses HSPI IOMux compatible pins
-#define pinHSCLK	   (14)
-#define pinHMOSI	   (13) 
-#define pinHMISO     (-1)
+#define pinHSCLK	    14
+#define pinHMOSI	    27 
+#define pinHMISO        15
 
-#define pinLcdCS	   (12)
-#define pinLcdRST    (27)
-#define pinLcdRS     (26)
-#define pinLcdBklt   (33)
+#define pinLcdCS	    12
+#define pinLcdRST       13
+#define pinLcdA0		26
+#define pinLcdBklt      33
 
-#define LCD_CS_HI() 	   {GPIO.out_w1ts = (1 << pinLcdCS);}
-#define LCD_CS_LO() 	   {GPIO.out_w1tc = (1 << pinLcdCS);}
-#define LCD_RST_HI() 	{GPIO.out_w1ts = (1 << pinLcdRST);}
-#define LCD_RST_LO() 	{GPIO.out_w1tc = (1 << pinLcdRST);}
-#define LCD_RS_HI() 	   {GPIO.out_w1ts = (1 << pinLcdRS);}
-#define LCD_RS_LO() 	   {GPIO.out_w1tc = (1 << pinLcdRS);}
-#define LCD_BKLT_OFF()  {GPIO.out1_w1ts.val = ((uint32_t)1 << (pinLcdBklt - 32));}
-#define LCD_BKLT_ON()   {GPIO.out1_w1tc.val = ((uint32_t)1 << (pinLcdBklt - 32));}
+#define LCD_CS_HI()  {GPIO.out_w1ts  = 1 << pinLcdCS;}
+#define LCD_CS_LO()   {GPIO.out_w1tc = 1 << pinLcdCS;}
+
+#define LCD_RST_HI()  {GPIO.out_w1ts = 1 << pinLcdRST;}
+#define LCD_RST_LO()   {GPIO.out_w1tc = 1 << pinLcdRST;}
+
+#define LCD_A0_HI()  {GPIO.out_w1ts = 1 << pinLcdA0;}
+#define LCD_A0_LO()   {GPIO.out_w1tc = 1 << pinLcdA0;}
+
+#define LCD_BKLT_ON()  {GPIO.out1_w1ts.val = 1 << (pinLcdBklt - 32);}
+#define LCD_BKLT_OFF()   {GPIO.out1_w1tc.val = 1 << (pinLcdBklt - 32);}
+
 
 #define HSPI_CLK_FREQHZ 4000000
 
-#define pinLED		      (2)
+#define pinLED		      2
 
 #define LED_ON() 		   {GPIO.out_w1ts = (1 << pinLED);}
 #define LED_OFF()		   {GPIO.out_w1tc = (1 << pinLED);}
 
-#define pinAudioAmpEna       (32)
-#define pinAudioDAC          (25)
+#define pinAudioAmpEna       32
+#define pinAudioDAC          25
 
 #define AUDIO_AMP_ENABLE()   {GPIO.out1_w1ts.val = ((uint32_t)1 << (pinAudioAmpEna - 32));}
 #define AUDIO_AMP_DISABLE()  {GPIO.out1_w1tc.val = ((uint32_t)1 << (pinAudioAmpEna - 32));}

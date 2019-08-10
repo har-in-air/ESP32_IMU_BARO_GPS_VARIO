@@ -32,6 +32,9 @@
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern volatile int LedState;
 extern volatile float kfAltitudeCm, kfClimbrateCps;
@@ -61,6 +64,10 @@ typedef struct KEY_VAL_ {
 
 #define _180_DIV_PI         57.2957795f
 #define PI_DIV_180          0.017453292f
-//#define TWO_PI              6.2831853f
+#define TWO_PI              6.2831853f
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
