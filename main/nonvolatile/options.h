@@ -1,6 +1,10 @@
 #ifndef OPTIONS_H_
 #define OPTIONS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct VARIO_PARAMS_ {
 	int16_t  climbThresholdCps;
 	int16_t  zeroThresholdCps;
@@ -46,6 +50,10 @@ extern OPTIONS opt;
 int opt_init(void);
 int opt_save(void);
 void opt_setDefaults(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

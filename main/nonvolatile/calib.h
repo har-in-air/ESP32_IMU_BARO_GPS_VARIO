@@ -1,6 +1,9 @@
 #ifndef CALIB_H_
 #define CALIB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct CALIB_ {
 	int16_t  axBias;
@@ -26,4 +29,7 @@ int calib_init(void);
 int calib_save();
 void calib_setDefaults();
 
+#ifdef __cplusplus
+}
+#endif
 #endif

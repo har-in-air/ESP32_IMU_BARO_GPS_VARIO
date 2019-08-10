@@ -3,6 +3,10 @@
 
 #include "spiflash.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FLASHLOG_RECORD_MAXBYTES		80
 #define FLASHLOG_MAX_ADDR		      (FLASH_SIZE_BYTES - FLASHLOG_RECORD_MAXBYTES) 
 
@@ -106,6 +110,10 @@ int 	flashlog_readIBGRecord(uint32_t addr, FLASHLOG_IBG_RECORD* pRecord);
 uint32_t flashlog_getFreeAddress();
 int   flashlog_getNumIBGRecords();
 int 	flashlog_writeGPSRecord(FLASHLOG_GPS_RECORD* pRecord);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
