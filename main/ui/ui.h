@@ -3,6 +3,10 @@
 
 #include "gps.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MIN_VELOCITY_KPH	0
 #define MAX_VELOCITY_KPH	999
 
@@ -67,6 +71,7 @@ typedef struct TRACK_ {
 
 
 void ui_printPosDOP(int page, int col, int dop);				
+void ui_printSupplyVoltage(int page, int col, int bV);
 void ui_printBatteryStatus(int page, int col, int bV);
 void ui_printSpkrStatus(int page, int col, int bAudioEn);
 void ui_printAltitude(int page, int col, int32_t nAlt);
@@ -100,9 +105,15 @@ extern bool IsFlashDisplayRequired;
 extern bool IsGpsHeading;
 extern bool EndTrack;
 
+extern int  BatteryVoltage;
+
 extern volatile float YawDeg;
 extern volatile float DisplayClimbrateCps;
 extern volatile float KFAltitudeCm;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

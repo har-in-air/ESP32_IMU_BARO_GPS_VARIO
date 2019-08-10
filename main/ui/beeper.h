@@ -1,6 +1,9 @@
 #ifndef BEEPER_H_
 #define BEEPER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct BEEP_ {
     int periodTicks;  // on-time + off-time
@@ -19,5 +22,8 @@ typedef struct BEEP_ {
 void beeper_config();
 void beeper_beep(int32_t cps);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

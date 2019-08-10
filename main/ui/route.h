@@ -1,6 +1,10 @@
 #ifndef ROUTE_H_
 #define ROUTE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MAX_WAYPOINTS			100
 
 #define MAX_ID_CHARS    10
@@ -30,5 +34,9 @@ int rte_selectRoute();
 int rte_readLine(FILE* pFile, char* szBuf);
 int rte_loadRoute(char* szFileName);
 int32_t rte_totalDistance();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -14,71 +14,87 @@ int FrameCol;
 static void lcd_setPageCol(int page, int col);
 
 
-void lcd_init(void) {
-   FramePage = 0;
-   FrameCol = 0;
+
+void lcd_init(uint8_t brightness) {
+    FramePage = 0;
+    FrameCol = 0;
 	LCD_CS_LO();
+	
 	LCD_RST_LO();
 	delayMs(100);
 	LCD_RST_HI();
+    // LCD bias select
+    lcd_sendCmd(CMD_SET_BIAS_7);
 
-	lcd_sendCmd(CMD_SET_BIAS_9);
+    // adc reverse and com reverse for connector ribbon on top
+    // ADC select
+    lcd_sendCmd(CMD_SET_ADC_REVERSE);
+    //lcd_sendCmd(CMD_SET_ADC_REVERSE);
+    // SHL select
+    lcd_sendCmd(CMD_SET_COM_NORMAL);
+    //lcd_sendCmd(CMD_SET_COM_REVERSE);
 
-	lcd_sendCmd(CMD_SET_ADC_NORMAL);
-	lcd_sendCmd(CMD_SET_COM_NORMAL);
-	lcd_sendCmd(CMD_SET_DISP_START_LINE);
+    // Initial display line
+    lcd_sendCmd(CMD_SET_DISP_START_LINE);
 
-	lcd_sendCmd(CMD_SET_POWER_CONTROL | 0x4 );
-	delayMs(50);
-	lcd_sendCmd(CMD_SET_POWER_CONTROL | 0x6);
-	delayMs(50);
-	lcd_sendCmd(CMD_SET_POWER_CONTROL | 0x7);
-	delayMs(20);
+    // turn on voltage converter (VC=1, VR=0, VF=0)
+    lcd_sendCmd(CMD_SET_POWER_CONTROL | 0x4);
+    // wait for 50% rising
+    delayMs(50);
 
-	lcd_sendCmd(CMD_SET_RESISTOR_RATIO | 0x6);
+    // turn on voltage regulator (VC=1, VR=1, VF=0)
+    lcd_sendCmd(CMD_SET_POWER_CONTROL | 0x6);
+    // wait >=50ms
+    delayMs(50);
 
+    // turn on voltage follower (VC=1, VR=1, VF=1)
+    lcd_sendCmd(CMD_SET_POWER_CONTROL | 0x7);
+    // wait
+    delayMs(10);
+
+    // set lcd operating voltage (regulator resistor, ref voltage resistor)
+    lcd_sendCmd(CMD_SET_RESISTOR_RATIO | 0x6);
 	lcd_sendCmd(CMD_DISPLAY_ON);
 
 	lcd_sendCmd(CMD_SET_ALLPTS_NORMAL);
 
-	lcd_sendCmd(CMD_SET_VOLUME_FIRST);
-	lcd_sendCmd(CMD_SET_VOLUME_SECOND | 14);
+    lcd_sendCmd(CMD_SET_VOLUME_FIRST);
+    lcd_sendCmd(CMD_SET_VOLUME_SECOND | (brightness & 0x3f));
 
-	lcd_clear();
-	}
+    delayMs(50);
+    lcd_clear();
+    }
 	
-
+   
 void lcd_sendData(uint8_t data)	{
-	spiSimpleTransaction(_hspi);
-	LCD_RS_HI();
+	hspi_beginTransaction();
+	LCD_A0_HI();
 	LCD_CS_LO();
-	spiTransferByteNL(_hspi, data);
+	hspi_write(data);
 	LCD_CS_HI();
-	spiEndTransaction(_hspi);
+	hspi_endTransaction();
 	}
 
 
 void lcd_sendCmd(uint8_t cmd)	{
-	spiSimpleTransaction(_hspi);
-	LCD_RS_LO();
+	hspi_beginTransaction();
+	LCD_A0_LO();
 	LCD_CS_LO();
-	spiTransferByteNL(_hspi, cmd);
+	hspi_write(cmd);
 	LCD_CS_HI();
-	spiEndTransaction(_hspi);
+	hspi_endTransaction();
 	}
-
 
 static void lcd_setPageCol(int page,int col){
-	spiSimpleTransaction(_hspi);
-	LCD_RS_LO();
+	hspi_beginTransaction();
+	LCD_A0_LO();
 	LCD_CS_LO();
-	spiTransferByteNL(_hspi, (0xB0|((uint8_t)page & 0x0F)));
-	spiTransferByteNL(_hspi, (0x10|(((uint8_t)col >> 4))));
-	spiTransferByteNL(_hspi, (0x00|((uint8_t)col & 0x0F)));
+	hspi_write((CMD_SET_PAGE|((uint8_t)page & 0x0F)));
+	hspi_write((CMD_SET_COLUMN_UPPER|(((uint8_t)col >> 4))));
+	hspi_write((CMD_SET_COLUMN_LOWER|(3+((uint8_t)col & 0x0F))));
 	LCD_CS_HI();
-	spiEndTransaction(_hspi);
+	hspi_endTransaction();
 	}
-
 
 
 ////////////////////// these work on the frame buffer ////////////////	
@@ -266,12 +282,12 @@ void lcd_invertSubFrame(int page, int col, int numPages, int numCols) {
 void lcd_sendFrame(void) {
 	for(int page = 0; page < 8; page++) {
 		lcd_setPageCol(page,0); 
-	   spiSimpleTransaction(_hspi);
-	   LCD_RS_HI();
-	   LCD_CS_LO();
-      spiTransferBytesNL(_hspi, &FrameBuf[FRAME_WIDTH*page], NULL, FRAME_WIDTH);
-	   LCD_CS_HI();
-	   spiEndTransaction(_hspi);
+    	hspi_beginTransaction();
+	    LCD_A0_HI();
+	    LCD_CS_LO();
+	    hspi_writeBytes(&FrameBuf[FRAME_WIDTH*page], FRAME_WIDTH);
+	    LCD_CS_HI();
+	    hspi_endTransaction();
 		}
 	}
 

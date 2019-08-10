@@ -1,6 +1,9 @@
 #ifndef LCD7565_H_
 #define LCD7565_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // driver for GMG12864-06D 128x64 lcd  using ST7565 controller
 // 1/65 duty 1/9 bias
@@ -60,7 +63,7 @@ extern uint8_t FrameBuf[FRAME_WIDTH*NUM_PAGES];   // 128x64 lcd
 extern int FramePage;
 extern int FrameCol;
 
-void lcd_init();
+void lcd_init(uint8_t brightness);
 void lcd_clear();
 void lcd_putChar(uint8_t ch);
 void lcd_putCharX2(uint8_t ch );
@@ -94,5 +97,9 @@ void lcd_clearSubFrame(int page, int col, int numPages, int numCols);
 void lcd_invertSubFrame(int page, int col, int numPages, int numCols);
 void lcd_sendFrame(void);
 void lcd_clearPage(int page);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

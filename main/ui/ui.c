@@ -29,6 +29,8 @@ static int ScreenParOffset = 0;
 static int ParDisplaySel = 0;
 static int ParSel = 0;
 
+int SupplyVoltage = 0;
+
 void ui_printLatitude(int page, int col, int32_t nLat) {
 	char szBuf[12];
 	int32_t  nL;
@@ -41,23 +43,23 @@ void ui_printLatitude(int page, int col, int32_t nLat) {
 	inx = 0;
 	while (szBuf[inx]) {
 		lcd_putChar(szBuf[inx++]);
-      }
+        }
    }
 
 
 void ui_printLongitude(int page, int col, int32_t nLon) {
 	char  szBuf[12];
-   int32_t  nL;
-   int inx;
-   nL = ABS(nLon)/100;
-   sprintf(szBuf,"%c%d", (nLon >= 0 ? 'E' : 'W'), nL/100000);
+    int32_t  nL;
+    int inx;
+    nL = ABS(nLon)/100;
+    sprintf(szBuf,"%c%d", (nLon >= 0 ? 'E' : 'W'), nL/100000);
 	lcd_setFramePos(page,col);
 	lcd_printSzLNum(page,col,szBuf);
-   sprintf(szBuf,"%05d", nL%100000);
-   inx = 0;
-	while (szBuf[inx]) {
+    sprintf(szBuf,"%05d", nL%100000);
+    inx = 0;
+    while (szBuf[inx]) {
 		lcd_putChar(szBuf[inx++]);
-      }
+        }
    }
 
 
@@ -379,6 +381,11 @@ void ui_printBatteryStatus(int page, int col, int bV) {
       }
 	}
 
+void ui_printSupplyVoltage(int page, int col, int bV) {
+	char  szBuf[6];
+    sprintf(szBuf,"%d.%dv", bV/10, bV%10);
+	lcd_printSz(page,col,szBuf);
+	}
 
 
 void ui_printTrackTime(int page, int col, int nHrs, int nMin)	{
@@ -463,9 +470,9 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       lcd_printSz(0,60, IsTrackActive ? "GPS" : "gps");
       }
    ui_printPosDOP(6,110, dop);
-   int batv = (int)(adc_batteryVoltage()+50)/100;
-   ui_printBatteryStatus(7, 111, batv);
-   ui_printSpkrStatus(7,100, IsSpeakerEnabled);
+   SupplyVoltage = (int)(adc_supplyVoltage()+50)/100;
+   ui_printSupplyVoltage(7, 104, SupplyVoltage);
+   ui_printSpkrStatus(7,96, IsSpeakerEnabled);
    ui_printAltitude(0,0,altm);
    lcd_printSz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
    lcd_printSz(1,45,"m");
