@@ -4,6 +4,10 @@
 #include "xtensa/core-macros.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define  CCT_TICKS_PER_US 	CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ 
 
 void 		cct_delayUs(uint32_t us);
@@ -12,4 +16,7 @@ float  	cct_intervalSecs(uint32_t before, uint32_t after);
 uint32_t	cct_setMarker();
 uint32_t cct_elapsedUs(uint32_t clockPrev);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

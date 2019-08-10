@@ -3,6 +3,9 @@
 
 #include "config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #if defined(FLASH_W25Q128)
    #define FLASH_SIZE_BYTES	16777216
 #elif defined(FLASH_W25Q16)
@@ -25,5 +28,9 @@ void 	spiflash_writeDisable(void);
 uint16_t  spiflash_readID(void);
 void 	spiflash_writeBuffer(uint32_t address, uint8_t* pBuffer, int nBytes);
 void 	spiflash_readBuffer(uint32_t addr, uint8_t* pBuf, int nBytes);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

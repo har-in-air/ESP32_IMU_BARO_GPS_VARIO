@@ -1,6 +1,9 @@
 #ifndef BTN_H_
 #define BTN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern volatile uint16_t Btn0State;
 extern volatile uint16_t BtnLState;
@@ -14,4 +17,7 @@ extern volatile bool BtnRPressed;
 void btn_clear();
 void btn_debounce();
 
+#ifdef __cplusplus
+}
+#endif
 #endif
