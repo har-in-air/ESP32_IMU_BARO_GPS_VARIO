@@ -1,6 +1,9 @@
 #ifndef MS5611_H_
 #define MS5611_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //#define MS5611_TEST
 
@@ -21,7 +24,7 @@ void 	ms5611_triggerPressureSample(void);
 void 	ms5611_triggerTemperatureSample(void);
 uint32_t  	ms5611_readSample(void);
 void 	ms5611_averagedSample(int nSamples);	
-void  	ms5611_calculateTemperatureCx10(void);
+void  	ms5611_calculateTemperatureC(void);
 float  	ms5611_calculatePressurePa(void);
 void 	ms5611_calculateSensorNoisePa(void);
 int 	ms5611_config(void);
@@ -39,4 +42,7 @@ extern	float ZCmSample;
 extern	float PaSample;
 extern	int   CelsiusSample;
 
+#ifdef __cplusplus
+}
+#endif
 #endif // MS5611_H_

@@ -49,8 +49,7 @@ int ms5611_sampleStateMachine(void) {
    if (SensorState_ == MS5611_READ_TEMPERATURE) {
       D2_ = ms5611_readSample();
       ms5611_triggerPressureSample();
-      ms5611_calculateTemperatureCx10();
-      //CelsiusSample_ = (TempCx100_ >= 0? (TempCx100_+50)/100 : (TempCx100_-50)/100);
+      ms5611_calculateTemperatureC();
       PaSample = ms5611_calculatePressurePa();
 	   ZCmSample = ms5611_pa2Cm(PaSample);
 	   SensorState_ = MS5611_READ_PRESSURE;
@@ -117,7 +116,7 @@ void ms5611_averagedSample(int nSamples) {
 		ms5611_triggerTemperatureSample();
 		delayMs(MS5611_SAMPLE_PERIOD_MS);
 		D2_ = ms5611_readSample();
-		ms5611_calculateTemperatureCx10();
+		ms5611_calculateTemperatureC();
 		ms5611_triggerPressureSample();
 		delayMs(MS5611_SAMPLE_PERIOD_MS);
 		D1_ = ms5611_readSample();
@@ -193,9 +192,10 @@ uint32_t ms5611_readSample(void)	{
 	}
 
 
-void ms5611_calculateTemperatureCx10(void) {
+void ms5611_calculateTemperatureC(void) {
 	DT_ = (int64_t)D2_ - Tref_;
 	TempCx100_ = 2000 + ((DT_*((int32_t)Cal_[5]))>>23);
+   CelsiusSample = (TempCx100_ >= 0? (TempCx100_+50)/100 : (TempCx100_-50)/100);
 	}
 
 

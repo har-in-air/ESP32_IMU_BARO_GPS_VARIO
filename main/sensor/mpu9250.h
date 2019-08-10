@@ -26,6 +26,10 @@ modified HN
 #ifndef MPU9250_h
 #define MPU9250_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum GyroRange_
 {
 GYRO_RANGE_250DPS,
@@ -83,5 +87,7 @@ int mpu9250_getGyroAccelMagData(float* pgx, float* pgy, float* pgz, float* pax, 
 void mpu9250_initCalibrationParams(void);
 int mpu9250_getVector(uint8_t startAddr, int isLittleEndian, int16_t* px, int16_t* py, int16_t* pz);
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif

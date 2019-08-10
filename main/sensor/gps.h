@@ -1,6 +1,9 @@
 #ifndef GPS_H_
 #define GPS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define NAV_PVT_PKT_NUM_BYTES   	94
 #define GPS_MAX_PKTS             4
@@ -101,5 +104,8 @@ int32_t gps_haversineDistancem(float lat1, float lon1, float lat2, float lon2);
 int32_t gps_bearingDeg(float lat1, float lon1, float lat2, float lon2);
 void gps_localDateTime(NAV_PVT* pn, int* plYear, int* plMonth, int* plDay, int* plHour, int* plMinute);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 

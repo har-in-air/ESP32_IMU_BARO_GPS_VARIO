@@ -1,4 +1,3 @@
-#include "Arduino.h"
 #include "common.h"
 #include "config.h"
 #include "driver/uart.h"
