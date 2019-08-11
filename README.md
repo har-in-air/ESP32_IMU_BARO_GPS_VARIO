@@ -28,7 +28,7 @@ required for building this project
 ### Menuconfig
 
 #### Arduino
-We're only using the FS and Wifi libraries from the arduino-esp32 component
+No autostart, disable mutexes for HAL library, and we're only using the FS and Wifi libraries from the arduino-esp32 component
 
 <img src="/docs/menuconfig_arduino.png" alt="menuconfig_arduino"/>
 
@@ -38,7 +38,7 @@ We're using a mixture of C++ and C code for the project
 <img src="/docs/menuconfig_compiler.png" alt="menuconfig_compiler"/>
 
 #### Partition Table
-Run 'make flashfs' once to create and flash the spiffs partition image.
+Custom partition table. Note we need to run 'make flashfs' once to create and flash the spiffs partition image.
 
 <img src="/docs/menuconfig_partitiontable.png" alt="menuconfig_partitiontable"/>
 
