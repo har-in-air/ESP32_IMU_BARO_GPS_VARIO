@@ -1,1 +1,0 @@
-v0.8-9-g1c2573e-dirty ESP32_IMU_BARO_GPS_VARIO 
