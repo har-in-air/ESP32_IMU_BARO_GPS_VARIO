@@ -23,14 +23,16 @@ void lcd_init(uint8_t brightness) {
 	LCD_RST_LO();
 	delayMs(100);
 	LCD_RST_HI();
+	
     // LCD bias select
     lcd_sendCmd(CMD_SET_BIAS_7);
+    //    lcd_sendCmd(CMD_SET_BIAS_9);
 
-    // adc reverse and com reverse for connector ribbon on top
+    // adc reverse and com normal for correct orientation
     // ADC select
     lcd_sendCmd(CMD_SET_ADC_REVERSE);
-    //lcd_sendCmd(CMD_SET_ADC_REVERSE);
-    // SHL select
+    //lcd_sendCmd(CMD_SET_ADC_NORMAL);
+    // COM select
     lcd_sendCmd(CMD_SET_COM_NORMAL);
     //lcd_sendCmd(CMD_SET_COM_REVERSE);
 
