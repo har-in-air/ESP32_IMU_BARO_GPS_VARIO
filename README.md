@@ -15,14 +15,64 @@ glide ratio, course/compass heading, bearing to start/waypoint, GPS derived cloc
 an 8ohm cellphone speaker with sine-wave tones.
 * Flight summaries (date, start time, start and end coordinates, duration, max altitude, max climb and sink rates) are stored as single line entries in the file "flightlog.txt" in the spiffs file system. This text file can be downloaded using wifi and opened in a spreadsheet (open as CSV file) for analysis.
 
-## Technical specifications
+
+## Build environment
+* Ubuntu 19.04 amdx64
+* Software uses [esp-idf with Arduino as a component](https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md), so we can take advantage of 
+arduino-ESP32 code for the web server. 
+* [esp-idf release tag v3.2.2](https://github.com/espressif/esp-idf/tree/v3.2.2)
+* [arduino-esp32 release tag 1.03rc1](https://github.com/espressif/arduino-esp32/tree/1.0.3-rc1) : Note that I have only retained the directories 
+required for building this project
+* xtensa-esp32-elf-gcc v5.2.0 (crosstool-ng-1.22.0-80-g6c4433a) 
+
+### Menuconfig
+
+#### Arduino
+We're only using the FS and Wifi libraries from the arduino-esp32 component
+
+<img src="/docs/menuconfig_arduino.png" alt="menuconfig_arduino"/>
+
+#### Compiler
+We're using a mixture of C++ and C code for the project
+
+<img src="/docs/menuconfig_compiler.png" alt="menuconfig_compiler"/>
+
+#### Partition Table
+Run 'make flashfs' once to create and flash the spiffs partition image.
+
+<img src="/docs/menuconfig_partitiontable.png" alt="menuconfig_partitiontable"/>
+
+#### SPIFFS
+
+<img src="/docs/menuconfig_SPIFFS.png" alt="menuconfig_spiffs"/>
+
+#### ESP32
+80MHz clock to minimize power consumption, main task stack size increased to 16384bytes to accommodate ESP32Webserver
+
+<img src="/docs/menuconfig_esp32_specific.png" alt="menuconfig_esp32_specific"/>
+
+#### PHY
+Wifi transmit power reduced to 13dB from 20dB. This reduces the 
+current spikes on wifi transmit bursts, so there's no need for a honking big capacitor on the 
+ESP32 3.3V line. The reduced power isn't a problem for our application - if you're configuring or downloading data from
+the gpsvario with a pc or smartphone, the units will likely be next to each other.
+
+<img src="/docs/menuconfig_PHY.png" alt="menuconfig_phy"/>
+
+#### FreeRTOS
+FreeRTOS tick rate increased to 200Hz from 100Hz. This
+allows a minimum tick delay of 5mS, which reduces the overhead of regular 
+task yield during server data download etc.
+
+<img src="/docs/menuconfig_FreeRTOS.png" alt="menuconfig_freertos"/>
+
+## Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 barometric pressure sensor, sampled at 50Hz
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud.
 I used a compact gps module from Banggood (see screenshot in /docs directory). Not a great choice, it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
 And it doesn't save configuration settings to flash or eeprom, so it needs to be configured on initialization each time.
-
 I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. 
 Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, I'm assuming the advertising is correct :-D. 
 Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm). 
@@ -36,47 +86,6 @@ my hand-wired gpsvario in checked-in luggage (no battery => no problem), with th
 luggage as per airline requirements.
 * Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
  optimized.
-* Software uses [esp-idf with Arduino as a component](https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md), so we can take advantage of 
-arduino-ESP32 code for the web server. 
-
-### Build notes
-
-#### Build environment
-* Ubuntu 19.04 amdx64
-* [esp-idf release tag v3.2.2](https://github.com/espressif/esp-idf/tree/v3.2.2)
-* [arduino-esp32 release tag 1.03rc1] (https://github.com/espressif/arduino-esp32/tree/1.0.3-rc1) : Note that I have only retained the directories 
-required for building this project
-* xtensa-esp32-elf-gcc v5.2.0 (crosstool-ng-1.22.0-80-g6c4433a) 
-
-#### Menuconfig
-
-<img src="/docs/menuconfig_arduino.png" alt="menuconfig_arduino"/>
-* We're only using the FS and Wifi libraries from the arduino-esp32 component
-
-<img src="/docs/menuconfig_compiler.png" alt="menuconfig_compiler"/>
-* We're using a mixture of C++ and C code for the project
-
-<img src="/docs/menuconfig_partitiontable.png" alt="menuconfig_partitiontable"/>
-* Run 'make flashfs' once to create and flash the spiffs partition image.
-
-<img src="/docs/menuconfig_SPIFFS.png" alt="menuconfig_spiffs"/>
-
-<img src="/docs/menuconfig_esp32_specific.png" alt="menuconfig_esp32_specific"/>
-* 80MHz clock to minimize power consumption
-* Main task stack size increased to 16384bytes to accommodate ESP32Webserver
-
-<img src="/docs/menuconfig_PHY.png" alt="menuconfig_phy"/>
-* Wifi transmit power reduced to 13dB from 20dB. This reduces the 
-current spikes on wifi transmit bursts, so there's no need for a honking big capacitor on the 
-ESP32 3.3V line. The reduced power isn't a problem for our application - if you're configuring or downloading data from
-the gpsvario with a pc or smartphone, the units will likely be next to each other.
-
-<img src="/docs/menuconfig_FreeRTOS.png" alt="menuconfig_freertos"/>
-* FreeRTOS tick rate increased to 200Hz from 100Hz. This
-allows a minimum tick delay of 5mS, which reduces the overhead of regular 
-task yield during server data download etc.
-
-##### Hardware
 * I don't have a schematic for the project because I used  off-the-shelf modules/breakout boards
  (and one homebrew board for the audio amplifier). Have a look at the file
 /main/config.h to find the signal connections from the ESP32 (#define pinXXX ) to various components. Use the 
@@ -84,23 +93,19 @@ ESP32 board USB 5V to supply power for the module boards (GPS, MPU9250, MS5611, 
 3.3V from the ESP32 VCC line for the 128Mb SPI flash.  Note that the LCD module PCB has a footprint for an
 SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. All signal interfaces between the ESP32
 and other components are at 3.3V level. 
-
 * There are different versions of the 128x64 LCD module that need 
 modifications to the initialization code (lcd bias, display orientation). So you may
 need to tweak the code to get it to display at all or with the right orientation.
 See lcd_init() in /ui/lcd7565.c.
-
 * I added a 470uF 10V capacitor on the USB5V supply
 before the power switch along with a 1A resettable polyfuse in the 5V supply line. Note that installing
 a power switch requires breaking the 5V supply line from the microusb connector on the ESP32 breakout board.
 The easiest way to do this is to desolder the schottky diode that is normally placed in the
 5V supply line between the microusb connector 5V pin and the rest of the circuit. Connect the power switch inline in its place.
-
 * I currently use a homebrew max4401 board for the audio amplifier, but you can 
 use an inexpensive and compact NS8002 amplifier module from Aliexpress. Make sure to use 
 a module with a shutdown(enable) pin to save power when not generating audio. If you're content with driving a piezo speaker, you can reduce power consumption 
 by omitting the audio amplifier and driving the piezo directly from an ESP32 pin with square wave signals.
-
 
 ## Usage
 * There are 4 user-interface buttons labeled as btnL(eft), btnM(iddle) and btnR(ight), plus btn0 (connected to gpio0). 
