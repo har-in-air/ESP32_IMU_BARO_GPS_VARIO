@@ -283,7 +283,7 @@ int opt_save() {
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -5;
 
-    sprintf(buf,"crossoverCps [%d,%d] %d\r\n\r\n",
+    sprintf(buf,"crossoverCps [%d,%d] %d\r\n",
          VARIO_CROSSOVER_CPS_MIN,VARIO_CROSSOVER_CPS_MAX,opt.vario.crossoverCps);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -6;
