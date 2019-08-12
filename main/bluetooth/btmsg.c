@@ -57,7 +57,7 @@ Field 4, battery voltage or charge percentage
 	To send percentage, add 1000. Example 0% = 1000
 	14% = 1014 .  Do not send float values for percentages.
 	Percentage should be 0 to 100, with no decimals, added by 1000!
-	*/
+*/
 void btmsg_genLK8EX1(char* szmsg) {
 	sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample+0.5f), (int32_t)KFAltitudeCm, (int32_t)KFClimbrateCps, CelsiusSample,((float)SupplyVoltageMV)/1000.0f);
 	uint8_t cksum = btmsg_nmeaChecksum(szmsg);
