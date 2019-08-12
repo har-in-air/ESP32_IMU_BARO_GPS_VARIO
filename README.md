@@ -90,6 +90,7 @@ Cheaper, larger patch antenna, and with flash configuration save. I don't have o
 Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm). 
 Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for expensive multi-constellation modules.
 * ESP32 WROOM rev 1 module. Any off-the-shelf breakout board with an onboard USB-UART interface (CH340, CP2102 etc).
+* W25Q128FVSG 128Mbit SPI flash
 * 128x64 reflective LCD display (ST7565 controller) with serial spi interface.
 * MAX4410 audio amplifier driving 8ohm cellphone speaker.
 * For the power supply, I use a generic USB 5V output power bank. This allows me to 
