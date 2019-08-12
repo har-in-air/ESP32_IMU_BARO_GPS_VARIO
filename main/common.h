@@ -37,9 +37,9 @@ extern "C" {
 #endif
 
 extern volatile int LedState;
-extern volatile float kfAltitudeCm, kfClimbrateCps;
-extern volatile float iirClimbrateCps,glideRatio, glideRatioNew;
-extern volatile float yawDeg, pitchDeg, rollDeg;
+extern volatile float  KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
+extern volatile float IirClimbrateCps,GlideRatio, GlideRatioNew;
+extern volatile float YawDeg, PitchDeg, RollDeg;
 
 typedef struct KEY_VAL_ {
    char szName[30];
@@ -64,7 +64,7 @@ typedef struct KEY_VAL_ {
 
 #define _180_DIV_PI         57.2957795f
 #define PI_DIV_180          0.017453292f
-#define TWO_PI              6.2831853f
+#define _2_PI              6.2831853f
 
 #ifdef __cplusplus
 }

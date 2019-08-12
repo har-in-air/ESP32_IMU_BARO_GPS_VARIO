@@ -47,6 +47,9 @@ extern "C" {
 #define SEL_LOG_TYPE                16
 #define SEL_WPT_RADIUS              17
 #define SEL_ALTITUDE_DISPLAY        18
+#define SEL_BTMSG_TYPE				19
+#define SEL_BTMSG_FREQ				20
+#define SEL_LCD_CONTRAST			21
 
 
 typedef struct TRACK_ {
@@ -87,7 +90,7 @@ void ui_printLongitude(int page, int col, int32_t nLon);
 void ui_printLatitude(int page, int col, int32_t nLat);
 void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk);
 void ui_printRouteSegment(int page, int col, int start, int end);
-int  ui_saveLog(NAV_PVT* pn, TRACK* pTrk);
+int  ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk);
 void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHrs, int32_t* pMins);
 void ui_alarmWaypointReached();
 void ui_displayOptions(void);
@@ -105,11 +108,11 @@ extern bool IsFlashDisplayRequired;
 extern bool IsGpsHeading;
 extern bool EndTrack;
 
-extern int  BatteryVoltage;
+extern int  SupplyVoltageMV;
 
-extern volatile float YawDeg;
-extern volatile float DisplayClimbrateCps;
-extern volatile float KFAltitudeCm;
+extern const char szLogType[3][5];
+extern const char szAltDisplayType[2][5];
+extern const char szBtMsgType[2][4];
 
 #ifdef __cplusplus
 }

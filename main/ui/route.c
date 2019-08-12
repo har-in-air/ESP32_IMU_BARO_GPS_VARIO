@@ -56,7 +56,7 @@ int rte_selectRoute(){
       }
    if (NumRoutes == 0) return -1;
 
-   RouteSel = 0;
+   RouteSel = 0; // default, do not use a route
    rte_displayRouteSel();
    btn_clear();
    while (rte_handleRouteSelEvent() == 0) {
@@ -72,6 +72,7 @@ int rte_selectRoute(){
 
 void rte_displayRouteSel() {
   lcd_clear();
+  // BtnR to traverse list, Btn0 to select
   lcd_printlnf(false, 0, "R->change   0->sel"); 
   lcd_printlnf(false, 1, "%c no route", RouteSel == 0 ? '*' : ' ');
   for (int inx = 0; inx < NumRoutes; inx++) {
@@ -80,22 +81,30 @@ void rte_displayRouteSel() {
   lcd_sendFrame();
   }
 
+#define RTE_IDLE_COUNT 330 // ~10 seconds at 30mS debounce interval
+
 int rte_handleRouteSelEvent() {
-  if (BtnRPressed) {
-      btn_clear();
-      RouteSel++;
-      if (RouteSel > NumRoutes) {
-         RouteSel = 0; 
-         }
-      rte_displayRouteSel();
-      return 0;
-      }
-   else 
-   if (Btn0Pressed) {
-      btn_clear();
-      return 1;
-      }
-   else return 0;
+	static int countDown = RTE_IDLE_COUNT;
+
+	if (BtnRPressed) {
+		btn_clear();
+		countDown = RTE_IDLE_COUNT;
+		RouteSel++;
+		if (RouteSel > NumRoutes) {
+			RouteSel = 0;
+         	}
+		rte_displayRouteSel();
+		return 0;
+      	}
+	else
+	if (Btn0Pressed || (countDown <= 0)) {
+		btn_clear();
+		return 1;
+      	}
+   else {
+	   countDown--;
+	   return 0;
+   	   }
    }
 
 // expects FormatGEO waypoint text file ".wpt" as output by xcplanner (xcplanner.appspot.com)

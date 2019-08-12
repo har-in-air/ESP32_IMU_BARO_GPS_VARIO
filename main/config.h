@@ -204,6 +204,17 @@
 #define ALTITUDE_DISPLAY_GPS  0
 #define ALTITUDE_DISPLAY_BARO 1
 
+#define BT_MSG_LK8EX1	0
+#define BT_MSG_XCTRC	1
+
+#define BT_MSG_FREQ_HZ_MIN	0
+#define BT_MSG_FREQ_HZ_MAX	10
+#define BT_MSG_FREQ_HZ_DEFAULT	0
+
+#define LCD_CONTRAST_MIN 1
+#define LCD_CONTRAST_MAX 10
+#define LCD_CONTRAST_DEFAULT 4
+
 ///////////////////////////////////////////////////////////////////////////////
 // COMPILED CONFIGURATION PARAMETERS
 
@@ -230,6 +241,7 @@
 // This is set low as the residual acceleration bias after calibration
 // is expected to have little variation/drift
 #define KF_ACCELBIAS_VARIANCE   1.0f
+
 
 
 // print debug information to the serial port for different code modules

@@ -24,12 +24,18 @@ bool IsFlashDisplayRequired = false;
 bool IsGpsHeading = true;
 bool EndTrack = false;
 
+
+int SupplyVoltageMV = 0;
+
+const char szLogType[3][5]    = {"NONE", " GPS", " IBG"};
+const char szAltDisplayType[2][5] = {" GPS", "BARO"};
+const char szBtMsgType[2][4]  = {"LK8", "XCT"};
+
+
 static int ParChanged = 0;
 static int ScreenParOffset = 0;
 static int ParDisplaySel = 0;
 static int ParSel = 0;
-
-int SupplyVoltage = 0;
 
 void ui_printLatitude(int page, int col, int32_t nLat) {
 	char szBuf[12];
@@ -470,8 +476,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       lcd_printSz(0,60, IsTrackActive ? "GPS" : "gps");
       }
    ui_printPosDOP(6,110, dop);
-   SupplyVoltage = (int)(adc_supplyVoltage()+50)/100;
-   ui_printSupplyVoltage(7, 104, SupplyVoltage);
+   SupplyVoltageMV = adc_supplyVoltageMV();
+   ui_printSupplyVoltage(7, 104, (SupplyVoltageMV+50)/100);
    ui_printSpkrStatus(7,96, IsSpeakerEnabled);
    ui_printAltitude(0,0,altm);
    lcd_printSz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
@@ -574,7 +580,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    }
 
 
-int ui_saveLog(NAV_PVT* pn, TRACK* pTrk) {
+int ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk) {
    FILE *fd;
    char szbuf[30];
    char szEntry[110];
@@ -636,8 +642,6 @@ void ui_screenInit() {
    ParSel = 0;
    }
 
-const char szLogType[3][5] = {"NONE", " GPS", " IBG"};
-const char szAltDisplay[2][5] = {" GPS", "BARO"};
 
 void ui_displayOptions(void) {
   int row;
@@ -704,182 +708,216 @@ void ui_displayOptions(void) {
      lcd_printf(false, row, 7, "Log Type        %s",  szLogType[opt.misc.logType]); row++;
      }
   if (ScreenParOffset < 18) {
-     lcd_printf(false, row, 7, "Waypt radius   %5d",  opt.misc.waypointRadiusm); row++;
+     lcd_printf(false, row, 7, "Waypt Radius   %5d",  opt.misc.waypointRadiusm); row++;
      }
   if (ScreenParOffset < 19) {
-     lcd_printf(false, row, 7, "Alt display     %s",  szAltDisplay[opt.misc.altitudeDisplay]); row++;
+     lcd_printf(false, row, 7, "Alt display     %s",  szAltDisplayType[opt.misc.altitudeDisplay]); row++;
+     }
+  if (ScreenParOffset < 20) {
+     lcd_printf(false, row, 7, "BtMsg Type       %s",  szBtMsgType[opt.misc.btMsgType]); row++;
+     }
+  if (ScreenParOffset < 21) {
+     lcd_printf(false, row, 7, "BtMsg Freq        %2d",  opt.misc.btMsgFreqHz); row++;
+     }
+  if (ScreenParOffset < 22) {
+     lcd_printf(false, row, 7, "LCD Contrast      %2d",  opt.misc.lcdContrast); row++;
      }
   lcd_sendFrame();
   }
 
+#define OPT_IDLE_COUNT 330 // this is ~10 seconds of inactivity with 30mS debounce interval
 
 int ui_optionsEventHandler(void)  {
-   if (Btn0Pressed) {
-      btn_clear();
+	static int countDown = OPT_IDLE_COUNT;
+	if (Btn0Pressed || (countDown <= 0)) {
+		btn_clear();
 		if (ParChanged) {
-  			ParChanged = 0;
-         lcd_clear();
-         lcd_printlnf(true, 0, "Saving options");
-         opt_save();
-         delayMs(1000);
-  		   }
-      return 1;
-      }
+			ParChanged = 0;
+			lcd_clear();
+			lcd_printlnf(true, 0, "Saving options");
+			opt_save();
+			delayMs(1000);
+			}
+		return 1;
+		}
   
-   if (BtnMPressed)	{
-      btn_clear();
-	   ParDisplaySel = !ParDisplaySel;
-      ui_displayOptions();
-      return 0;
-      }
+	if (BtnMPressed)	{
+		btn_clear();
+		countDown = OPT_IDLE_COUNT;
+		ParDisplaySel = !ParDisplaySel;
+		ui_displayOptions();
+		return 0;
+		}
 	
-   if (BtnLPressed) {   
-      btn_clear();
+	if (BtnLPressed) {
+		btn_clear();
+		countDown = OPT_IDLE_COUNT;
 		if (ParDisplaySel) {
-		   ParChanged = 1;
-	      switch (ParSel) {	
-			   case SEL_CLIMB_THRESHOLD : if (opt.vario.climbThresholdCps >= VARIO_CLIMB_THRESHOLD_CPS_MIN+5) opt.vario.climbThresholdCps -= 5;
-			   default :
-			   break;
+			ParChanged = 1;
+			switch (ParSel) {
+				case SEL_CLIMB_THRESHOLD : if (opt.vario.climbThresholdCps >= VARIO_CLIMB_THRESHOLD_CPS_MIN+5) opt.vario.climbThresholdCps -= 5;
+				default :
+				break;
 				 	
-			   case SEL_ZERO_THRESHOLD : if (opt.vario.zeroThresholdCps >= VARIO_ZERO_THRESHOLD_CPS_MIN+5) opt.vario.zeroThresholdCps -= 5; 
-	         break; 
+				case SEL_ZERO_THRESHOLD : if (opt.vario.zeroThresholdCps >= VARIO_ZERO_THRESHOLD_CPS_MIN+5) opt.vario.zeroThresholdCps -= 5;
+				break;
 	
-			   case SEL_SINK_THRESHOLD : if (opt.vario.sinkThresholdCps >= VARIO_SINK_THRESHOLD_CPS_MIN+5) opt.vario.sinkThresholdCps -= 5; 
-	         break; 
+				case SEL_SINK_THRESHOLD : if (opt.vario.sinkThresholdCps >= VARIO_SINK_THRESHOLD_CPS_MIN+5) opt.vario.sinkThresholdCps -= 5;
+				break;
 
-			   case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps >= VARIO_CROSSOVER_CPS_MIN+10) opt.vario.crossoverCps -= 10; 
-	         break; 
+				case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps >= VARIO_CROSSOVER_CPS_MIN+10) opt.vario.crossoverCps -= 10;
+				break;
 
-			   case SEL_VARIO_DISPLAY_IIR : if (opt.vario.varioDisplayIIR > VARIO_DISPLAY_IIR_MIN) opt.vario.varioDisplayIIR--; 
-	         break; 
+				case SEL_VARIO_DISPLAY_IIR : if (opt.vario.varioDisplayIIR > VARIO_DISPLAY_IIR_MIN) opt.vario.varioDisplayIIR--;
+				break;
 
-			   case SEL_ACCEL_VAR : if (opt.kf.accelVariance >= KF_ACCEL_VARIANCE_MIN+5) opt.kf.accelVariance -= 5; 
-	         break; 
+				case SEL_ACCEL_VAR : if (opt.kf.accelVariance >= KF_ACCEL_VARIANCE_MIN+5) opt.kf.accelVariance -= 5;
+				break;
 
-			   case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance >= KF_ZMEAS_VARIANCE_MIN+10) opt.kf.zMeasVariance -= 10; 
-	         break; 
+				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance >= KF_ZMEAS_VARIANCE_MIN+10) opt.kf.zMeasVariance -= 10;
+				break;
 
-			   case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins >= UTC_OFFSET_MINS_MIN+15) opt.misc.utcOffsetMins -= 15; 
-	         break; 
+				case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins >= UTC_OFFSET_MINS_MIN+15) opt.misc.utcOffsetMins -= 15;
+				break;
 
-			   case SEL_BKLIGHT_SECS : if (opt.misc.backlitSecs >= BACKLIT_SECS_MIN+5) opt.misc.backlitSecs -= 5; 
-	         break; 
+				case SEL_BKLIGHT_SECS : if (opt.misc.backlitSecs >= BACKLIT_SECS_MIN+5) opt.misc.backlitSecs -= 5;
+				break;
 
-			   case SEL_TRACK_THRESHOLD : if (opt.misc.trackStartThresholdm >= TRACK_START_THRESHOLD_M_MIN+5 ) opt.misc.trackStartThresholdm -= 5; 
-	         break; 
+				case SEL_TRACK_THRESHOLD : if (opt.misc.trackStartThresholdm >= TRACK_START_THRESHOLD_M_MIN+5 ) opt.misc.trackStartThresholdm -= 5;
+				break;
 
-			   case SEL_TRACK_INTERVAL : if (opt.misc.trackIntervalSecs > TRACK_INTERVAL_SECS_MIN) opt.misc.trackIntervalSecs--; 
-	         break; 
+				case SEL_TRACK_INTERVAL : if (opt.misc.trackIntervalSecs > TRACK_INTERVAL_SECS_MIN) opt.misc.trackIntervalSecs--;
+				break;
 
-			   case SEL_GLIDE_IIR : if (opt.misc.glideRatioIIR > GLIDE_RATIO_IIR_MIN) opt.misc.glideRatioIIR--; 
-	         break; 
+				case SEL_GLIDE_IIR : if (opt.misc.glideRatioIIR > GLIDE_RATIO_IIR_MIN) opt.misc.glideRatioIIR--;
+				break;
 
-			   case SEL_GPS_STABLE_DOP : if (opt.misc.gpsStableDOP > GPS_STABLE_DOP_MIN) opt.misc.gpsStableDOP--; 
-	         break; 
+				case SEL_GPS_STABLE_DOP : if (opt.misc.gpsStableDOP > GPS_STABLE_DOP_MIN) opt.misc.gpsStableDOP--;
+				break;
 
-			   case SEL_GYRO_OFFSET_MAX : if (opt.misc.gyroOffsetLimit1000DPS >= GYRO_OFFSET_LIMIT_1000DPS_MIN+10) opt.misc.gyroOffsetLimit1000DPS -= 10; 
-	         break; 
+				case SEL_GYRO_OFFSET_MAX : if (opt.misc.gyroOffsetLimit1000DPS >= GYRO_OFFSET_LIMIT_1000DPS_MIN+10) opt.misc.gyroOffsetLimit1000DPS -= 10;
+				break;
 
-			   case SEL_MAG_DECLINATION : if (opt.misc.magDeclinationdeg > MAG_DECLINATION_DEG_MIN) opt.misc.magDeclinationdeg--; 
-	         break; 
+				case SEL_MAG_DECLINATION : if (opt.misc.magDeclinationdeg > MAG_DECLINATION_DEG_MIN) opt.misc.magDeclinationdeg--;
+				break;
 
-			   case SEL_SPKR_VOL : if (opt.misc.speakerVolume > SPEAKER_VOLUME_MIN ) opt.misc.speakerVolume--; 
-	         break; 
+				case SEL_SPKR_VOL : if (opt.misc.speakerVolume > SPEAKER_VOLUME_MIN ) opt.misc.speakerVolume--;
+				break;
 
-			   case SEL_LOG_TYPE : if (opt.misc.logType > LOGTYPE_NONE ) opt.misc.logType--; 
-	         break; 
+				case SEL_LOG_TYPE : if (opt.misc.logType > LOGTYPE_NONE ) opt.misc.logType--;
+				break;
 
-			   case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm >= WAYPOINT_RADIUS_M_MIN+10  ) opt.misc.waypointRadiusm -= 10; 
-	         break; 
+				case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm >= WAYPOINT_RADIUS_M_MIN+10  ) opt.misc.waypointRadiusm -= 10;
+				break;
 
-			   case SEL_ALTITUDE_DISPLAY : if (opt.misc.altitudeDisplay > ALTITUDE_DISPLAY_GPS  ) opt.misc.altitudeDisplay--; 
-	         break; 
-	         }
-		  }
+				case SEL_ALTITUDE_DISPLAY : if (opt.misc.altitudeDisplay > ALTITUDE_DISPLAY_GPS  ) opt.misc.altitudeDisplay--;
+				break;
+
+				case SEL_BTMSG_TYPE : if (opt.misc.btMsgType > BT_MSG_LK8EX1  ) opt.misc.btMsgType--;
+				break;
+
+				case SEL_BTMSG_FREQ : if (opt.misc.btMsgFreqHz > BT_MSG_FREQ_HZ_MIN  ) opt.misc.btMsgFreqHz--;
+				break;
+
+				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast > LCD_CONTRAST_MIN  ) opt.misc.lcdContrast--;
+				break;
+ 	      	  	}
+		  	}
 		else { // ParDisplaySel == 0
-         if (ParSel > 0) ParSel--;
-         if (ScreenParOffset > ParSel) {
-             ScreenParOffset = ParSel;
-            }
-		   }
+			if (ParSel > 0) ParSel--;
+			if (ScreenParOffset > ParSel) {
+				ScreenParOffset = ParSel;
+            	}
+		   	 }
       ui_displayOptions();
       return 0;
       }
    
-   if (BtnRPressed) {   
-      btn_clear();
+	if (BtnRPressed) {
+		btn_clear();
+		countDown = OPT_IDLE_COUNT;
 		if (ParDisplaySel) {
-		   ParChanged = 1;
-         switch (ParSel) { 
-		   case SEL_CLIMB_THRESHOLD : if (opt.vario.climbThresholdCps <= VARIO_CLIMB_THRESHOLD_CPS_MAX-5) opt.vario.climbThresholdCps += 5;
-			   default :
-			   break;
+			ParChanged = 1;
+			switch (ParSel) {
+
+				case SEL_CLIMB_THRESHOLD : if (opt.vario.climbThresholdCps <= VARIO_CLIMB_THRESHOLD_CPS_MAX-5) opt.vario.climbThresholdCps += 5;
+				default :
+				break;
 				 	
-			   case SEL_ZERO_THRESHOLD : if (opt.vario.zeroThresholdCps <= VARIO_ZERO_THRESHOLD_CPS_MAX-5) opt.vario.zeroThresholdCps += 5; 
-	         break; 
+				case SEL_ZERO_THRESHOLD : if (opt.vario.zeroThresholdCps <= VARIO_ZERO_THRESHOLD_CPS_MAX-5) opt.vario.zeroThresholdCps += 5;
+				break;
 	
-			   case SEL_SINK_THRESHOLD : if (opt.vario.sinkThresholdCps <= VARIO_SINK_THRESHOLD_CPS_MAX-5) opt.vario.sinkThresholdCps += 5; 
-	         break; 
+				case SEL_SINK_THRESHOLD : if (opt.vario.sinkThresholdCps <= VARIO_SINK_THRESHOLD_CPS_MAX-5) opt.vario.sinkThresholdCps += 5;
+				break;
 
-			   case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps <= VARIO_CROSSOVER_CPS_MAX-10) opt.vario.crossoverCps += 10; 
-	         break; 
+				case SEL_CROSSOVER_THRESHOLD : if (opt.vario.crossoverCps <= VARIO_CROSSOVER_CPS_MAX-10) opt.vario.crossoverCps += 10;
+				break;
 
-			   case SEL_VARIO_DISPLAY_IIR : if (opt.vario.varioDisplayIIR < VARIO_DISPLAY_IIR_MAX) opt.vario.varioDisplayIIR++; 
-	         break; 
+				case SEL_VARIO_DISPLAY_IIR : if (opt.vario.varioDisplayIIR < VARIO_DISPLAY_IIR_MAX) opt.vario.varioDisplayIIR++;
+				break;
 
-			   case SEL_ACCEL_VAR : if (opt.kf.accelVariance <= KF_ACCEL_VARIANCE_MAX-5) opt.kf.accelVariance += 5; 
-	         break; 
+				case SEL_ACCEL_VAR : if (opt.kf.accelVariance <= KF_ACCEL_VARIANCE_MAX-5) opt.kf.accelVariance += 5;
+				break;
 
-			   case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance <= KF_ZMEAS_VARIANCE_MAX-10) opt.kf.zMeasVariance += 10; 
-	         break; 
+				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance <= KF_ZMEAS_VARIANCE_MAX-10) opt.kf.zMeasVariance += 10;
+				break;
 
-			   case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins <= UTC_OFFSET_MINS_MAX-15) opt.misc.utcOffsetMins += 15; 
-	         break; 
+				case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins <= UTC_OFFSET_MINS_MAX-15) opt.misc.utcOffsetMins += 15;
+				break;
 
-			   case SEL_BKLIGHT_SECS : if (opt.misc.backlitSecs < BACKLIT_SECS_MAX) opt.misc.backlitSecs++; 
-	         break; 
+				case SEL_BKLIGHT_SECS : if (opt.misc.backlitSecs < BACKLIT_SECS_MAX) opt.misc.backlitSecs++;
+				break;
 
-			   case SEL_TRACK_THRESHOLD : if (opt.misc.trackStartThresholdm <= TRACK_START_THRESHOLD_M_MAX-5 ) opt.misc.trackStartThresholdm += 5; 
-	         break; 
+				case SEL_TRACK_THRESHOLD : if (opt.misc.trackStartThresholdm <= TRACK_START_THRESHOLD_M_MAX-5 ) opt.misc.trackStartThresholdm += 5;
+				break;
 
-			   case SEL_TRACK_INTERVAL : if (opt.misc.trackIntervalSecs < TRACK_INTERVAL_SECS_MAX) opt.misc.trackIntervalSecs++; 
-	         break; 
+				case SEL_TRACK_INTERVAL : if (opt.misc.trackIntervalSecs < TRACK_INTERVAL_SECS_MAX) opt.misc.trackIntervalSecs++;
+				break;
 
-			   case SEL_GLIDE_IIR : if (opt.misc.glideRatioIIR < GLIDE_RATIO_IIR_MAX) opt.misc.glideRatioIIR++; 
-	         break; 
+				case SEL_GLIDE_IIR : if (opt.misc.glideRatioIIR < GLIDE_RATIO_IIR_MAX) opt.misc.glideRatioIIR++;
+				break;
 
-			   case SEL_GPS_STABLE_DOP : if (opt.misc.gpsStableDOP < GPS_STABLE_DOP_MAX) opt.misc.gpsStableDOP++; 
-	         break; 
+				case SEL_GPS_STABLE_DOP : if (opt.misc.gpsStableDOP < GPS_STABLE_DOP_MAX) opt.misc.gpsStableDOP++;
+				break;
 
-			   case SEL_GYRO_OFFSET_MAX : if (opt.misc.gyroOffsetLimit1000DPS <= GYRO_OFFSET_LIMIT_1000DPS_MAX-10) opt.misc.gyroOffsetLimit1000DPS += 10; 
-	         break; 
+				case SEL_GYRO_OFFSET_MAX : if (opt.misc.gyroOffsetLimit1000DPS <= GYRO_OFFSET_LIMIT_1000DPS_MAX-10) opt.misc.gyroOffsetLimit1000DPS += 10;
+				break;
 
-			   case SEL_MAG_DECLINATION : if (opt.misc.magDeclinationdeg < MAG_DECLINATION_DEG_MAX) opt.misc.magDeclinationdeg++; 
-	         break; 
+				case SEL_MAG_DECLINATION : if (opt.misc.magDeclinationdeg < MAG_DECLINATION_DEG_MAX) opt.misc.magDeclinationdeg++;
+				break;
 
-			   case SEL_SPKR_VOL : if (opt.misc.speakerVolume < SPEAKER_VOLUME_MAX ) opt.misc.speakerVolume++; 
-	         break; 
+				case SEL_SPKR_VOL : if (opt.misc.speakerVolume < SPEAKER_VOLUME_MAX ) opt.misc.speakerVolume++;
+				break;
 
-			   case SEL_LOG_TYPE : if (opt.misc.logType < LOGTYPE_IBG ) opt.misc.logType++; 
-	         break; 
+				case SEL_LOG_TYPE : if (opt.misc.logType < LOGTYPE_IBG ) opt.misc.logType++;
+				break;
 
-			   case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm <= WAYPOINT_RADIUS_M_MAX-10  ) opt.misc.waypointRadiusm += 10; 
-	         break; 
+				case SEL_WPT_RADIUS : if (opt.misc.waypointRadiusm <= WAYPOINT_RADIUS_M_MAX-10  ) opt.misc.waypointRadiusm += 10;
+				break;
 
-			   case SEL_ALTITUDE_DISPLAY : if (opt.misc.altitudeDisplay < ALTITUDE_DISPLAY_BARO) opt.misc.altitudeDisplay++; 
-	         break; 
-		      }
-	      }
+				case SEL_ALTITUDE_DISPLAY : if (opt.misc.altitudeDisplay < ALTITUDE_DISPLAY_BARO) opt.misc.altitudeDisplay++;
+				break;
+
+				case SEL_BTMSG_TYPE : if (opt.misc.btMsgType < BT_MSG_XCTRC  ) opt.misc.btMsgType++;
+				break;
+
+				case SEL_BTMSG_FREQ : if (opt.misc.btMsgFreqHz < BT_MSG_FREQ_HZ_MAX  ) opt.misc.btMsgFreqHz++;
+				break;
+
+				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast < LCD_CONTRAST_MAX  ) opt.misc.lcdContrast++;
+				break;
+		      	  }
+	      	  }
 		else { // ParDisplaySel == 0
-         if (ParSel <  SEL_ALTITUDE_DISPLAY) ParSel++;
-         if (ScreenParOffset < (ParSel-7)) {
-            ScreenParOffset = ParSel-7;
-            }  
-         }
-      ui_displayOptions();
-      return 0;
-  	   }
-   return 0;
-   }
+			if (ParSel <  SEL_LCD_CONTRAST) ParSel++;
+			if (ScreenParOffset < (ParSel-7)) {
+				ScreenParOffset = ParSel-7;
+            	}
+         	 }
+		ui_displayOptions();
+		return 0;
+  	   	}
+	countDown--;
+	return 0;
+   	}
 

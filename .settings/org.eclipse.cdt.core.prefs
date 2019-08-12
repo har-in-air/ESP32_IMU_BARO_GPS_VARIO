@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/0.875560256/IDF_PATH/delimiter=\:
+environment/project/0.875560256/IDF_PATH/operation=append
+environment/project/0.875560256/IDF_PATH/value=/home/hari/esp32/esp-idf-v3.2.2
+environment/project/0.875560256/append=true
+environment/project/0.875560256/appendContributed=true

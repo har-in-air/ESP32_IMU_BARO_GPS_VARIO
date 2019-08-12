@@ -311,7 +311,7 @@ void gps_stateMachine()  {
 				   else {
                   gps_updateFlashLogRecord();        
                   IsGpsNavUpdated = 1;
-                  //ESP_LOGI(TAG, "NAV_PVT tow %d",NavPvt.timeOfWeekmS);
+                  //ESP_LOGD(TAG, "NAV_PVT tow %d",NavPvt.timeOfWeekmS);
 	               PktReceivedBytes = 0;
 	           	   GpsState = GPS_STATE_IDLE;
 					   }
@@ -397,8 +397,8 @@ int32_t gps_bearingDeg(float lat1, float lon1, float lat2, float lon2) {
 	x =  cos(lat1rad)*sin(lat2rad) - sin(lat1rad)*cos(lat2rad)*cos(dlonrad);
 	y = sin(dlonrad)*cos(lat2rad);
 	b = atan2(y,x);
-	b += TWO_PI;	
-	if (b >= TWO_PI) b -= TWO_PI; // convert to [0, 2*pi] radians
+	b += _2_PI;
+	if (b >= _2_PI) b -= _2_PI; // convert to [0, 2*pi] radians
 	b *= _180_DIV_PI;  // translate to [0,360] degrees
 	bearing = (int32_t)(b + 0.5f);
 	CLAMP(bearing,0,359);

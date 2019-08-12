@@ -1,27 +1,30 @@
 #include "common.h"
 #include "config.h"
 #include "options.h"
+#include "ui.h"
 
 #define TAG "options"
 
 OPTIONS opt;
 
 
+
 int opt_init(void) {
    FILE *fdrd;
    char line[80];
 
-   opt_setDefaults(); // set to defaults and override with values found in options.txt
+   // first set to defaults and then override with values found in options.txt
+   opt_setDefaults();
 
-   ESP_LOGI(TAG,"Opening spiffs options.txt file... ");
+   ESP_LOGD(TAG,"Opening spiffs options.txt file... ");
    fdrd = fopen("/spiffs/options.txt", "r");
    if (fdrd == NULL) {
-      ESP_LOGI(TAG,"options.txt file not found, saving file with default values");
+      ESP_LOGD(TAG,"options.txt file not found, saving file with default values");
       opt_save();
       return 0;
       }
 
-   KEY_VAL* pkeys = (KEY_VAL*) calloc(MAX_OPTIONS,sizeof(KEY_VAL));
+   KEY_VAL* pkeys = (KEY_VAL*) calloc(NUM_OPTIONS,sizeof(KEY_VAL));
    if (pkeys == NULL) {
       ESP_LOGE(TAG, "error calloc pkeys");
       return -1;
@@ -33,24 +36,27 @@ int opt_init(void) {
       while (*p == ' ' || *p == '\t') p++;
       //  skip lines beginning with '#' or blank lines
       if (*p == '#'  ||  *p == '\r' || *p == '\n') continue;
-      //ESP_LOGI(TAG,"%s", p);
-      szToken = strtok(p," ,=\t[");
+      //ESP_LOGD(TAG,"%s", p);
+      szToken = strtok(p," \t[");
       if (szToken != NULL)   {
          strcpy(pkeys[numKeys].szName, szToken);
-         szToken = strtok(NULL,"] ");
+         szToken = strtok(NULL,"]\t ");
          if (szToken != NULL) {
             szToken = strtok(NULL," \r\n");
             if (szToken != NULL) {
                strcpy(pkeys[numKeys].szValue, szToken);
-               //ESP_LOGI(TAG,"[%d]  %s =  %s",numKeys,pkeys[numKeys].szName, pkeys[numKeys].szValue);
+               //ESP_LOGD(TAG,"[%d]  %s =  %s",numKeys,pkeys[numKeys].szName, pkeys[numKeys].szValue);
                numKeys++;
                }
             }
          }
       }
 
+   if (numKeys != NUM_OPTIONS) {
+	   ESP_LOGE(TAG, "numKeys %d != NUM_OPTIONS (%d)", numKeys, NUM_OPTIONS);
+   	   }
    for (int key = 0; key < numKeys; key++) {
-     // ESP_LOGI(TAG,"[%d]  %s  = %s",key, pkeys[key].szName, pkeys[key].szValue);
+     // ESP_LOGD(TAG,"[%d]  %s  = %s",key, pkeys[key].szName, pkeys[key].szValue);
       if (!strcmp(pkeys[key].szName, "climbThresholdCps")) {
          opt.vario.climbThresholdCps = atoi(pkeys[key].szValue);
          CLAMP(opt.vario.climbThresholdCps,VARIO_CLIMB_THRESHOLD_CPS_MIN, VARIO_CLIMB_THRESHOLD_CPS_MAX);
@@ -132,7 +138,17 @@ int opt_init(void) {
          }
       else
       if (!strcmp(pkeys[key].szName, "logType")) {
-         opt.misc.logType = atoi(pkeys[key].szValue);
+    	  if( (!strcmp(pkeys[key].szValue, "NONE")) || (!strcmp(pkeys[key].szValue, "none"))) {
+    		  opt.misc.logType = LOGTYPE_NONE;
+    	  	  }
+    	  else
+          if( (!strcmp(pkeys[key].szValue, "GPS")) || (!strcmp(pkeys[key].szValue, "gps"))) {
+        		  opt.misc.logType = LOGTYPE_GPS;
+        	  }
+    	  else
+          if( (!strcmp(pkeys[key].szValue, "IBG")) || (!strcmp(pkeys[key].szValue, "ibg"))) {
+        		  opt.misc.logType = LOGTYPE_IBG;
+        	  }
          CLAMP(opt.misc.logType, LOGTYPE_NONE, LOGTYPE_IBG);
          }
       else
@@ -142,35 +158,64 @@ int opt_init(void) {
          }
       else
       if (!strcmp(pkeys[key].szName, "altitudeDisplay")) {
-         opt.misc.altitudeDisplay = atoi(pkeys[key].szValue);
+    	  if( (!strcmp(pkeys[key].szValue, "BARO")) || (!strcmp(pkeys[key].szValue, "baro"))) {
+    		  opt.misc.altitudeDisplay = ALTITUDE_DISPLAY_BARO;
+    	  	  }
+    	  else
+          if( (!strcmp(pkeys[key].szValue, "GPS")) || (!strcmp(pkeys[key].szValue, "gps"))) {
+        		  opt.misc.altitudeDisplay = ALTITUDE_DISPLAY_GPS;
+        	  }
          CLAMP(opt.misc.altitudeDisplay, ALTITUDE_DISPLAY_BARO, ALTITUDE_DISPLAY_GPS);
+         }
+      else
+      if (!strcmp(pkeys[key].szName, "btMsgType")) {
+    	  if( (!strcmp(pkeys[key].szValue, "LK8")) || (!strcmp(pkeys[key].szValue, "lk8"))) {
+    		  opt.misc.btMsgType = BT_MSG_LK8EX1;
+    	  	  }
+    	  else
+          if( (!strcmp(pkeys[key].szValue, "XCT")) || (!strcmp(pkeys[key].szValue, "xct"))) {
+        		  opt.misc.btMsgType = BT_MSG_XCTRC;
+        	  }
+         CLAMP(opt.misc.btMsgType, BT_MSG_LK8EX1, BT_MSG_XCTRC);
+         }
+      else
+      if (!strcmp(pkeys[key].szName, "btMsgFreqHz")) {
+          opt.misc.btMsgFreqHz = atoi(pkeys[key].szValue);
+         CLAMP(opt.misc.btMsgFreqHz, BT_MSG_FREQ_HZ_MIN, BT_MSG_FREQ_HZ_MAX);
+         }
+      else
+      if (!strcmp(pkeys[key].szName, "lcdContrast")) {
+          opt.misc.lcdContrast = atoi(pkeys[key].szValue);
+         CLAMP(opt.misc.lcdContrast, LCD_CONTRAST_MIN, LCD_CONTRAST_MAX);
          }
       }
    free (pkeys);
 
 #ifdef OPT_DEBUG	
-      ESP_LOGI(TAG,"VARIO CONFIGURATION");
-      ESP_LOGI(TAG,"climbThresholdCps = %d", opt.vario.climbThresholdCps);
-      ESP_LOGI(TAG,"zeroThresholdCps = %d", opt.vario.zeroThresholdCps);
-      ESP_LOGI(TAG,"sinkThresholdCps = %d", opt.vario.sinkThresholdCps);
-      ESP_LOGI(TAG,"crossoverCps = %d", opt.vario.crossoverCps);
-      ESP_LOGI(TAG,"varioDisplayIIR = %d", opt.vario.varioDisplayIIR);
-      ESP_LOGI(TAG,"KALMAN FILTER CONFIGURATION");
-      ESP_LOGI(TAG,"accelVariance = %d", opt.kf.accelVariance);
-      ESP_LOGI(TAG,"zMeasVariance = %d", opt.kf.zMeasVariance);
-      ESP_LOGI(TAG,"MISCELLANEOUS CONFIGURATION");
-      ESP_LOGI(TAG,"backlitSecs = %d", opt.misc.backlitSecs);
-      ESP_LOGI(TAG,"gyroOffsetLimit1000DPS = %d", opt.misc.gyroOffsetLimit1000DPS);
-      ESP_LOGI(TAG,"trackIntervalSecs = %d", opt.misc.trackIntervalSecs);
-      ESP_LOGI(TAG,"utcOffsetMins = %d", opt.misc.utcOffsetMins);
-      ESP_LOGI(TAG,"gpsStableDOP = %d", opt.misc.gpsStableDOP);
-      ESP_LOGI(TAG,"glideRatioIIR = %d", opt.misc.glideRatioIIR);
-      ESP_LOGI(TAG,"trackStartThresholdm = %d", opt.misc.trackStartThresholdm);
-      ESP_LOGI(TAG,"magDeclinationdeg = %d", opt.misc.magDeclinationdeg);
-      ESP_LOGI(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
-      ESP_LOGI(TAG,"logType = %d", opt.misc.logType);
-      ESP_LOGI(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
-      ESP_LOGI(TAG,"altitudeDisplay = %d", opt.misc.altitudeDisplay);
+      ESP_LOGD(TAG,"VARIO CONFIGURATION");
+      ESP_LOGD(TAG,"climbThresholdCps = %d", opt.vario.climbThresholdCps);
+      ESP_LOGD(TAG,"zeroThresholdCps = %d", opt.vario.zeroThresholdCps);
+      ESP_LOGD(TAG,"sinkThresholdCps = %d", opt.vario.sinkThresholdCps);
+      ESP_LOGD(TAG,"crossoverCps = %d", opt.vario.crossoverCps);
+      ESP_LOGD(TAG,"varioDisplayIIR = %d", opt.vario.varioDisplayIIR);
+      ESP_LOGD(TAG,"KALMAN FILTER CONFIGURATION");
+      ESP_LOGD(TAG,"accelVariance = %d", opt.kf.accelVariance);
+      ESP_LOGD(TAG,"zMeasVariance = %d", opt.kf.zMeasVariance);
+      ESP_LOGD(TAG,"MISCELLANEOUS CONFIGURATION");
+      ESP_LOGD(TAG,"backlitSecs = %d", opt.misc.backlitSecs);
+      ESP_LOGD(TAG,"gyroOffsetLimit1000DPS = %d", opt.misc.gyroOffsetLimit1000DPS);
+      ESP_LOGD(TAG,"trackIntervalSecs = %d", opt.misc.trackIntervalSecs);
+      ESP_LOGD(TAG,"utcOffsetMins = %d", opt.misc.utcOffsetMins);
+      ESP_LOGD(TAG,"gpsStableDOP = %d", opt.misc.gpsStableDOP);
+      ESP_LOGD(TAG,"glideRatioIIR = %d", opt.misc.glideRatioIIR);
+      ESP_LOGD(TAG,"trackStartThresholdm = %d", opt.misc.trackStartThresholdm);
+      ESP_LOGD(TAG,"magDeclinationdeg = %d", opt.misc.magDeclinationdeg);
+      ESP_LOGD(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
+      ESP_LOGD(TAG,"logType = %s", szLogType[opt.misc.logType]);
+      ESP_LOGD(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
+      ESP_LOGD(TAG,"btMsgType = %s", szBtMsgType[opt.misc.btMsgType]);
+      ESP_LOGD(TAG,"btMsgFreqHz = %d", opt.misc.btMsgFreqHz);
+      ESP_LOGD(TAG,"lcdContrast = %d", opt.misc.lcdContrast);
 #endif
    return 0;
 	}
@@ -203,6 +248,9 @@ void opt_setDefaults() {
 	opt.misc.logType = LOGTYPE_NONE;
 	opt.misc.waypointRadiusm = WAYPOINT_RADIUS_M_DEFAULT;
 	opt.misc.altitudeDisplay = ALTITUDE_DISPLAY_GPS;
+	opt.misc.btMsgType = BT_MSG_LK8EX1;
+	opt.misc.btMsgFreqHz = BT_MSG_FREQ_HZ_DEFAULT;
+	opt.misc.lcdContrast = LCD_CONTRAST_DEFAULT;
    }
 
 
@@ -308,7 +356,7 @@ int opt_save() {
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -20;
 
-    sprintf(buf,"logType [0=none,1=gps,2=ibg] %d\r\n", opt.misc.logType);
+    sprintf(buf,"logType [NONE,GPS,IBG] %s\r\n", szLogType[opt.misc.logType]);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -21;
 
@@ -316,36 +364,50 @@ int opt_save() {
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
     if (nwrote != strlen(buf)) return -22;
 
-    sprintf(buf,"altitudeDisplay [%d,%d] %d\r\n", ALTITUDE_DISPLAY_GPS, ALTITUDE_DISPLAY_BARO, opt.misc.altitudeDisplay);
+    sprintf(buf,"altitudeDisplay [GPS,BARO] %s\r\n", szAltDisplayType[opt.misc.altitudeDisplay]);
     nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
-    if (nwrote != strlen(buf)) return -22;
+    if (nwrote != strlen(buf)) return -23;
 
+    sprintf(buf,"btMsgType [LK8,XCT] %s\r\n", szBtMsgType[opt.misc.btMsgType]);
+    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
+    if (nwrote != strlen(buf)) return -24;
+
+    sprintf(buf,"btMsgFreqHz [%d,%d] %d\r\n", BT_MSG_FREQ_HZ_MIN, BT_MSG_FREQ_HZ_MAX, opt.misc.btMsgFreqHz);
+    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
+    if (nwrote != strlen(buf)) return -25;
+
+    sprintf(buf,"lcdContrast [%d,%d] %d\r\n", LCD_CONTRAST_MIN, LCD_CONTRAST_MAX, opt.misc.lcdContrast);
+    nwrote =  fwrite(buf, 1, strlen(buf), fdwr);
+    if (nwrote != strlen(buf)) return -26;
     fclose(fdwr);
 
 #ifdef OPT_DEBUG
-      ESP_LOGI(TAG,"------Saved options-----");
-      ESP_LOGI(TAG,"VARIO CONFIGURATION");
-      ESP_LOGI(TAG,"climbThresholdCps = %d", opt.vario.climbThresholdCps);
-      ESP_LOGI(TAG,"zeroThresholdCps = %d", opt.vario.zeroThresholdCps);
-      ESP_LOGI(TAG,"sinkThresholdCps = %d", opt.vario.sinkThresholdCps);
-      ESP_LOGI(TAG,"crossoverCps = %d", opt.vario.crossoverCps);
-      ESP_LOGI(TAG,"varioDisplayIIR = %d", opt.vario.varioDisplayIIR);
-      ESP_LOGI(TAG,"KALMAN FILTER CONFIGURATION");
-      ESP_LOGI(TAG,"accelVariance = %d", opt.kf.accelVariance);
-      ESP_LOGI(TAG,"zMeasVariance = %d", opt.kf.zMeasVariance);
-      ESP_LOGI(TAG,"MISCELLANEOUS CONFIGURATION");
-      ESP_LOGI(TAG,"backlitSecs = %d", opt.misc.backlitSecs);
-      ESP_LOGI(TAG,"gyroOffsetLimit1000DPS = %d", opt.misc.gyroOffsetLimit1000DPS);
-      ESP_LOGI(TAG,"trackIntervalSecs = %d", opt.misc.trackIntervalSecs);
-      ESP_LOGI(TAG,"utcOffsetMins = %d", opt.misc.utcOffsetMins);
-      ESP_LOGI(TAG,"gpsStableDOP = %d", opt.misc.gpsStableDOP);
-      ESP_LOGI(TAG,"glideRatioIIR = %d", opt.misc.glideRatioIIR);
-      ESP_LOGI(TAG,"trackStartThresholdm = %d", opt.misc.trackStartThresholdm);
-      ESP_LOGI(TAG,"magDeclinationdeg = %d", opt.misc.magDeclinationdeg);
-      ESP_LOGI(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
-      ESP_LOGI(TAG,"logType = %d", opt.misc.logType);
-      ESP_LOGI(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
-      ESP_LOGI(TAG,"altitudeDisplay = %d", opt.misc.altitudeDisplay);
+      ESP_LOGD(TAG,"------Saved options-----");
+      ESP_LOGD(TAG,"VARIO CONFIGURATION");
+      ESP_LOGD(TAG,"climbThresholdCps = %d", opt.vario.climbThresholdCps);
+      ESP_LOGD(TAG,"zeroThresholdCps = %d", opt.vario.zeroThresholdCps);
+      ESP_LOGD(TAG,"sinkThresholdCps = %d", opt.vario.sinkThresholdCps);
+      ESP_LOGD(TAG,"crossoverCps = %d", opt.vario.crossoverCps);
+      ESP_LOGD(TAG,"varioDisplayIIR = %d", opt.vario.varioDisplayIIR);
+      ESP_LOGD(TAG,"KALMAN FILTER CONFIGURATION");
+      ESP_LOGD(TAG,"accelVariance = %d", opt.kf.accelVariance);
+      ESP_LOGD(TAG,"zMeasVariance = %d", opt.kf.zMeasVariance);
+      ESP_LOGD(TAG,"MISCELLANEOUS CONFIGURATION");
+      ESP_LOGD(TAG,"backlitSecs = %d", opt.misc.backlitSecs);
+      ESP_LOGD(TAG,"gyroOffsetLimit1000DPS = %d", opt.misc.gyroOffsetLimit1000DPS);
+      ESP_LOGD(TAG,"trackIntervalSecs = %d", opt.misc.trackIntervalSecs);
+      ESP_LOGD(TAG,"utcOffsetMins = %d", opt.misc.utcOffsetMins);
+      ESP_LOGD(TAG,"gpsStableDOP = %d", opt.misc.gpsStableDOP);
+      ESP_LOGD(TAG,"glideRatioIIR = %d", opt.misc.glideRatioIIR);
+      ESP_LOGD(TAG,"trackStartThresholdm = %d", opt.misc.trackStartThresholdm);
+      ESP_LOGD(TAG,"magDeclinationdeg = %d", opt.misc.magDeclinationdeg);
+      ESP_LOGD(TAG,"speakerVolume = %d", opt.misc.speakerVolume);
+      ESP_LOGD(TAG,"logType = %s", szLogType[opt.misc.logType]);
+      ESP_LOGD(TAG,"waypointRadiusm = %d", opt.misc.waypointRadiusm);
+      ESP_LOGD(TAG,"altitudeDisplay = %s", szAltDisplayType[opt.misc.altitudeDisplay]);
+      ESP_LOGD(TAG,"btMsgType = %s", szBtMsgType[opt.misc.btMsgType]);
+      ESP_LOGD(TAG,"btMsgFreqHz = %d", opt.misc.btMsgFreqHz);
+      ESP_LOGD(TAG,"lcdContrast = %d", opt.misc.lcdContrast);
 #endif
    return 0;
    }

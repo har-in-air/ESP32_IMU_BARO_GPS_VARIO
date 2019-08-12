@@ -28,6 +28,8 @@ extern "C" {
 #include "ui.h"
 #include "route.h"
 #include "options.h"
+#include "btspp.h"
+#include "btmsg.h"
 }
 
 #define TAG "main"
@@ -35,7 +37,6 @@ extern "C" {
 ESP32WebServer server(80);
 
 volatile int LedState = 0;
-volatile int BacklitCounter = 0;
 volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
 volatile float YawDeg, PitchDeg, RollDeg;
 
@@ -74,43 +75,25 @@ void pinConfig() {
     pinMode(pinDRDYINT, INPUT); // external 10K pullup
     }
 
-#if (CONFIG_BLUETOOTH_SERIAL_OUTPUT == 1)
-#include "BluetoothSerial.h"
-
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to enable it
-#endif
-
-
-static uint8_t btserial_nmeaChecksum(const char *szNMEA){
-    const char* sz = &szNMEA[1]; // skip leading '$'
-    uint8_t cksum = 0;
-
-    while ((*sz) != 0 && (*sz != '*')) {
-        cksum ^= (uint8_t) *sz;
-        sz++;
-        }
-    return cksum;
-    }
 
 
 static void btserial_task(void *pvParameter) {
-    BluetoothSerial SerialBT;
-    ESP_LOGI(TAG, "Starting bluetooth serial output : device ESP32GpsVario");
-    SerialBT.begin("ESP32GpsVario"); //Bluetooth device name
+    ESP_LOGD(TAG, "Starting bluetooth serial output : device ESP32GpsVario");
     while (1) {
-        char szmsg[40];
-        sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample+0.5f), (int32_t)KFAltitudeCm, (int32_t)DisplayClimbrateCps, CelsiusSample,((float)SupplyVoltage)/10.0f);
-        uint8_t cksum = btserial_nmeaChecksum(szmsg);
-        char szcksum[5];
-        sprintf(szcksum,"%02X\r\n", cksum);
-        strcat(szmsg, szcksum);
-        SerialBT.print(szmsg);
-        delayMs(500);
-        }
+		char szmsg[100];
+		if (opt.misc.btMsgType == BT_MSG_LK8EX1) {
+			btmsg_genLK8EX1(szmsg);
+			}
+		else
+		if (opt.misc.btMsgType == BT_MSG_XCTRC) {
+			btmsg_genXCTRC(szmsg);
+			}
+		btspp_print(szmsg,strlen(szmsg));
+		delayMs(1000/opt.misc.btMsgFreqHz);
+		}
     }
 
-#endif 
+
 
 static void server_task(void *pvParameter){
     server.on("/",         server_homePage);
@@ -158,7 +141,7 @@ static void ui_task(void *pvParameter) {
             lcd_printlnf(false, 2, "Alt s %4dm max %4dm", track.startAltm, track.maxAltm);
             lcd_printlnf(false, 3, "Max Climb +%.1fm/s", track.maxClimbrateCps/100.0f);
             lcd_printlnf(true, 4, "Max Sink %.1fm/s", track.maxSinkrateCps/100.0f);
-            ui_saveLog(&navpvt, &track);
+            ui_saveFlightLogSummary(&navpvt, &track);
             while(1) delayMs(100);
             }
 
@@ -366,19 +349,19 @@ static void vario_task(void *pvParameter) {
         if (drdyCounter >= 500) {
             drdyCounter = 0;
 #ifdef IMU_DEBUG
-            ESP_LOGI(TAG,"%dus",eus);
-			ESP_LOGI(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
-			ESP_LOGI(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
+            ESP_LOGD(TAG,"%dus",eus);
+			ESP_LOGD(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
+			ESP_LOGD(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
 #endif			
 
-            // ESP_LOGI(TAG,"ax %.1f ay %.1f az %.1f", axmG, aymG, azmG);
-            // ESP_LOGI(TAG,"gx %.1f gy %.1f gz %.1f", gxdps, gydps, gzdps);
-            // ESP_LOGI(TAG,"mx %.1f my %.1f mz %.1f", mx, my, mz);
-            // ESP_LOGI(TAG,"ax %.1f ay %.1f az %.1f", axNEDmG, ayNEDmG, azNEDmG);
-            // ESP_LOGI(TAG,"gx %.1f gy %.1f gz %.1f", gxNEDdps, gyNEDdps, gzNEDdps);
-            // ESP_LOGI(TAG,"mx %.1f my %.1f mz %.1f", mxNED, myNED, mzNED);
+            // ESP_LOGD(TAG,"ax %.1f ay %.1f az %.1f", axmG, aymG, azmG);
+            // ESP_LOGD(TAG,"gx %.1f gy %.1f gz %.1f", gxdps, gydps, gzdps);
+            // ESP_LOGD(TAG,"mx %.1f my %.1f mz %.1f", mx, my, mz);
+            // ESP_LOGD(TAG,"ax %.1f ay %.1f az %.1f", axNEDmG, ayNEDmG, azNEDmG);
+            // ESP_LOGD(TAG,"gx %.1f gy %.1f gz %.1f", gxNEDdps, gyNEDdps, gzNEDdps);
+            // ESP_LOGD(TAG,"mx %.1f my %.1f mz %.1f", mxNED, myNED, mzNED);
 
-            // ESP_LOGI(TAG,"baro alt %dcm", (int)ZCmSample);
+            // ESP_LOGD(TAG,"baro alt %dcm", (int)ZCmSample);
             //lcd_clear();
             //lcd_printf(0,0,"a %d %d %d", (int)axmG, (int)aymG, (int)azmG);
             //lcd_printf(1,0,"g %d %d %d", (int)gxdps, (int)gydps, (int)gzdps);
@@ -392,8 +375,13 @@ static void vario_task(void *pvParameter) {
 
 
 extern "C" void app_main() {
-    initArduino();
     ESP_LOGI(TAG, "esp32gpsvario compiled on %s at %s", __DATE__, __TIME__);
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+        }
+    ESP_ERROR_CHECK( ret );
     pinConfig();
 
     // initialize SPIFFS file system 
@@ -409,11 +397,11 @@ extern "C" void app_main() {
 
     // HSPI bus used for 128x64 LCD display
     hspi_config(pinHSCLK,pinHMISO, pinHMOSI,-1,HSPI_CLK_FREQHZ);
-    lcd_init(4);
+    lcd_init(opt.misc.lcdContrast);
     LCD_BKLT_ON();
-    BacklitCounter = 330;
+    int backlitCounter = opt.misc.backlitSecs*33;
     adc_init();
-    uint32_t supplyVoltagemV = adc_supplyVoltage();
+    uint32_t supplyVoltagemV = adc_supplyVoltageMV();
     ESP_LOGI(TAG, "Supply voltage = %d.%03dV", supplyVoltagemV/1000, supplyVoltagemV%1000);
     lcd_printlnf(false,0,"%s %s", __DATE__, __TIME__);
     lcd_printlnf(true,1,"Power %d.%03dV", supplyVoltagemV/1000, supplyVoltagemV%1000);
@@ -468,6 +456,7 @@ extern "C" void app_main() {
         }
 
     if (IsServer) {
+        initArduino();
         lcd_clear();
         lcd_printlnf(false,0,"HTTP Server Mode");
         lcd_printlnf(false,1,"AP \"ESP32GpsVario\"");
@@ -502,22 +491,25 @@ extern "C" void app_main() {
 	    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, 20, NULL, 1);
 	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);
         // ui_task lower priority than gps_task
-	    xTaskCreatePinnedToCore(&ui_task, "uitask", 8192, NULL, 10, NULL, 0); 
-#if (CONFIG_BLUETOOTH_SERIAL_OUTPUT == 1)
-	    xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 4096, NULL, 10, NULL, 0); 
-#endif
+	    xTaskCreatePinnedToCore(&ui_task, "uitask", 8192, NULL, 10, NULL, 0);
+	    if (opt.misc.btMsgFreqHz != 0) {
+	    	if (btspp_init("Esp32GpsVario")) { //Bluetooth device name
+	    		xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 2048, NULL, 15, NULL, 0);
+	    		}
+	    	}
         }
+
 
     while(1) {
         btn_debounce();
         if (BtnRPressed || BtnLPressed || BtnMPressed || Btn0Pressed) {
-            IsFlashDisplayRequired = true;
-            BacklitCounter = opt.misc.backlitSecs*33;   
+            IsFlashDisplayRequired = true; // invert display for one frame to acknowledge button press
+            backlitCounter = opt.misc.backlitSecs*33;   // turn on backlight for user configurable time if a button is pressed
             LCD_BKLT_ON();
             }
-        if (BacklitCounter) {
-            BacklitCounter--;
-            if (BacklitCounter <= 0) LCD_BKLT_OFF();
+        if (backlitCounter) {
+            backlitCounter--;
+            if (backlitCounter <= 0) LCD_BKLT_OFF();
             }
         if (BtnRPressed) {
             btn_clear();
@@ -552,7 +544,7 @@ extern "C" void app_main() {
                 IsSpeakerEnabled = false;
                 }
             }
-
+    
         delayMs(30);
         }
 	}

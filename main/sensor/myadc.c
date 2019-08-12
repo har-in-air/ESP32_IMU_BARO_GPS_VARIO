@@ -62,7 +62,7 @@ void adc_init(){
     print_char_val_type(val_type);
     }
     
-uint32_t adc_sample() {    
+uint32_t adc_sampleMV() {
     uint32_t adc_reading = 0;
     for (int i = 0; i < NO_OF_SAMPLES; i++) {
         adc_reading += adc1_get_raw((adc1_channel_t)channel);

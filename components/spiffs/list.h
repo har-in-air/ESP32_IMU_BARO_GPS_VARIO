@@ -33,28 +33,36 @@
 #include <stdint.h>
 #include "mutex.h"
 
-struct list {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct splist {
     struct mtx mutex;
-    struct list_index *index;
-    struct list_index *free;
+    struct splist_index *index;
+    struct splist_index *free;
     uint8_t indexes;
     uint8_t first_index;
 };
 
-struct list_index {
+struct splist_index {
     void *item;
     uint8_t index;
     uint8_t deleted;
-    struct list_index *next;
+    struct splist_index *next;
 };
 
-void list_init(struct list *list, int first_index);
-int list_add(struct list *list, void *item, int *item_index);
-int list_get(struct list *list, int index, void **item);
-int list_remove(struct list *list, int index, int destroy);
-int list_first(struct list *list);
-int list_next(struct list *list, int index);
-void list_destroy(struct list *list, int items);
+void splist_init(struct splist *list, int first_index);
+int splist_add(struct splist *list, void *item, int *item_index);
+int splist_get(struct splist *list, int index, void **item);
+int splist_remove(struct splist *list, int index, int destroy);
+int splist_first(struct splist *list);
+int splist_next(struct splist *list, int index);
+void splist_destroy(struct splist *list, int items);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* LIST_H */
 
