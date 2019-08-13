@@ -82,36 +82,33 @@ task yield during server data download etc.
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 barometric pressure sensor, sampled at 50Hz
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud.
-I used a compact gps module from Banggood (see screenshot in /docs directory). Not a great choice, it was expensive, and 
+I used a compact ublox gps module from Banggood (/docs/banggood_gpsmodule.png). Not a great choice, it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
-And it doesn't save configuration settings to flash or eeprom, so it needs to be configured on initialization each time.
-I've uploaded a screenshot of an alternative ublox compatible module from Aliexpress that seems to be a better option. 
-Cheaper, larger patch antenna, and with flash configuration save. I don't have one myself, I'm assuming the advertising is correct :-D. 
-Note that we're trying to use  the highest fix rate possible (for future integration into the imu-vario algorithm). 
-Ublox documentation indicates that this is possible only when you restrict the module to one GPS constellation (GPS), rather than GPS+GLONASS  or GPS+GLONASS+BEIDOU. So don't waste your time looking for expensive multi-constellation modules.
-* ESP32 WROOM rev 1 module. Any off-the-shelf breakout board with an onboard USB-UART interface (CH340, CP2102 etc).
+And it doesn't save configuration settings to flash, so it needs to be configured on every power-up.
+I found another gps module on Aliexpress (/docs/aliexpress_gpsmodule.png) that is cheaper, has a larger patch antenna and flash configuration save. 
+I don't have one myself, I'm assuming the advertising is correct :-D. 
+We're using the highest fix rate possible (10Hz), for future integration into the imu-vario algorithm. 
+Ublox documentation indicates that this is possible only when you restrict the module to the GPS constellation, rather than GPS+GLONASS etc. 
+So don't waste your time looking for multi-constellation modules.
+* ESP32 WROOM rev 1 module. Use any off-the-shelf breakout board with an onboard USB-UART interface (CH340, CP2102 etc).
 * W25Q128FVSG 128Mbit SPI flash
 * 128x64 reflective LCD display (ST7565 controller) with serial spi interface.
-* MAX4410 audio amplifier driving 8ohm cellphone speaker.
-* For the power supply, I use a generic USB 5V output power bank. This allows me to 
+* For the power supply, I use a USB 5V output power bank. This allows me to 
 detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
 my hand-wired gpsvario in checked-in luggage (no battery => no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
-* Average current draw is ~160mA in gpsvario mode, ~300mA in wifi access point mode. Not
- optimized.
-* I don't have a schematic for the project because I used  off-the-shelf modules/breakout boards
+* Current draw from a 5V power bank is < 100mA in gpsvario mode with bluetooth transmission and volume set to 1, and < 150mA in wifi access point mode.
+* I don't have a schematic for the project because I used  off-the-shelf modules
  (and one homebrew board for the audio amplifier). Have a look at the file
-/main/config.h to find the signal connections from the ESP32 (#define pinXXX ) to various components. Use the 
-ESP32 board USB 5V to supply power for the module boards (GPS, MPU9250, MS5611, audio amplifier, LCD), and
-3.3V from the ESP32 VCC line for the 128Mb SPI flash.  Note that the LCD module PCB has a footprint for an
+/main/config.h to find the signal connections from the ESP32 (#define pinXXX). The 
+USB 5V pin supplies power for the GPS, MPU9250, MS5611, LCD modules (these modules have onboard 3.3V regulators) and audio amplifier. The
+ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  The LCD module PCB has a footprint for an
 SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. All signal interfaces between the ESP32
 and other components are at 3.3V level. 
-* There are different versions of the 128x64 LCD module that need 
-modifications to the initialization code (lcd bias, display orientation). So you may
-need to tweak the code to get it to display at all or with the right orientation.
-See lcd_init() in /ui/lcd7565.c.
-* I added a 470uF 10V capacitor on the USB5V supply
-before the power switch along with a 1A resettable polyfuse in the 5V supply line. Note that installing
+* There are different versions of the 128x64 LCD module that may need 
+modifications to the initialization code lcd_init() in /ui/lcd7565.c (specifically lcd bias and display orientation). 
+* I added a 470uF 10V bypass capacitor on the USB5V supply
+before the power switch along with an inline 1A resettable polyfuse. Note that installing
 a power switch requires breaking the 5V supply line from the microusb connector on the ESP32 breakout board.
 The easiest way to do this is to desolder the schottky diode that is normally placed in the
 5V supply line between the microusb connector 5V pin and the rest of the circuit. Connect the power switch inline in its place.
