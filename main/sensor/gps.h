@@ -97,7 +97,7 @@ extern volatile bool 	IsGpsNavUpdated;
 						
 int  gps_packetChecksum(uint8_t* pBuf, int numBytes);
 void gps_stateMachine();
-int  gps_config(void);
+bool  gps_config(void);
 void gps_updateFlashLogRecord();
 
 int32_t gps_haversineDistancem(float lat1, float lon1, float lat2, float lon2);

@@ -190,7 +190,7 @@ static bool ubx_detectUBX(int baudrate) {
 	}
 
 
-int gps_config() {
+bool gps_config() {
    esp_err_t err;
    UartNum = GPS_UART_NUM;
    uart_config_t uart_config = {
@@ -203,17 +203,17 @@ int gps_config() {
    err = uart_param_config(UartNum, &uart_config);
    if (err != ERR_OK) {
       ESP_LOGE(TAG, "error configuring uart params");
-      return -1;
+      return false;
       }
    err = uart_set_pin(UartNum, pinGpsTXD, pinGpsRXD, pinGpsRTS, pinGpsCTS);
    if (err != ERR_OK) {
       ESP_LOGE(TAG, "error configuring uart pins");
-      return -2;
+      return false;
       }
    err = uart_driver_install(UartNum, UART_RX_BUFFER_SIZE * 2, 0, 0, NULL, 0);
    if (err != ERR_OK) {
       ESP_LOGE(TAG, "error installing uart driver");
-      return -3;
+      return false;
       }
 
    bool nmea9600 = false;
@@ -246,7 +246,7 @@ int gps_config() {
                }   
             else{ 
                ESP_LOGE(TAG, "Could not detect protocol");
-               return -5;
+               return false;
                }
             }
          } 
@@ -262,14 +262,14 @@ int gps_config() {
           ESP_LOGI(TAG, "Found NMEA packet at 115200 baud");
           }   
       }
-   ESP_LOGI(TAG, "configuring @115200baud");
-   ubx_config115200();
+   	ESP_LOGI(TAG, "configuring @115200baud");
+   	ubx_config115200();
 
 	NumValidHdrBytes = 0;
 	PktReceivedBytes = 0;
 	IsGpsNavUpdated = false;
 	GpsState = GPS_STATE_IDLE;
-   return 0;
+	return true;
 	}
 
 

@@ -34,7 +34,6 @@ extern "C" {
 
 #define TAG "main"
 
-//ESP32WebServer server(80);
 ESP32WebServer *pServer = NULL;
 
 volatile int LedState = 0;
@@ -99,6 +98,12 @@ static void btserial_task(void *pvParameter) {
 
 static void server_task(void *pvParameter){
 	pServer = new ESP32WebServer(80);
+	if (pServer == NULL) {
+		ESP_LOGE(TAG, "error malloc webserver");
+		lcd_clear();
+		lcd_printlnf(true,0,"webserver error");
+		while(1) delayMs(100);
+		}
     pServer->on("/",         server_homePage);
     pServer->on("/dir",      server_listDir);
     pServer->on("/upload",   server_fileUpload);
@@ -158,12 +163,16 @@ static void ui_task(void *pvParameter) {
 
 static void gps_task(void *pvParameter) {
 	ESP_LOGI(TAG, "gps task started");
-    if (gps_config() < 0) {
+    if (!gps_config()) {
         ESP_LOGE(TAG, "error configuring gps");
-        while(1) {delayMs(100);}
+		lcd_clear();
+		lcd_printlnf(true,0,"gps error");
+        delayMs(3000);
+        lcd_clear();
         }
     while(1) {
         gps_stateMachine();
+        delayMs(5);
         }
     vTaskDelete(NULL);
     }  
