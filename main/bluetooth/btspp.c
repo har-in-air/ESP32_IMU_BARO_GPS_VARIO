@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-
 #include "esp32-hal-log.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -21,10 +20,9 @@
 #include "esp_bt_device.h"
 #include "esp_spp_api.h"
 
-//static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
 const char * _spp_server_name = "ESP32SPP";
 
-
+#define TAG "btspp"
 
 #define RX_QUEUE_SIZE 512
 #define TX_QUEUE_SIZE 32
@@ -48,18 +46,18 @@ typedef struct {
 
 static esp_err_t _spp_queue_packet(uint8_t *data, size_t len){
     if(!data || !len){
-        log_w("No data provided");
+        ESP_LOGW(TAG,"No data provided");
         return ESP_OK;
     }
     spp_packet_t * packet = (spp_packet_t*)malloc(sizeof(spp_packet_t) + len);
     if(!packet){
-        log_e("SPP TX Packet Malloc Failed!");
+        ESP_LOGE(TAG,"SPP TX Packet Malloc Failed!");
         return ESP_FAIL;
     }
     packet->len = len;
     memcpy(packet->data, data, len);
     if (xQueueSend(_spp_tx_queue, &packet, portMAX_DELAY) != pdPASS) {
-        log_e("SPP TX Queue Send Failed!");
+        ESP_LOGE(TAG,"SPP TX Queue Send Failed!");
         free(packet);
         return ESP_FAIL;
     }
@@ -74,12 +72,12 @@ static bool _spp_send_buffer(){
     if((xEventGroupWaitBits(_spp_event_group, SPP_CONGESTED, pdFALSE, pdTRUE, portMAX_DELAY) & SPP_CONGESTED)){
         esp_err_t err = esp_spp_write(_spp_client, _spp_tx_buffer_len, _spp_tx_buffer);
         if(err != ESP_OK){
-            log_e("SPP Write Failed! [0x%X]", err);
+            ESP_LOGE(TAG,"SPP Write Failed! [0x%X]", err);
             return false;
         }
         _spp_tx_buffer_len = 0;
         if(xSemaphoreTake(_spp_tx_done, portMAX_DELAY) != pdTRUE){
-            log_e("SPP Ack Failed!");
+            ESP_LOGE(TAG,"SPP Ack Failed!");
             return false;
         }
         return true;
@@ -128,7 +126,7 @@ static void _spp_tx_task(void * arg){
                 }
             }
         } else {
-            log_e("Something went horribly wrong");
+            ESP_LOGE(TAG,"Something went horribly wrong");
         }
     }
     vTaskDelete(NULL);
@@ -141,7 +139,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     switch (event)
     {
     case ESP_SPP_INIT_EVT:
-        log_i("ESP_SPP_INIT_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_INIT_EVT");
         esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
         esp_spp_start_srv(ESP_SPP_SEC_NONE, ESP_SPP_ROLE_SLAVE, 0, _spp_server_name);
         xEventGroupSetBits(_spp_event_group, SPP_RUNNING);
@@ -155,7 +153,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
             esp_spp_disconnect(param->open.handle);
         }
         xEventGroupSetBits(_spp_event_group, SPP_CONNECTED);
-        log_i("ESP_SPP_SRV_OPEN_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_SRV_OPEN_EVT");
         break;
 
     case ESP_SPP_CLOSE_EVT://Client connection closed
@@ -165,7 +163,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
             _spp_client = 0;
         }
         xEventGroupClearBits(_spp_event_group, SPP_CONNECTED);
-        log_i("ESP_SPP_CLOSE_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_CLOSE_EVT");
         break;
 
     case ESP_SPP_CONG_EVT://connection congestion status changed
@@ -174,7 +172,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         } else {
             xEventGroupSetBits(_spp_event_group, SPP_CONGESTED);
         }
-        log_v("ESP_SPP_CONG_EVT: %s", param->cong.cong?"CONGESTED":"FREE");
+        ESP_LOGV(TAG,"ESP_SPP_CONG_EVT: %s", param->cong.cong?"CONGESTED":"FREE");
         break;
 
     case ESP_SPP_WRITE_EVT://write operation completed
@@ -182,18 +180,18 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
             xEventGroupClearBits(_spp_event_group, SPP_CONGESTED);
         }
         xSemaphoreGive(_spp_tx_done);//we can try to send another packet
-        log_v("ESP_SPP_WRITE_EVT: %u %s", param->write.len, param->write.cong?"CONGESTED":"FREE");
+        ESP_LOGV(TAG,"ESP_SPP_WRITE_EVT: %u %s", param->write.len, param->write.cong?"CONGESTED":"FREE");
         break;
 
     case ESP_SPP_DATA_IND_EVT://connection received data
-        log_v("ESP_SPP_DATA_IND_EVT len=%d handle=%d", param->data_ind.len, param->data_ind.handle);
+        ESP_LOGV(TAG,"ESP_SPP_DATA_IND_EVT len=%d handle=%d", param->data_ind.len, param->data_ind.handle);
         //esp_log_buffer_hex("",param->data_ind.data,param->data_ind.len); //for low level debug
         //ets_printf("r:%u\n", param->data_ind.len);
 
         if (_spp_rx_queue != NULL){
             for (int i = 0; i < param->data_ind.len; i++){
                 if(xQueueSend(_spp_rx_queue, param->data_ind.data + i, (TickType_t)0) != pdTRUE){
-                    log_e("RX Full! Discarding %u bytes", param->data_ind.len - i);
+                    ESP_LOGE(TAG,"RX Full! Discarding %u bytes", param->data_ind.len - i);
                     break;
                 }
             }
@@ -202,16 +200,16 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 
         //should maybe delete those.
     case ESP_SPP_DISCOVERY_COMP_EVT://discovery complete
-        log_i("ESP_SPP_DISCOVERY_COMP_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_DISCOVERY_COMP_EVT");
         break;
     case ESP_SPP_OPEN_EVT://Client connection open
-        log_i("ESP_SPP_OPEN_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_OPEN_EVT");
         break;
     case ESP_SPP_START_EVT://server started
-        log_i("ESP_SPP_START_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_START_EVT");
         break;
     case ESP_SPP_CL_INIT_EVT://client initiated a connection
-        log_i("ESP_SPP_CL_INIT_EVT");
+        ESP_LOGD(TAG,"ESP_SPP_CL_INIT_EVT");
         break;
     default:
         break;
@@ -237,7 +235,7 @@ bool btspp_init(const char *deviceName) {
     if(!_spp_event_group){
         _spp_event_group = xEventGroupCreate();
         if(!_spp_event_group){
-            log_e("SPP Event Group Create Failed!");
+            ESP_LOGE(TAG,"SPP Event Group Create Failed!");
             return false;
         }
         xEventGroupClearBits(_spp_event_group, 0xFFFFFF);
@@ -246,21 +244,21 @@ bool btspp_init(const char *deviceName) {
     if (_spp_rx_queue == NULL){
         _spp_rx_queue = xQueueCreate(RX_QUEUE_SIZE, sizeof(uint8_t)); //initialize the queue
         if (_spp_rx_queue == NULL){
-            log_e("RX Queue Create Failed");
+            ESP_LOGE(TAG,"RX Queue Create Failed");
             return false;
         }
     }
     if (_spp_tx_queue == NULL){
         _spp_tx_queue = xQueueCreate(TX_QUEUE_SIZE, sizeof(spp_packet_t*)); //initialize the queue
         if (_spp_tx_queue == NULL){
-            log_e("TX Queue Create Failed");
+            ESP_LOGE(TAG,"TX Queue Create Failed");
             return false;
         }
     }
     if(_spp_tx_done == NULL){
         _spp_tx_done = xSemaphoreCreateBinary();
         if (_spp_tx_done == NULL){
-            log_e("TX Semaphore Create Failed");
+            ESP_LOGE(TAG,"TX Semaphore Create Failed");
             return false;
         }
         xSemaphoreTake(_spp_tx_done, 0);
@@ -269,7 +267,7 @@ bool btspp_init(const char *deviceName) {
     if(!_spp_task_handle){
         xTaskCreate(_spp_tx_task, "spp_tx", 4096, NULL, 2, &_spp_task_handle);
         if(!_spp_task_handle){
-            log_e("Network Event Task Start Failed!");
+            ESP_LOGE(TAG,"Network Event Task Start Failed!");
             return false;
         }
     }

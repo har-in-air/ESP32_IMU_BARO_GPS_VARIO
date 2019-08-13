@@ -34,7 +34,8 @@ extern "C" {
 
 #define TAG "main"
 
-ESP32WebServer server(80);
+//ESP32WebServer server(80);
+ESP32WebServer *pServer = NULL;
 
 volatile int LedState = 0;
 volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
@@ -91,23 +92,27 @@ static void btserial_task(void *pvParameter) {
 		btspp_print(szmsg,strlen(szmsg));
 		delayMs(1000/opt.misc.btMsgFreqHz);
 		}
+    vTaskDelete(NULL);
     }
 
 
 
 static void server_task(void *pvParameter){
-    server.on("/",         server_homePage);
-    server.on("/dir",      server_listDir);
-    server.on("/upload",   server_fileUpload);
-    server.on("/fupload",  HTTP_POST,[](){ server.send(200);}, server_handleFileUpload);
-    server.on("/download", server_fileDownload);
-    server.on("/delete",   server_fileDelete);
-    server.on("/datalog",  server_downloadDataLog);
-    server.begin();
+	pServer = new ESP32WebServer(80);
+    pServer->on("/",         server_homePage);
+    pServer->on("/dir",      server_listDir);
+    pServer->on("/upload",   server_fileUpload);
+    pServer->on("/fupload",  HTTP_POST,[](){ pServer->send(200);}, server_handleFileUpload);
+    pServer->on("/download", server_fileDownload);
+    pServer->on("/delete",   server_fileDelete);
+    pServer->on("/datalog",  server_downloadDataLog);
+    pServer->begin();
     while(1) {
-        server.handleClient(); 
+        pServer->handleClient();
         delayMs(5);
         }
+    delete pServer;
+    vTaskDelete(NULL);
     }
 
 
@@ -128,7 +133,7 @@ static void ui_task(void *pvParameter) {
             counter++;
             if (counter >= 5) {
                 counter = 0;
-                // display update interval 0.5s
+                // GPS update interval = 0.1s => display update interval =  0.5s
                 memcpy(&navpvt, (void*)&NavPvt, sizeof(NAV_PVT)); 
                 ui_updateFlightDisplay(&navpvt,&track);
                 }
@@ -147,6 +152,7 @@ static void ui_task(void *pvParameter) {
 
 		delayMs(5);
 		}
+    vTaskDelete(NULL);
 	}	
 
 
@@ -159,6 +165,7 @@ static void gps_task(void *pvParameter) {
     while(1) {
         gps_stateMachine();
         }
+    vTaskDelete(NULL);
     }  
 
 
@@ -235,7 +242,7 @@ static void vario_taskConfig() {
 		}	
 
     ms5611_averagedSample(4);
-    //ESP_LOGI(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
+    ESP_LOGD(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
     //lcd_printlnf(true,0,"Baro %dm %dC",(int)(ZCmAvg/100.0f), (int)CelsiusSample);
     kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, ZCmAvg, 0.0f, 0.0f);
     //delayMs(2000);
@@ -264,9 +271,12 @@ static void vario_task(void *pvParameter) {
     attachInterrupt(pinDRDYINT, drdyHandler, RISING);
 
     while (1) {
-        xSemaphoreTake(DrdySemaphore, portMAX_DELAY);
+        xSemaphoreTake(DrdySemaphore, portMAX_DELAY); // wait for data ready interrupt from MPU9250 (500Hz)
         clockNow = XTHAL_GET_CCOUNT();
+#ifdef IMU_DEBUG
         uint32_t marker =  cct_setMarker();
+        LED_ON();
+#endif
         imuTimeDeltaUSecs = cct_intervalUs(clockPrevious, clockNow); // time in us since last sample
         clockPrevious = clockNow;
         drdyCounter++;
@@ -331,7 +341,6 @@ static void vario_task(void *pvParameter) {
 			    FlashLogIBGRecord.imu.mxNED = mxNED;
 			    FlashLogIBGRecord.imu.myNED = myNED;
 			    FlashLogIBGRecord.imu.mzNED = mzNED;
-			    //LED_ON();
                 // worst case imu+baro+gps record = 80bytes,
                 //  ~130uS intra-page, ~210uS across page boundary
                 if (IsLogging) {
@@ -341,18 +350,19 @@ static void vario_task(void *pvParameter) {
                         } 
                     memset(&FlashLogIBGRecord, 0, sizeof(FLASHLOG_IBG_RECORD));
                     }
-				//LED_OFF();
 				xSemaphoreGive( FlashLogMutex );
 				}			
 	        }  
+#ifdef IMU_DEBUG
         uint32_t eus = cct_elapsedUs(marker);
+		LED_OFF(); // scope the led on-time to ensure worst case < 2mS
+#endif
         if (drdyCounter >= 500) {
             drdyCounter = 0;
 #ifdef IMU_DEBUG
-            ESP_LOGD(TAG,"%dus",eus);
-			ESP_LOGD(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
-			ESP_LOGD(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
-#endif			
+            //ESP_LOGD(TAG,"%dus",eus); // need to ensure time elapsed is less than 2mS worst case
+			//ESP_LOGD(TAG,"\r\nY = %d P = %d R = %d", (int)YawDeg, (int)PitchDeg, (int)RollDeg);
+			//ESP_LOGD(TAG,"ba = %d ka = %d v = %d",(int)ZCmSample, (int)KFAltitudeCm, (int)KFClimbrateCps);
 
             // ESP_LOGD(TAG,"ax %.1f ay %.1f az %.1f", axmG, aymG, azmG);
             // ESP_LOGD(TAG,"gx %.1f gy %.1f gz %.1f", gxdps, gydps, gzdps);
@@ -369,9 +379,11 @@ static void vario_task(void *pvParameter) {
             //lcd_printf(0,0,"a %d %d %d", (int)axNEDmG, (int)ayNEDmG, (int)azNEDmG);
             //lcd_printf(1,0,"g %d %d %d", (int)gxNEDdps, (int)gyNEDdps, (int)gzNEDdps);
             //lcd_printf(2,0,"m %d %d %d", (int)mxNED, (int)myNED, (int)mzNED);
+#endif
             }
         }
-   }
+    vTaskDelete(NULL);
+    }
 
 
 extern "C" void app_main() {
@@ -386,8 +398,10 @@ extern "C" void app_main() {
 
     // initialize SPIFFS file system 
     vfs_spiffs_register();
-    // read calibration parameters from calib.txt, configuration parameters from options.txt
+    // read calibration parameters from calib.txt
     calib_init();
+    // set default configuration parameters, then override them with configuration parameters read from options.txt
+    // so you only have to specify the parameters you want to modify, in the file options.txt
     opt_init();
 
     // configure DAC sine-wave tone generation
@@ -480,7 +494,7 @@ extern "C" void app_main() {
             delayMs(30);
             }
 
-        if (rte_selectRoute() == 0) {
+        if (rte_selectRoute()) {
             int32_t rteDistance = rte_totalDistance();
             lcd_clear();
             lcd_printlnf(true,0,"Route %.2fkm", ((float)rteDistance)/1000.0f);
@@ -488,10 +502,10 @@ extern "C" void app_main() {
             IsRouteActive = true;
             }
         vario_taskConfig();   	
-	    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, 20, NULL, 1);
+	    xTaskCreatePinnedToCore(&vario_task, "variotask", 2048, NULL, 20, NULL, 1);
 	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, 20, NULL, 0);
         // ui_task lower priority than gps_task
-	    xTaskCreatePinnedToCore(&ui_task, "uitask", 8192, NULL, 10, NULL, 0);
+	    xTaskCreatePinnedToCore(&ui_task, "uitask", 2048, NULL, 10, NULL, 0);
 	    if (opt.misc.btMsgFreqHz != 0) {
 	    	if (btspp_init("Esp32GpsVario")) { //Bluetooth device name
 	    		xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 2048, NULL, 15, NULL, 0);

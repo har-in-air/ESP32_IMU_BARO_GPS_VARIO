@@ -11,27 +11,30 @@
 
 #define TAG "route"
 
-#define CONTINUE() {ESP_LOGI(TAG,"error at line %d\r\n", __LINE__); continue;} 
-//#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#define CONTINUE() {ESP_LOGE(TAG,"error at line %d\r\n", __LINE__); continue;}
 
 ROUTE Route;
 ROUTE* pRoute = &Route;
 
 #define MAX_ROUTES 7
+
 int NumRoutes;
 int RouteSel;
 char RouteFileNames[MAX_ROUTES][20];
 
-int rte_handleRouteSelEvent();
-void rte_displayRouteSel();
+static bool rte_handleRouteSelEvent();
+static bool rte_readLine(FILE* pFile, char* szBuf);
+static void rte_displayRouteSel();
+static bool rte_loadRoute(char* szFileName);
 
-int rte_selectRoute(){
+
+bool rte_selectRoute(){
    DIR *dir = NULL;
    struct dirent *ent;
    char tpath[100];
    struct stat sb;
 #ifdef ROUTE_DEBUG
-   ESP_LOGI(TAG,"LIST of DIR [/spiffs/]\r\n");
+   ESP_LOGD(TAG,"LIST of DIR [/spiffs/]\r\n");
 #endif
    dir = opendir("/spiffs/");
    NumRoutes = 0;
@@ -43,7 +46,7 @@ int rte_selectRoute(){
 			if ((res == 0) && (ent->d_type == DT_REG)) {
             if (strstr(tpath, ".wpt") || strstr(tpath,".WPT")){
                strcpy(RouteFileNames[NumRoutes], ent->d_name);
-               ESP_LOGI(TAG,"Found route file %s", RouteFileNames[NumRoutes]);
+               ESP_LOGD(TAG,"Found route file %s", RouteFileNames[NumRoutes]);
                NumRoutes++;
                if (NumRoutes == MAX_ROUTES) break;
                }
@@ -52,25 +55,25 @@ int rte_selectRoute(){
       }
    else {
       ESP_LOGE(TAG,"error opening /spiffs/");
-      return -1;
+      return false;
       }
-   if (NumRoutes == 0) return -1;
+   if (NumRoutes == 0) return false;
 
-   RouteSel = 0; // default, do not use a route
+   RouteSel = 0; // default : do not use a route
    rte_displayRouteSel();
    btn_clear();
-   while (rte_handleRouteSelEvent() == 0) {
+   while (!rte_handleRouteSelEvent()) {
       btn_debounce();
       delayMs(30);
       }
-   if (RouteSel == 0) return -1;
+   if (RouteSel == 0) return false;
    sprintf(tpath, "/spiffs/");
    strcat(tpath, RouteFileNames[RouteSel-1]);
    return rte_loadRoute(tpath);
    }
 
 
-void rte_displayRouteSel() {
+static void rte_displayRouteSel() {
   lcd_clear();
   // BtnR to traverse list, Btn0 to select
   lcd_printlnf(false, 0, "R->change   0->sel"); 
@@ -81,9 +84,9 @@ void rte_displayRouteSel() {
   lcd_sendFrame();
   }
 
-#define RTE_IDLE_COUNT 330 // ~10 seconds at 30mS debounce interval
+#define RTE_IDLE_COUNT 330 // ~10 seconds at 30mS debounce interval (if you do nothing)
 
-int rte_handleRouteSelEvent() {
+static bool rte_handleRouteSelEvent() {
 	static int countDown = RTE_IDLE_COUNT;
 
 	if (BtnRPressed) {
@@ -94,25 +97,26 @@ int rte_handleRouteSelEvent() {
 			RouteSel = 0;
          	}
 		rte_displayRouteSel();
-		return 0;
+		return false;
       	}
 	else
 	if (Btn0Pressed || (countDown <= 0)) {
 		btn_clear();
-		return 1;
+		return true;
       	}
    else {
 	   countDown--;
-	   return 0;
+	   return false;
    	   }
    }
+
 
 // expects FormatGEO waypoint text file ".wpt" as output by xcplanner (xcplanner.appspot.com)
 // You can edit the waypoint text file to add a waypoint radius in meters at the end of  each
 // waypoint entry line. If a waypoint radius is not found, the default waypoint radius
 // (as specified in options.txt) will be used.
 
-int rte_loadRoute(char* szFileName) {
+static bool rte_loadRoute(char* szFileName) {
    FILE * fwpt = NULL;
    int cnt, maxCnt;
    float lat,lon,alt,sec,radius;
@@ -124,19 +128,19 @@ int rte_loadRoute(char* szFileName) {
    pRoute->numWpts = 0;
    pRoute->nextWptInx = 0;
    if ((fwpt = fopen( szFileName, "r" )) == NULL){
-      ESP_LOGI(TAG, "error opening file %s\r\n", szFileName);
-      return -1;
+      ESP_LOGE(TAG, "error opening file %s\r\n", szFileName);
+      return false;
       }
    rte_readLine(fwpt,szLine);
 	szToken = strtok(szLine," \r\n");
    if (strcmp(szToken, "$FormatGEO") != 0) {
-      ESP_LOGI(TAG,"incorrect format\r\n");
-      return -2;
+      ESP_LOGE(TAG,"incorrect format\r\n");
+      return false;
       }
 
    // malformed lines are skipped, so check the total number of waypoints is as expected.
-   // waypoints without a radius are allowed, then the default radius is used. So xcplanner output
-   // files can be used without any modification.
+   // Waypoints without a radius are allowed, for these the waypoint radius from options.txt
+   // is used. So xcplanner output files can be used without any modification if all the waypoints have the same radius.
    while (rte_readLine(fwpt,szLine)) {
 	   szToken = strtok(szLine," ");
 	   if (szToken == NULL) CONTINUE();
@@ -197,11 +201,11 @@ int rte_loadRoute(char* szFileName) {
       pRoute->numWpts++;   
       }
     fclose(fwpt);
-    return 0;
+    return true;
     }
 
 
-int rte_readLine(FILE* pFile, char* szBuf) {
+static bool rte_readLine(FILE* pFile, char* szBuf) {
     uint8_t b;
     char* psz = szBuf;
     if (pFile == NULL) return 0;
@@ -212,7 +216,7 @@ int rte_readLine(FILE* pFile, char* szBuf) {
             }
         }
     *psz = 0;
-    return ((*szBuf) == 0 ? 0 : 1);
+    return ((*szBuf) == 0 ? false : true);
     }
 
 int32_t rte_totalDistance() {

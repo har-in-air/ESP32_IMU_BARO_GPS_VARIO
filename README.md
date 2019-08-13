@@ -58,8 +58,8 @@ Custom partition table. Note we need to run 'make flashfs' once to create and fl
 
 <img src="/docs/menuconfig_SPIFFS.png" alt="menuconfig_spiffs"/>
 
-#### ESP32
-80MHz clock to minimize power consumption, main task stack size increased to 16384bytes to accommodate ESP32Webserver
+#### ESP32 
+80MHz clock to minimize power consumption, main task stack size increased to 4096bytes
 
 <img src="/docs/menuconfig_esp32_specific.png" alt="menuconfig_esp32_specific"/>
 
@@ -125,7 +125,8 @@ by omitting the audio amplifier and driving the piezo directly from an ESP32 pin
 * For downloading binary data logs, put the gpsvario into server mode, connect to the WiFi access point 'ESP32GpsVario' and access the url 'http://192.168.4.1/datalog' via a web browser. The binary datalog file can contain a mix of high-speed IBG (imu+baro+gps) data samples, and normal GPS track logs. There is some sample software in the /offline directory for splitting the binary datalog into separate IBG and GPS datalogs, and for converting GPS logs into .gpx text files that you can load in Google Earth or other GPS track visualization software.
 * For configuring the gpsvario, you can edit the user-configurable options on the LCD screen. In the options page, press the L or R buttons to select the option (o cursor). Press the M button to change
 the option (* cursor). Now L and R will decrease/increase the value. Press the M button again to go back to the option select (o cursor). Changes are saved to the file options.txt in the onboard SPIFFS flash file system. If there is no button press for ~10 seconds on the option edit screen, the gpsvario will automatically transition into flight display mode. This is so that you can power up the unit and have it eventually start displaying the flight screen without user intervention. 
-Alternatively, put the gpsvario into server mode, access the url 'http://192.168.4.1' and download the options.txt file from the gpsvario. Edit it as required, and upload the file back to the gpsvario. This way you can keep different versions of the options.txt file on your laptop/smartphone for different sites or site conditions. To reset to 'factory defaults', just delete the options.txt file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario.
+* Alternatively, put the gpsvario into server mode, access the url 'http://192.168.4.1' and download the options.txt file from the gpsvario. Edit it as required, and upload the file back to the gpsvario. This way you can keep different versions of the options.txt file on your laptop/smartphone for different sites or site conditions. To reset to 'factory defaults', just delete the options.txt file from the gpsvario using the webserver. It will be regenerated with 'factory default' values the next time you power up the gpsvario. A sample configuration file is in /docs/options.txt.
+* Every time the gpsvario is powered on, it sets the configuration to default values and then overrides them with the values in the option.txt file. So you don't have to specify all the options in the options.txt file, only the ones you want to modify from the 'factory default' values. 
 * Use [xcplanner](https://xcplanner.appspot.com) to generate a route with waypoints in FormatGEO format as a *.wpt text file. Note that xcplanner does not specify waypoint radii in the FormatGEO file. You can edit the .wpt file to add the waypoint radius (in meters) at the end of a waypoint entry line. If the radius is not specified for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. Upload the .wpt file to the gpsvario using the webpage upload file function. You can upload up to 7 route files and select one of them (or none) on-screen. If there
 are no route files or you select "none", the bearing-to-waypoint arrow and distance-to-waypoint field will display bearing and distance to the launch coordinates.
 * When connecting a smartphone/tablet navigation app (e.g. XCTrack) via bluetooth, the device name is Esp32GpsVario. XCTrack applies heavy damping filters to incoming data such as

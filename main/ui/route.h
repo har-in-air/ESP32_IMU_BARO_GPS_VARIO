@@ -30,9 +30,7 @@ typedef struct ROUTE_ {
 
 extern ROUTE* pRoute;
 
-int rte_selectRoute();
-int rte_readLine(FILE* pFile, char* szBuf);
-int rte_loadRoute(char* szFileName);
+bool rte_selectRoute();
 int32_t rte_totalDistance();
 
 #ifdef __cplusplus
