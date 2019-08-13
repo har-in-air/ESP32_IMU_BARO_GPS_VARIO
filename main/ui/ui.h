@@ -76,7 +76,8 @@ typedef struct TRACK_ {
 void ui_printPosDOP(int page, int col, int dop);				
 void ui_printSupplyVoltage(int page, int col, int bV);
 void ui_printBatteryStatus(int page, int col, int bV);
-void ui_printSpkrStatus(int page, int col, int bAudioEn);
+void ui_printSpkrStatus(int page, int col, bool bAudioEn);
+void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn);
 void ui_printAltitude(int page, int col, int32_t nAlt);
 void ui_printDistance(int page, int col, int distanceM) ;
 void ui_printGlideRatio(int page, int col, int nGr);
@@ -98,6 +99,7 @@ int  ui_optionsEventHandler(void);
 void ui_screenInit();
 
 extern bool IsSpeakerEnabled;
+extern bool IsBluetoothEnabled;
 extern bool IsRouteActive;
 extern bool IsGpsFixStable;
 extern bool IsTrackActive;
@@ -109,6 +111,8 @@ extern bool IsGpsHeading;
 extern bool EndTrack;
 
 extern int  SupplyVoltageMV;
+extern int32_t GpsCourseHeadingDeg;
+extern int32_t CompassHeadingDeg;
 
 extern const char szLogType[3][5];
 extern const char szAltDisplayType[2][5];

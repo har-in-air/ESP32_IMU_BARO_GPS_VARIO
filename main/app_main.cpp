@@ -517,6 +517,7 @@ extern "C" void app_main() {
 	    xTaskCreatePinnedToCore(&ui_task, "uitask", 2048, NULL, 10, NULL, 0);
 	    if (opt.misc.btMsgFreqHz != 0) {
 	    	if (btspp_init("Esp32GpsVario")) { //Bluetooth device name
+	    		IsBluetoothEnabled = true;
 	    		xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 2048, NULL, 15, NULL, 0);
 	    		}
 	    	}

@@ -23,9 +23,11 @@ bool IsLogging = false;
 bool IsFlashDisplayRequired = false;
 bool IsGpsHeading = true;
 bool EndTrack = false;
-
+bool IsBluetoothEnabled = false;
 
 int SupplyVoltageMV = 0;
+int32_t GpsCourseHeadingDeg;
+int32_t CompassHeadingDeg;
 
 const char szLogType[3][5]    = {"NONE", " GPS", " IBG"};
 const char szAltDisplayType[2][5] = {" GPS", "BARO"};
@@ -71,8 +73,13 @@ void ui_printLongitude(int page, int col, int32_t nLon) {
 
 void ui_printAltitude(int page, int col, int32_t altm) {
 	char szBuf[5];
-   CLAMP(altm,MIN_ALTITUDE_M,MAX_ALTITUDE_M);
-   sprintf(szBuf,"%4d", altm);
+	CLAMP(altm,MIN_ALTITUDE_M,MAX_ALTITUDE_M);
+	if (altm == 9999) {
+		sprintf(szBuf,"----");
+		}
+	else {
+		sprintf(szBuf,"%4d",altm);
+		}
 	lcd_printSzLNum(page,col,szBuf);
    }
 
@@ -180,11 +187,14 @@ void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg) {
 	int tblOffset = 0;
 	lcd_setFramePos(page - 1, col+13);
 
+	// caret on top of the heading display
+	// bar => gps course over ground (direction of motion)
+	// diamond => magnetic compass heading (direction unit is facing)
    if (IsGpsHeading) {
       FrameBuf[128*FramePage + FrameCol+1] = 0x3C;
       FrameBuf[128*FramePage + FrameCol+2] = 0x7C;
       FrameBuf[128*FramePage + FrameCol+3] = 0x3C;  
-      // if very low velocity, gps heading is uncertain, do not display
+      // if very low velocity, gps course over ground heading is uncertain, do not display
 	   if (velkph < 2) { 
 		   tblOffset = 16;
 	   	}
@@ -344,23 +354,37 @@ void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
    }
 
 
-void ui_printSpkrStatus(int page, int col, int bAudioEn) {
+void ui_printSpkrStatus(int page, int col, bool bAudioEn) {
 	lcd_setFramePos(page, col);
 	if (bAudioEn) {
-      FrameBuf[128*FramePage + FrameCol + 0] = 0x3C;
-      FrameBuf[128*FramePage + FrameCol + 1] = 0x24;
-      FrameBuf[128*FramePage + FrameCol + 2] = 0x3C;
-      FrameBuf[128*FramePage + FrameCol + 3] = 0x42;
-      FrameBuf[128*FramePage + FrameCol + 4] = 0x81;
-      FrameBuf[128*FramePage + FrameCol + 5] = 0xFF;
+      FrameBuf[128*FramePage + FrameCol + 0] = 0x1C;
+      FrameBuf[128*FramePage + FrameCol + 1] = 0x14;
+      FrameBuf[128*FramePage + FrameCol + 2] = 0x1C;
+      FrameBuf[128*FramePage + FrameCol + 3] = 0x22;
+      FrameBuf[128*FramePage + FrameCol + 4] = 0x7F;
 		}
 	else {
-		for (int inx = 0; inx < 6; inx++) {
+		for (int inx = 0; inx < 5; inx++) {
          FrameBuf[128*FramePage + FrameCol + inx] = 0x00;
          }
 		}
 	}
 
+void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
+	lcd_setFramePos(page, col);
+	if (bBluetoothEn) {
+      FrameBuf[128*FramePage + FrameCol + 0] = 0x22;
+      FrameBuf[128*FramePage + FrameCol + 1] = 0x14;
+      FrameBuf[128*FramePage + FrameCol + 2] = 0x7F;
+      FrameBuf[128*FramePage + FrameCol + 3] = 0x49;
+      FrameBuf[128*FramePage + FrameCol + 4] = 0x36;
+		}
+	else {
+		for (int inx = 0; inx < 5; inx++) {
+         FrameBuf[128*FramePage + FrameCol + inx] = 0x00;
+         }
+		}
+	}
 
 void ui_printBatteryStatus(int page, int col, int bV) {
 	lcd_setFramePos(page,col);
@@ -452,10 +476,19 @@ void ui_alarmWaypointReached() {
 
 
 void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
-   // uint32_t marker = cct_setMarker();
-   float lat = FLOAT_DEG(pn->nav.latDeg7);
-   float lon = FLOAT_DEG(pn->nav.lonDeg7);
-   int32_t altm = ((opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS) && IsGpsFixStable) ? (pn->nav.heightMSLmm + 500)/1000 : (int32_t)(KFAltitudeCm/100.0f + 0.5f);
+	// uint32_t marker = cct_setMarker();
+	float lat = FLOAT_DEG(pn->nav.latDeg7);
+	float lon = FLOAT_DEG(pn->nav.lonDeg7);
+	int32_t altm,xaltm;
+   	if (opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS){
+   		altm = IsGpsFixStable ? (pn->nav.heightMSLmm + 500)/1000 : 9999;
+   		xaltm = (int32_t)(KFAltitudeCm/100.0f + 0.5f);
+   		}
+   	else {
+   		altm = (int32_t)(KFAltitudeCm/100.0f + 0.5f);
+   		xaltm = IsGpsFixStable ? (pn->nav.heightMSLmm + 500)/1000 : 9999;
+   		}
+
    int32_t dop = (pn->nav.posDOP+50)/100;
    if ((!IsGpsFixStable) && (dop < opt.misc.gpsStableDOP)) {
       IsGpsFixStable = true;
@@ -469,19 +502,27 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
 
    lcd_clearFrame();
    if (opt.misc.logType == LOGTYPE_IBG) {
-      lcd_printSz(0,60, IsLogging ? "IBG" : "ibg");
+      lcd_printSz(1,74, IsLogging ? "I" : "i");
       }
    else
    if (opt.misc.logType == LOGTYPE_GPS) {
-      lcd_printSz(0,60, IsTrackActive ? "GPS" : "gps");
+      lcd_printSz(1,74, IsTrackActive ? "G" : "g");
       }
    ui_printPosDOP(6,110, dop);
    SupplyVoltageMV = adc_supplyVoltageMV();
    ui_printSupplyVoltage(7, 104, (SupplyVoltageMV+50)/100);
-   ui_printSpkrStatus(7,96, IsSpeakerEnabled);
+   ui_printSpkrStatus(1,54, IsSpeakerEnabled);
+   ui_printBluetoothStatus(1,64, IsBluetoothEnabled);
    ui_printAltitude(0,0,altm);
    lcd_printSz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
    lcd_printSz(1,45,"m");
+   // secondary altitude display (if primary=baro, secondary=gps, and vice versa)
+   if (xaltm == 9999) {
+	   lcd_printSz(0,55,"----");
+   	   }
+   else {
+	   lcd_printf(false,0,55,"%4d",xaltm);
+      }
    ui_printClimbRate(2,0,INTEGER_ROUNDUP(DisplayClimbrateCps));
    lcd_printSz(3,34,"ms");
 
@@ -491,12 +532,12 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       ui_printRealTime(2,93,hour,minute);
       }
 
-   int32_t compassHeadingDeg = 0;
+   CompassHeadingDeg = 0;
    if (!IsGpsHeading) { // magnetic compass heading
-      compassHeadingDeg = INTEGER_ROUNDUP(YawDeg);
-      compassHeadingDeg -= (int32_t)opt.misc.magDeclinationdeg; 
-      compassHeadingDeg = RANGE_360(compassHeadingDeg);
-      ui_printHeadingAnalog(4,55,0, compassHeadingDeg);
+      CompassHeadingDeg = INTEGER_ROUNDUP(YawDeg);
+      CompassHeadingDeg -= (int32_t)opt.misc.magDeclinationdeg;
+      CompassHeadingDeg = RANGE_360(CompassHeadingDeg);
+      ui_printHeadingAnalog(4,55,0, CompassHeadingDeg);
       }
 
    if ((pn->nav.numSV > 3) && IsGpsFixStable) {
@@ -512,8 +553,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       int32_t vn = pn->nav.velNorthmmps;
       int32_t ve = pn->nav.velEastmmps;
-      int32_t gpsCourseHeadingDeg = 90 - (int32_t)(atan2((float)vn, (float)ve)*_180_DIV_PI); // course over ground (motion headingdeg)
-      gpsCourseHeadingDeg = RANGE_360(gpsCourseHeadingDeg);
+	  GpsCourseHeadingDeg = 90 - (int32_t)(atan2((float)vn, (float)ve)*_180_DIV_PI); // course over ground (motion headingdeg)
+      GpsCourseHeadingDeg = RANGE_360(GpsCourseHeadingDeg);
       float horzVelmmps = sqrt((float)(vn*vn + ve*ve));
       int32_t horzVelKph = (int32_t)(horzVelmmps*0.0036f + 0.5f);
       ui_printVelocity(4,0,horzVelKph);
@@ -538,17 +579,17 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       int32_t bearingDeg, distancem;
       //int32_t gpsCourseHeadingDeg = pn->nav.headingMotionDeg5/100000; // this gives junk readings
       if (IsGpsHeading) {
-         ui_printHeadingAnalog(4,55,horzVelKph, gpsCourseHeadingDeg);
+         ui_printHeadingAnalog(4,55,horzVelKph, GpsCourseHeadingDeg);
          }
       if (IsRouteActive) { // show bearingdeg relative to course/compass headingdeg and distance to next waypoint
          if (pRoute->nextWptInx >= pRoute->numWpts) {
-            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg) - (IsGpsHeading ?  gpsCourseHeadingDeg : compassHeadingDeg);
+            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg) - (IsGpsHeading ?  GpsCourseHeadingDeg : CompassHeadingDeg);
             bearingDeg = RANGE_360(bearingDeg);
             distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[pRoute->numWpts-1].latdeg, pRoute->wpt[pRoute->numWpts-1].londeg);
             ui_printRouteSegment(3, 52, pRoute->numWpts-1, pRoute->numWpts-1);
             }
          else {
-            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg) - (IsGpsHeading ?  gpsCourseHeadingDeg : compassHeadingDeg);
+            bearingDeg = gps_bearingDeg(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg) - (IsGpsHeading ?  GpsCourseHeadingDeg : CompassHeadingDeg);
             bearingDeg = RANGE_360(bearingDeg);
             distancem = gps_haversineDistancem(lat, lon, pRoute->wpt[pRoute->nextWptInx].latdeg, pRoute->wpt[pRoute->nextWptInx].londeg);
             ui_printRouteSegment(3, 52, pRoute->nextWptInx-1, pRoute->nextWptInx);
@@ -559,7 +600,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
             }
          }
       else { // no route, show bearingdeg relative to course/compassheading and distance to start
-         bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg) - (IsGpsHeading ? gpsCourseHeadingDeg : compassHeadingDeg);
+         bearingDeg = gps_bearingDeg(lat, lon, pTrk->startLatdeg, pTrk->startLondeg) - (IsGpsHeading ? GpsCourseHeadingDeg : CompassHeadingDeg);
          bearingDeg = RANGE_360(bearingDeg);
          distancem = pTrk->distanceFromStartm;
          }
@@ -819,7 +860,11 @@ int ui_optionsEventHandler(void)  {
 				case SEL_BTMSG_FREQ : if (opt.misc.btMsgFreqHz > BT_MSG_FREQ_HZ_MIN  ) opt.misc.btMsgFreqHz--;
 				break;
 
-				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast > LCD_CONTRAST_MIN  ) opt.misc.lcdContrast--;
+				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast > LCD_CONTRAST_MIN  ) {
+					opt.misc.lcdContrast--;
+				    lcd_sendCmd(CMD_SET_VOLUME_FIRST);
+				    lcd_sendCmd(CMD_SET_VOLUME_SECOND | (opt.misc.lcdContrast & 0x3f));
+					}
 				break;
  	      	  	}
 		  	}
@@ -904,7 +949,11 @@ int ui_optionsEventHandler(void)  {
 				case SEL_BTMSG_FREQ : if (opt.misc.btMsgFreqHz < BT_MSG_FREQ_HZ_MAX  ) opt.misc.btMsgFreqHz++;
 				break;
 
-				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast < LCD_CONTRAST_MAX  ) opt.misc.lcdContrast++;
+				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast < LCD_CONTRAST_MAX  ) {
+					opt.misc.lcdContrast++;
+				    lcd_sendCmd(CMD_SET_VOLUME_FIRST);
+				    lcd_sendCmd(CMD_SET_VOLUME_SECOND | (opt.misc.lcdContrast & 0x3f));
+					}
 				break;
 		      	  }
 	      	  }

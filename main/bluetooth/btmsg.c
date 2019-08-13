@@ -87,7 +87,8 @@ void btmsg_genXCTRC(char* szmsg) {
 	int second = NavPvt.nav.utcSecond;
 	int centisecond = NavPvt.nav.nanoSeconds/10000000;
 	float sogKph = ((float)NavPvt.nav.groundSpeedmmps)*0.0036f;
-	float courseDeg = ((float)NavPvt.nav.headingMotionDeg5)/100000.0f;
+//	float courseDeg = ((float)NavPvt.nav.headingMotionDeg5)/100000.0f; not implemented on gps module, junk readings
+	float courseDeg = (float)GpsCourseHeadingDeg;
 	sprintf(szmsg, "$XCTRC,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.2f,%.2f,%.1f,%.2f,,,,%.2f,%d*",year,month,day,hour,minute,second,centisecond,latDeg,lonDeg,altM,sogKph,courseDeg,KFClimbrateCps/100.0f, PaSample/100.0f,batteryPercent);
 	uint8_t cksum = btmsg_nmeaChecksum(szmsg);
 	char szcksum[5];

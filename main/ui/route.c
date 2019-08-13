@@ -18,9 +18,11 @@ ROUTE* pRoute = &Route;
 
 #define MAX_ROUTES 7
 
+#define MAX_FILENAME_LENGTH	20
+
 int NumRoutes;
 int RouteSel;
-char RouteFileNames[MAX_ROUTES][20];
+char RouteFileNames[MAX_ROUTES][MAX_FILENAME_LENGTH+1];
 
 static bool rte_handleRouteSelEvent();
 static bool rte_readLine(FILE* pFile, char* szBuf);
@@ -29,57 +31,60 @@ static bool rte_loadRoute(char* szFileName);
 
 
 bool rte_selectRoute(){
-   DIR *dir = NULL;
-   struct dirent *ent;
-   char tpath[100];
-   struct stat sb;
+	DIR *dir = NULL;
+	struct dirent *ent;
+	char tpath[100];
+	struct stat sb;
 #ifdef ROUTE_DEBUG
-   ESP_LOGD(TAG,"LIST of DIR [/spiffs/]\r\n");
+	ESP_LOGD(TAG,"LIST of DIR [/spiffs/]\r\n");
 #endif
-   dir = opendir("/spiffs/");
-   NumRoutes = 0;
-   if (dir) {
-      while ((ent = readdir(dir)) != NULL) {
-    	   sprintf(tpath, "/spiffs/");
-         strcat(tpath, ent->d_name);
-		   int res = stat(tpath, &sb);
+	dir = opendir("/spiffs/");
+	NumRoutes = 0;
+	if (dir) {
+		while ((ent = readdir(dir)) != NULL) {
+			sprintf(tpath, "/spiffs/");
+			strcat(tpath, ent->d_name);
+			int res = stat(tpath, &sb);
 			if ((res == 0) && (ent->d_type == DT_REG)) {
-            if (strstr(tpath, ".wpt") || strstr(tpath,".WPT")){
-               strcpy(RouteFileNames[NumRoutes], ent->d_name);
-               ESP_LOGD(TAG,"Found route file %s", RouteFileNames[NumRoutes]);
-               NumRoutes++;
-               if (NumRoutes == MAX_ROUTES) break;
-               }
-			   }
-         }
-      }
-   else {
-      ESP_LOGE(TAG,"error opening /spiffs/");
-      return false;
-      }
-   if (NumRoutes == 0) return false;
+				if (strstr(tpath, ".wpt") || strstr(tpath,".WPT")){
+					if (strlen(ent->d_name) <= MAX_FILENAME_LENGTH ){
+						strcpy(RouteFileNames[NumRoutes], ent->d_name);
+						ESP_LOGD(TAG,"Found route file %s", RouteFileNames[NumRoutes]);
+						NumRoutes++;
+						if (NumRoutes == MAX_ROUTES) break;
+						}
+					else {
+						ESP_LOGE(TAG,"filename > %d chars", MAX_FILENAME_LENGTH);
+						}
+					}
+				}
+         	}
+      	}
+	else {
+		ESP_LOGE(TAG,"error opening /spiffs/");
+		return false;
+      	}
+	if (NumRoutes == 0) return false;
 
-   RouteSel = 0; // default : do not use a route
-   rte_displayRouteSel();
-   btn_clear();
-   while (!rte_handleRouteSelEvent()) {
-      btn_debounce();
-      delayMs(30);
-      }
-   if (RouteSel == 0) return false;
-   sprintf(tpath, "/spiffs/");
-   strcat(tpath, RouteFileNames[RouteSel-1]);
-   return rte_loadRoute(tpath);
-   }
+	RouteSel = 0; // default : do not use a route
+	rte_displayRouteSel();
+	btn_clear();
+	while (!rte_handleRouteSelEvent()) {
+		btn_debounce();
+		delayMs(30);
+      	}
+	if (RouteSel == 0) return false;
+	sprintf(tpath, "/spiffs/");
+	strcat(tpath, RouteFileNames[RouteSel-1]);
+	return rte_loadRoute(tpath);
+   	}
 
 
 static void rte_displayRouteSel() {
   lcd_clear();
-  // BtnR to traverse list, Btn0 to select
-  lcd_printlnf(false, 0, "R->change   0->sel"); 
-  lcd_printlnf(false, 1, "%c no route", RouteSel == 0 ? '*' : ' ');
+  lcd_printlnf(false, 0, "%cNo route", RouteSel == 0 ? '*' : ' ');
   for (int inx = 0; inx < NumRoutes; inx++) {
-      lcd_printlnf(false, 2+inx, "%c %s", RouteSel == 1+inx ? '*' : ' ', RouteFileNames[inx]);
+      lcd_printlnf(false, 1+inx, "%c%s", RouteSel == 1+inx ? '*' : ' ', RouteFileNames[inx]);
       }
   lcd_sendFrame();
   }
