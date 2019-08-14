@@ -73,30 +73,12 @@ typedef struct TRACK_ {
 
 
 
-void ui_printPosDOP(int page, int col, int dop);				
-void ui_printSupplyVoltage(int page, int col, int bV);
-void ui_printBatteryStatus(int page, int col, int bV);
-void ui_printSpkrStatus(int page, int col, bool bAudioEn);
-void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn);
-void ui_printAltitude(int page, int col, int32_t nAlt);
-void ui_printDistance(int page, int col, int distanceM) ;
-void ui_printGlideRatio(int page, int col, int nGr);
-void ui_printVelocity(int page, int col, int nVel);
-void ui_printClimbRate(int page, int col, int nCps);
-void ui_printBearingAnalog(int page, int col, int velkph, int bearing);
-void ui_printHeadingAnalog(int page, int col, int velkph, int heading);
-void ui_printRealTime(int page, int col, int nHrs, int nMin);
-void ui_printTrackTime(int page, int col, int nHrs, int nMin);
-void ui_printLongitude(int page, int col, int32_t nLon);
-void ui_printLatitude(int page, int col, int32_t nLat);
 void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk);
-void ui_printRouteSegment(int page, int col, int start, int end);
 int  ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk);
-void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHrs, int32_t* pMins);
-void ui_alarmWaypointReached();
-void ui_displayOptions(void);
-int  ui_optionsEventHandler(void);
+bool ui_optionsEventHandler(void);
 void ui_screenInit();
+void ui_displayOptions(void);
+
 
 extern bool IsSpeakerEnabled;
 extern bool IsBluetoothEnabled;

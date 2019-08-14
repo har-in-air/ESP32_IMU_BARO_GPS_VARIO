@@ -107,7 +107,7 @@
 
 // IIR filter coefficient for glide ratio calculation
 // higher number means more damping, 0 => no filtering
-#define GLIDE_RATIO_IIR_MIN            0
+#define GLIDE_RATIO_IIR_MIN            80
 #define GLIDE_RATIO_IIR_DEFAULT        90
 #define GLIDE_RATIO_IIR_MAX            99
 

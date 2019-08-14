@@ -3,7 +3,6 @@
 #include <ESP32WebServer.h>
 #include "server.h"
 
-extern "C" {
 #include "common.h"
 #include "config.h"
 #include "spiffs_vfs.h"
@@ -30,7 +29,6 @@ extern "C" {
 #include "options.h"
 #include "btspp.h"
 #include "btmsg.h"
-}
 
 #define TAG "main"
 
@@ -99,7 +97,7 @@ static void btserial_task(void *pvParameter) {
 static void server_task(void *pvParameter){
 	pServer = new ESP32WebServer(80);
 	if (pServer == NULL) {
-		ESP_LOGE(TAG, "error malloc webserver");
+		ESP_LOGE(TAG, "error creating webserver");
 		lcd_clear();
 		lcd_printlnf(true,0,"webserver error");
 		while(1) delayMs(100);

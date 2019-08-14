@@ -11,7 +11,7 @@
 
 #define TAG "route"
 
-#define CONTINUE() {ESP_LOGE(TAG,"error at line %d\r\n", __LINE__); continue;}
+#define CONTINUE() {ESP_LOGE(TAG,"error at line %d", __LINE__); continue;}
 
 ROUTE Route;
 ROUTE* pRoute = &Route;
@@ -94,16 +94,20 @@ static void rte_displayRouteSel() {
 static bool rte_handleRouteSelEvent() {
 	static int countDown = RTE_IDLE_COUNT;
 
-	if (BtnRPressed) {
+	if (BtnLPressed) {
 		btn_clear();
 		countDown = RTE_IDLE_COUNT;
-		RouteSel++;
-		if (RouteSel > NumRoutes) {
-			RouteSel = 0;
-         	}
+		if (RouteSel > 0) RouteSel--;
 		rte_displayRouteSel();
 		return false;
       	}
+	if (BtnRPressed) {
+		btn_clear();
+		countDown = RTE_IDLE_COUNT;
+		if (RouteSel < NumRoutes+1)	RouteSel++;
+		rte_displayRouteSel();
+		return false;
+   		}
 	else
 	if (Btn0Pressed || (countDown <= 0)) {
 		btn_clear();
@@ -118,8 +122,8 @@ static bool rte_handleRouteSelEvent() {
 
 // expects FormatGEO waypoint text file ".wpt" as output by xcplanner (xcplanner.appspot.com)
 // You can edit the waypoint text file to add a waypoint radius in meters at the end of  each
-// waypoint entry line. If a waypoint radius is not found, the default waypoint radius
-// (as specified in options.txt) will be used.
+// waypoint entry line. If a waypoint radius is not found, the user-specified default waypoint radius
+// (in options.txt) will be used.
 
 static bool rte_loadRoute(char* szFileName) {
    FILE * fwpt = NULL;

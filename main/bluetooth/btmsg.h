@@ -12,4 +12,4 @@ void btmsg_genXCTRC(char* szmsg);
 }
 #endif
 
-#endif /* MAIN_BLUETOOTH_BTNMEA_H_ */
+#endif

@@ -14,6 +14,10 @@
 
 #define TAG "ui"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 bool IsRouteActive = false;
 bool IsSpeakerEnabled  = true;
 bool IsGpsFixStable = false;
@@ -39,7 +43,30 @@ static int ScreenParOffset = 0;
 static int ParDisplaySel = 0;
 static int ParSel = 0;
 
-void ui_printLatitude(int page, int col, int32_t nLat) {
+
+static void ui_printSupplyVoltage(int page, int col, int bV);
+static void ui_printBatteryStatus(int page, int col, int bV);
+static void ui_printSpkrStatus(int page, int col, bool bAudioEn);
+static void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn);
+static void ui_printAltitude(int page, int col, int32_t nAlt);
+static void ui_printDistance(int page, int col, int distanceM) ;
+static void ui_printGlideRatio(int page, int col, int nGr);
+static void ui_printVelocity(int page, int col, int nVel);
+static void ui_printClimbRate(int page, int col, int nCps);
+static void ui_printBearingAnalog(int page, int col, int velkph, int bearing);
+static void ui_printHeadingAnalog(int page, int col, int velkph, int heading);
+static void ui_printRealTime(int page, int col, int nHrs, int nMin);
+static void ui_printTrackTime(int page, int col, int nHrs, int nMin);
+static void ui_printLongitude(int page, int col, int32_t nLon);
+static void ui_printLatitude(int page, int col, int32_t nLat);
+static void ui_printRouteSegment(int page, int col, int start, int end);
+static void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHrs, int32_t* pMins);
+static void ui_alarmWaypointReached();
+#ifdef __cplusplus
+}
+#endif
+
+static void ui_printLatitude(int page, int col, int32_t nLat) {
 	char szBuf[12];
 	int32_t  nL;
 	int inx;
@@ -55,7 +82,7 @@ void ui_printLatitude(int page, int col, int32_t nLat) {
    }
 
 
-void ui_printLongitude(int page, int col, int32_t nLon) {
+static void ui_printLongitude(int page, int col, int32_t nLon) {
 	char  szBuf[12];
     int32_t  nL;
     int inx;
@@ -71,7 +98,7 @@ void ui_printLongitude(int page, int col, int32_t nLon) {
    }
 
 
-void ui_printAltitude(int page, int col, int32_t altm) {
+static void ui_printAltitude(int page, int col, int32_t altm) {
 	char szBuf[5];
 	CLAMP(altm,MIN_ALTITUDE_M,MAX_ALTITUDE_M);
 	if (altm == 9999) {
@@ -84,7 +111,7 @@ void ui_printAltitude(int page, int col, int32_t altm) {
    }
 
 
-void ui_printDistance(int page, int col, int distanceM) {
+static void ui_printDistance(int page, int col, int distanceM) {
 	char szBuf[4];
    CLAMP(distanceM,MIN_DISTANCE_M,MAX_DISTANCE_M);
    distanceM = (distanceM + 5)/10;
@@ -99,7 +126,7 @@ void ui_printDistance(int page, int col, int distanceM) {
    }
 
 
-void ui_printClimbRate(int page, int col, int nCps) {
+static void ui_printClimbRate(int page, int col, int nCps) {
    char  sign;
    int  dec,frac;
 	char  szBuf[4];
@@ -149,7 +176,7 @@ void ui_printClimbRate(int page, int col, int nCps) {
   	}
 
 
-void ui_printVelocity(int page, int col, int nVel) {
+static void ui_printVelocity(int page, int col, int nVel) {
 	char  szBuf[4];
    CLAMP(nVel, 0, MAX_VELOCITY_KPH);
    sprintf(szBuf, "%3d", nVel);
@@ -157,7 +184,7 @@ void ui_printVelocity(int page, int col, int nVel) {
    }
 
 
-void ui_printGlideRatio(int page, int col, int nGr) {
+static void ui_printGlideRatio(int page, int col, int nGr) {
 	char  szBuf[3];
 	szBuf[2] = '\0';
 	if (nGr > 999) {
@@ -182,7 +209,7 @@ void ui_printGlideRatio(int page, int col, int nGr) {
 
 static uint8_t compassBuf[128];
 
-void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg) {
+static void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg) {
 	int nrow,ncol,inx;
 	int tblOffset = 0;
 	lcd_setFramePos(page - 1, col+13);
@@ -257,7 +284,7 @@ void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg) {
 
 #include "bearing.txt"
 
-void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) {
+static void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) {
 	int  nrow,ncol,inx;
    int tblOffset;
 	if (IsGpsHeading && (velkph < 2)) { 
@@ -312,7 +339,7 @@ void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) {
 	}
 
 
-void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
+static void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
 	char szBuf[3];
    CLAMP(nHrs,0,23);
    CLAMP(nMin,0,59);
@@ -354,7 +381,7 @@ void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
    }
 
 
-void ui_printSpkrStatus(int page, int col, bool bAudioEn) {
+static void ui_printSpkrStatus(int page, int col, bool bAudioEn) {
 	lcd_setFramePos(page, col);
 	if (bAudioEn) {
       FrameBuf[128*FramePage + FrameCol + 0] = 0x1C;
@@ -370,7 +397,7 @@ void ui_printSpkrStatus(int page, int col, bool bAudioEn) {
 		}
 	}
 
-void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
+static void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
 	lcd_setFramePos(page, col);
 	if (bBluetoothEn) {
       FrameBuf[128*FramePage + FrameCol + 0] = 0x22;
@@ -386,7 +413,7 @@ void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
 		}
 	}
 
-void ui_printBatteryStatus(int page, int col, int bV) {
+static void ui_printBatteryStatus(int page, int col, int bV) {
 	lcd_setFramePos(page,col);
    FrameBuf[128*FramePage + FrameCol] = 0xFF;
    for (int inx = 0; inx < 14; inx++) {
@@ -411,14 +438,14 @@ void ui_printBatteryStatus(int page, int col, int bV) {
       }
 	}
 
-void ui_printSupplyVoltage(int page, int col, int bV) {
+static void ui_printSupplyVoltage(int page, int col, int bV) {
 	char  szBuf[6];
     sprintf(szBuf,"%d.%dv", bV/10, bV%10);
 	lcd_printSz(page,col,szBuf);
 	}
 
 
-void ui_printTrackTime(int page, int col, int nHrs, int nMin)	{
+static void ui_printTrackTime(int page, int col, int nHrs, int nMin)	{
 	char szBuf[3];
 	if (!IsGpsFixStable) {
 		lcd_printf(false,page+1,col+22,"??");
@@ -441,19 +468,16 @@ void ui_printTrackTime(int page, int col, int nHrs, int nMin)	{
    }
 
 
-void ui_printPosDOP(int page, int col, int dop) {
-   lcd_printf(false,page,col,"%3d", dop);
-   }
 
 
-void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHours, int32_t* pMinutes) {
+static void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHours, int32_t* pMinutes) {
    int32_t elapsedSecs = ((currentmS - startmS)+500)/1000;
    *pHours = elapsedSecs/3600;
    *pMinutes = (elapsedSecs%3600)/60;
    }
 
 
-void ui_printRouteSegment(int page, int col, int start, int end) {
+static void ui_printRouteSegment(int page, int col, int start, int end) {
    if (start < 0) {
       lcd_printf(false, page,col,"--");
       }
@@ -464,7 +488,7 @@ void ui_printRouteSegment(int page, int col, int start, int end) {
     }
 
 
-void ui_alarmWaypointReached() {
+static void ui_alarmWaypointReached() {
    IsFlashDisplayRequired = true;
    for (int cnt = 0; cnt < 3; cnt++) {
 	   audio_setFrequency(2000);
@@ -490,6 +514,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    		}
 
    int32_t dop = (pn->nav.posDOP+50)/100;
+   CLAMP(dop, 0, 100);
    if ((!IsGpsFixStable) && (dop < opt.misc.gpsStableDOP)) {
       IsGpsFixStable = true;
       pTrk->startLatdeg = lat;
@@ -508,7 +533,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    if (opt.misc.logType == LOGTYPE_GPS) {
       lcd_printSz(1,74, IsTrackActive ? "G" : "g");
       }
-   ui_printPosDOP(6,110, dop);
+   lcd_printf(false,6,104,"%3d*", dop);
    SupplyVoltageMV = adc_supplyVoltageMV();
    ui_printSupplyVoltage(7, 104, (SupplyVoltageMV+50)/100);
    ui_printSpkrStatus(1,54, IsSpeakerEnabled);
@@ -768,7 +793,7 @@ void ui_displayOptions(void) {
 
 #define OPT_IDLE_COUNT 330 // this is ~10 seconds of inactivity with 30mS debounce interval
 
-int ui_optionsEventHandler(void)  {
+bool ui_optionsEventHandler(void)  {
 	static int countDown = OPT_IDLE_COUNT;
 	if (Btn0Pressed || (countDown <= 0)) {
 		btn_clear();
@@ -779,7 +804,7 @@ int ui_optionsEventHandler(void)  {
 			opt_save();
 			delayMs(1000);
 			}
-		return 1;
+		return true;
 		}
   
 	if (BtnMPressed)	{
@@ -787,7 +812,7 @@ int ui_optionsEventHandler(void)  {
 		countDown = OPT_IDLE_COUNT;
 		ParDisplaySel = !ParDisplaySel;
 		ui_displayOptions();
-		return 0;
+		return false;
 		}
 	
 	if (BtnLPressed) {
@@ -875,7 +900,7 @@ int ui_optionsEventHandler(void)  {
             	}
 		   	 }
       ui_displayOptions();
-      return 0;
+      return false;
       }
    
 	if (BtnRPressed) {
@@ -964,9 +989,9 @@ int ui_optionsEventHandler(void)  {
             	}
          	 }
 		ui_displayOptions();
-		return 0;
+		return false;
   	   	}
 	countDown--;
-	return 0;
+	return false;
    	}
 
