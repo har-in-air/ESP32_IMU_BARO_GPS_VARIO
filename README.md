@@ -82,10 +82,10 @@ task yield during server data download etc.
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 barometric pressure sensor, sampled at 50Hz
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol at 115200 baud.
-I used a compact ublox gps module from Banggood (/docs/banggood_gpsmodule.png). Not a great choice - it was expensive, and 
+I used a compact ublox gps module from Banggood (/docs/banggood_gpsmodule.jpg). Not a great choice - it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
 And it doesn't save configuration settings to flash, so it needs to be configured on every power-up.
-I found another gps module on Aliexpress (/docs/aliexpress_gpsmodule.png) that is cheaper, has a larger patch antenna and flash configuration save. 
+I found another gps module on Aliexpress (/docs/aliexpress_gpsmodule.jpg) that is cheaper, has a larger patch antenna and flash configuration save. 
 I don't have one myself, I'm assuming the advertising is correct :-D. 
 We're using the highest fix rate possible (10Hz), for future integration into the imu-vario algorithm. 
 Ublox documentation indicates that this is possible only when you restrict the module to the GPS constellation, rather than GPS+GLONASS etc. 
