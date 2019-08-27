@@ -129,7 +129,7 @@ void beeper_beep(int32_t nCps) {
         VarioState_ = VARIO_STATE_ZEROES;
     		CurrentTick_ = 0;
     		BeepPeriodTicks_ = 30;
-    		BeepEndTick_ = 2;
+    		BeepEndTick_ = 5;
     		newFreqHz = VARIO_SPKR_MIN_FREQHZ + ((VarioCps_ - ZeroesToneCps_)*(VARIO_CROSSOVER_FREQHZ - VARIO_SPKR_MIN_FREQHZ))/(CrossoverCps_ - ZeroesToneCps_);
         CLAMP(newFreqHz, VARIO_SPKR_MIN_FREQHZ, VARIO_SPKR_MAX_FREQHZ);
         FreqPlayingHz_ = newFreqHz;

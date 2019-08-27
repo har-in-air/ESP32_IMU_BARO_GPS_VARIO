@@ -1,4 +1,4 @@
-# ESP32 GPS Variometer
+# ESP32 GPS Altimeter Variometer
 
 * Variometer zero-lag response with a Kalman filter fusing acceleration data from an IMU module and altitude data from a barometric pressure sensor.
 * High-speed data logging option for IMU (accelerometer, gyrosocope and magnetometer), barometer and gps 
@@ -9,12 +9,12 @@ a 128Mbit serial SPI flash. This is useful for offline analysis and development 
 * Wifi access for downloading data or track logs and configuring user options. The unit acts as a Wifi
 access point and web server. So you can access datalogs/configuration with a smartphone or laptop.
 * Navigate a route with waypoints from one of up to 7 route files in FormatGEO .wpt format that were previously uploaded to the gpsvario.
-* 128x64 LCD display of GPS altitude, climb/sink rate, distance from start/to waypoint, ground speed,
-glide ratio, course/compass heading, bearing to start/waypoint, GPS derived clock, elapsed-time, battery, speaker, and data logging status.
+* 128x64 LCD display of GPS or barometric altitude, climb/sink rate, distance from start/to waypoint, ground speed,
+glide ratio, course-over-ground or compass heading, bearing to start/waypoint, time-of-day, elapsed-time, supply voltage, and speaker/data logging/bluetooth status.
 * Variometer audio feedback uses the esp32 onboard DAC and external audio amplifier driving
 an 8ohm cellphone speaker with sine-wave tones.
 * Flight summaries (date, start time, start and end coordinates, duration, max altitude, max climb and sink rates) are stored as single line entries in the file "flightlog.txt" in the spiffs file system. This text file can be downloaded using wifi and opened in a spreadsheet (open as CSV file) for analysis.
-* Optional bluetooth transmission of $LK8EX1 or $XCTRC NMEA sentences at a frequency of up to 10Hz. 
+* Bluetooth transmission of $LK8EX1 or $XCTRC NMEA sentences at a frequency of up to 10Hz. 
 
 ## Build environment
 * Ubuntu 19.04 amdx64
@@ -50,7 +50,7 @@ We're using a mixture of C++ and C code for the project
 <img src="/docs/menuconfig_compiler.png" alt="menuconfig_compiler"/>
 
 #### Partition Table
-Custom partition table. Note we need to run 'make flashfs' once to create and flash the spiffs partition image.
+Custom partition table. Run 'make flashfs' once to create and flash the spiffs partition image.
 
 <img src="/docs/menuconfig_partitiontable.png" alt="menuconfig_partitiontable"/>
 
@@ -81,8 +81,8 @@ task yield during server data download etc.
 ## Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 barometric pressure sensor, sampled at 50Hz
-* Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol @115200 baud.
-I used a compact ublox gps module from Banggood (/docs/banggood_gpsmodule.png). Not a great choice, it was expensive, and 
+* Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol at 115200 baud.
+I used a compact ublox gps module from Banggood (/docs/banggood_gpsmodule.png). Not a great choice - it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
 And it doesn't save configuration settings to flash, so it needs to be configured on every power-up.
 I found another gps module on Aliexpress (/docs/aliexpress_gpsmodule.png) that is cheaper, has a larger patch antenna and flash configuration save. 
@@ -92,7 +92,7 @@ Ublox documentation indicates that this is possible only when you restrict the m
 So don't waste your time looking for multi-constellation modules.
 * ESP32 WROOM rev 1 module. Use any off-the-shelf breakout board with an onboard USB-UART interface (CH340, CP2102 etc).
 * W25Q128FVSG 128Mbit SPI flash
-* 128x64 reflective LCD display (ST7565 controller) with serial spi interface.
+* 128x64 reflective LCD display (ST7565 controller) with SPI interface.
 * For the power supply, I use a USB 5V output power bank. This allows me to 
 detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
 my hand-wired gpsvario in checked-in luggage (no battery => no problem), with the power bank in my carry-on 
@@ -106,7 +106,7 @@ ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  The LCD module PCB
 SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. All signal interfaces between the ESP32
 and other components are at 3.3V level. 
 * There are different versions of the 128x64 LCD module that may need 
-modifications to the initialization code lcd_init() in /ui/lcd7565.c (specifically lcd bias and display orientation). 
+modifications to the initialization code. See the lcd_init() function in /ui/lcd7565.c, specifically lcd bias and display orientation. 
 * I added a 470uF 10V bypass capacitor on the USB5V supply
 before the power switch along with an inline 1A resettable polyfuse. Note that installing
 a power switch requires breaking the 5V supply line from the microusb connector on the ESP32 breakout board.
@@ -119,36 +119,39 @@ by omitting the audio amplifier and driving the piezo directly from an ESP32 pin
 
 ## Usage
 * There are 4 user-interface buttons labeled as btnL(eft), btnM(iddle) and btnR(ight), plus btn0 (connected to gpio0). 
-* The gyroscope is automatically calibrated each time on power up. The unit needs to be at rest during gyro calibration. If it's disturbed, it will use the last saved gyro calibration
-values. You can manually force accelerometer and magnetometer calibration by pressing the btn0 button during the onscreen countdown to gyro calibration. Or you can delete the calib.txt file
-using the webserver page. When you see the display countdown for accelerometer calibration,
-place the unit undisturbed on a horizontal surface. For magnetometer calibration, pick up the unit and slowly and smoothly wave with a figure-of-8 motion while turning around 
-and rotating the unit so that samples can be obtained with all possible 3D orientations. Keep doing this until calibration completes. Do this away from large metal objects. You MUST calibrate the accelerometer and magnetometer correctly before using the gpsvario.
+* The gyroscope is automatically calibrated each time on power up. The unit needs to be at rest (in any orientation) during gyro calibration. If it's disturbed, it will use the last saved gyro calibration values.
+* You MUST calibrate the accelerometer and magnetometer correctly before using the gpsvario. 
+* If there is no calib.txt file in the spiffs file system, the unit will prompt you for the calibration. If you want to recalibrate, you can delete the calib.txt file using the webserver access.
+ Or you can manually force accelerometer and magnetometer calibration by pressing the btn0 button during the onscreen countdown to gyro calibration.  When you see the lcd display countdown for accelerometer calibration,
+place the unit undisturbed on a flat horizontal surface, and wait until it completes. When you see the lcd display countdown for magnetometer calibration, pick up the unit and slowly and smoothly wave with a figure-of-8 motion while turning around 
+and rotating the unit so that magnetometer readings can be obtained with all possible 3D orientations and compass headings. Keep doing this until calibration completes. Make sure you are several feet away from large metal objects. 
 * For downloading binary data logs, put the gpsvario into server mode, connect to the WiFi access point 'ESP32GpsVario' and access the url 'http://192.168.4.1/datalog' via a web browser. The binary datalog file can contain a mix of high-speed IBG (imu+baro+gps) data samples, and normal GPS track logs. There is some sample software in the /offline directory for splitting the binary datalog into separate IBG and GPS datalogs, and for converting GPS logs into .gpx text files that you can load in Google Earth or other GPS track visualization software.
 * For configuring the gpsvario, you can edit the user-configurable options on the LCD screen. In the options page, press the L or R buttons to select the option (cursor=o). Press the M button if you want to change the option (cursor=*). Now L and R will decrease/increase the value. Press the M button again to go back to the option select (cursor=o). Changes are saved to the file options.txt in the onboard SPIFFS flash file system. If there is no user activity for ~10 seconds on the option screen, the gpsvario will automatically transition into flight display mode. This is so that you can power up the unit and have it eventually start displaying the flight screen without user intervention. 
 * Alternatively, put the gpsvario into server mode, access the url 'http://192.168.4.1/dir' and download the options.txt file from the gpsvario. Edit it as required, and upload the file back to the gpsvario. Make sure you only edit the last field on each line ! This way you can keep different versions of the options.txt file on your laptop/smartphone for different sites or site conditions. To reset to 'factory defaults', just delete the options.txt file from the gpsvario using the webserver. It will be regenerated with 'factory default' values the next time you power up the gpsvario. For a sample configuration file, see /docs/options.txt.
 <img src="/docs/screenshot_dir_listing.jpg" alt="screenshot_dir_listing"/>
 <img src="/docs/screenshot_options_download.jpg" alt="screenshot_options_download"/>
 
-* Every time the gpsvario is powered on, it sets the configuration to default values and then overrides them with the values in the option.txt file. So you don't have to specify all the options in the options.txt file, only the ones you want to modify from the 'factory default' values. 
+* Every time the gpsvario is powered on, it sets the user-configurable data to default values and then overrides them with the values in the option.txt file. So you don't have to specify all the options in the options.txt file, only the ones you want to modify from the 'factory default' values. 
 * Use [xcplanner](https://xcplanner.appspot.com) to generate a route with waypoints in FormatGEO format as a *.wpt text file. Note that xcplanner does not specify waypoint radii in the FormatGEO file. You can edit the .wpt file to add the waypoint radius (in meters) at the end of a waypoint entry line. If the radius is not specified for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. Upload the .wpt file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. You can upload up to 7 route files and select one of them (or none) on-screen. If there
-are no route files or you select "none", the bearing-to-waypoint arrow and distance-to-waypoint field will display bearing and distance to the launch coordinates.
-* In flight display mode, btnL toggles the heading display between GPS course over ground (direction of motion) and magnetic compass heading (direction the unit is facing). You will see the change reflected in the caret on top of the heading display - diamond for compass heading and a bar for gps course heading. For low velocities (< 2kph), the gps course heading is blanked out, as
-the uncertainty in course heading is high.
-* In flight display mode, if you selected IBG data logging, btnM toggles logging on and off. The display will show 'I' if logging, 'i' if not logging. 
-Bear in mind that if you selected high-speed IBG data logging and toggle it 'on', the 128Mb flash will be filled up in approximately 13minutes ! If the flash is full, logging stops.
-* In flight display mode, if you selected GPS track logging, the display will show 'G' if track logging is active, 'g' if track logging is inactive. For logging options GPS or NONE, btnM has no effect. 
+are no route files or you select "none", the bearing-to-waypoint arrow and distance-to-waypoint field will display bearing and distance to the start position.
+* In flight display mode, btnL toggles the heading display between GPS course-over-ground (direction of motion) and magnetic compass heading (direction the unit is facing). You will see the change reflected in the caret on top of the heading display - diamond for compass heading, bar for GPS course heading. For low velocities (< 2kph), the GPS course heading display is blanked out, as
+the uncertainty in direction is high.
+* In flight display mode, if you selected high-speed IBG data logging, btnM toggles data logging on and off. The display will show 'I' if logging, 'i' if not logging. 
+Bear in mind that if you turn on IBG data logging, the 128Mb flash will be filled up in approximately 13minutes ! If the flash is full, logging stops.
+* In flight display mode, if you selected GPS track logging, the display will show 'G' if track logging is active, 'g' if track logging is inactive. Track logging will be activated
+when you have moved a user-configurable distance from your start position. Your start position will be fixed when the GPS Dilution of Precision (DOP) value goes below a user configurable threshold (the GPS has a good position fix). For logging options GPS or NONE, btnM has no effect. 
 * In flight display mode, btnR toggles the audio on and off. You will see a speaker icon if audio is enabled. 
-* Either barometric pressure altitude/airspace altitude (assumes sealevel pressure = 101325Pa) or gps altitude can be displayed on the primary altitude display. If you select barometric altitude for the primary display, the field will show "bm" and the secondary altitude will be gps altitude. If you
-select gps altitude for the primary display, the field will show "gm" and the secondary altitude will be barometric altitude. If the gps dilution of precision (DOP) is high,
- gps altitude will be displayed as "----".  When the gps fix is good (enough satellites in view with a good signal), the gps altitude will be stable and fairly close to the barometric
-altitude (+/-100m). Of course barometric pressure altitude will vary depending on atmospheric conditions - higher in unstable low-pressure conditions, lower in stable high-pressure conditions.
-GPS DOP is displayed as a number on the lower right, just above the supply voltage. A good DOP value should be around 5 or less. This might take a couple of minutes after power up.
+* Either barometric pressure altitude (aka airspace altitude, assumes sea-level pressure = 101325Pa) or GPS altitude can be displayed on the primary altitude display. If you select barometric altitude for the primary display, the field will show "bm" and the secondary altitude field will show GPS altitude. If you
+select GPS altitude for the primary display, the field will show "gm" and the secondary field will show barometric altitude. If the GPS DOP is high,
+ GPS altitude will be displayed as "----".  When the GPS fix is good (enough satellites in view with a good signal), the GPS altitude will be stable and fairly close to the barometric
+altitude (+/-100m). Barometric pressure altitude depends on atmospheric conditions - higher in unstable low-pressure conditions, lower in stable high-pressure conditions.
+GPS DOP is displayed as a number on the lower right, just above the supply voltage, with a maximum value of 100. A good DOP value should be around 5 or less. This might take a couple of minutes after power up. If your GPS module has a battery backup to retain satellite ephemeris data for your location, you can get a good hot-start fix in a few seconds.
 * The glide ratio field displays '+' when climbing and is clamped to a maximum of 99.9 when gliding. There is a damping filter to reduce jitter in the
-computed value using an IIR recursive filter. The highest damping value is 99, recommended range is above 90.
-* When connecting a smartphone/tablet navigation app (e.g. XCTrack) via bluetooth, the device name is Esp32GpsVario. XCTrack applies heavy damping filters to incoming data such as
-climbrate or altitude, so you will see faster response on the XCTrack display if you increase the frequency of bluetooth NMEA sentences (upto a maximum of 10Hz). $LK8EX1 sentences only contain
-barometric data ( pressure/altitude, climbrate) and power supply voltage. $XCTRC sentences also include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent.
+computed value using an IIR recursive filter. The highest damping value is 99, recommended range is ~90.
+* When connecting a smartphone/tablet navigation app (e.g. XCTrack) via bluetooth, the bluetooth device name is Esp32GpsVario. XCTrack applies heavy damping filters to incoming data such as
+climbrate or altitude, so you will see faster response on the XCTrack display if you increase the frequency of NMEA messages (upto a maximum of 10Hz). $LK8EX1 messages only contain
+barometric data ( pressure/altitude, climbrate) and power supply voltage. $XCTRC messages include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. To
+disable bluetooth transmission, set the bluetooth message frequency to 0Hz.
 
 ## Credits
 * SPIFFS code - https://github.com/loboris/ESP32_spiffs_example

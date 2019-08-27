@@ -341,7 +341,7 @@ void gps_updateFlashLogRecord() {
 		xSemaphoreGive( FlashLogMutex );
 		}
    else 
-	if ((opt.misc.logType == LOGTYPE_GPS) && IsTrackActive) {
+	if ((opt.misc.logType == LOGTYPE_GPS) && IsGpsTrackActive) {
       counter++;// 100mS gps fix interval 
       if (counter >= (opt.misc.trackIntervalSecs*10)) {
          counter = 0;

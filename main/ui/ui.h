@@ -84,13 +84,13 @@ extern bool IsSpeakerEnabled;
 extern bool IsBluetoothEnabled;
 extern bool IsRouteActive;
 extern bool IsGpsFixStable;
-extern bool IsTrackActive;
+extern bool IsGpsTrackActive;
 extern bool IsLcdBkltEnabled;
-extern bool IsLogging;
+extern bool IsLoggingIBG;
 extern bool IsServer;
 extern bool IsFlashDisplayRequired;
 extern bool IsGpsHeading;
-extern bool EndTrack;
+extern bool EndGpsTrack;
 
 extern int  SupplyVoltageMV;
 extern int32_t GpsCourseHeadingDeg;

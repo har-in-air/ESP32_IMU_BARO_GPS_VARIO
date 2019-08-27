@@ -59,7 +59,9 @@ void pinConfig() {
     BARO_CS_HI();
     IMU_CS_HI();
 
-    pinMode(pinAudioAmpEna, OUTPUT);
+    //pinMode(pinAudioAmpEna, OUTPUT);
+    // using NS8002 amp module, external pullup resistor to 5V. Pulldown to enable.
+    pinMode(pinAudioAmpEna, OUTPUT_OPEN_DRAIN); 
     AUDIO_AMP_DISABLE();
 
     pinMode(pinBtn0, INPUT); // external 10K pullup
@@ -76,7 +78,7 @@ void pinConfig() {
 
 
 static void btserial_task(void *pvParameter) {
-    ESP_LOGD(TAG, "Starting bluetooth serial output : device ESP32GpsVario");
+    ESP_LOGI(TAG, "Starting bluetooth serial output task : device ESP32GpsVario");
     while (1) {
 		char szmsg[100];
 		if (opt.misc.btMsgType == BT_MSG_LK8EX1) {
@@ -95,6 +97,7 @@ static void btserial_task(void *pvParameter) {
 
 
 static void server_task(void *pvParameter){
+    ESP_LOGI(TAG, "Starting web server task");
 	pServer = new ESP32WebServer(80);
 	if (pServer == NULL) {
 		ESP_LOGE(TAG, "error creating webserver");
@@ -120,15 +123,16 @@ static void server_task(void *pvParameter){
 
 
 static void ui_task(void *pvParameter) {
+    ESP_LOGI(TAG, "Starting UI task");
     int counter = 0;
     NAV_PVT navpvt;
     TRACK  track;
     IsGpsFixStable = false;
-    IsLogging = false;
-    IsTrackActive = false;
+    IsLoggingIBG = false;
+    IsGpsTrackActive = false;
     IsLcdBkltEnabled = false;
     IsSpeakerEnabled = true;
-    EndTrack = false;
+    EndGpsTrack = false;
 
     while(1) {
 		if (IsGpsNavUpdated) {
@@ -141,8 +145,8 @@ static void ui_task(void *pvParameter) {
                 ui_updateFlightDisplay(&navpvt,&track);
                 }
 			}
-        if (IsTrackActive && EndTrack) {
-            IsTrackActive = false;
+        if (IsGpsTrackActive && EndGpsTrack) {
+            IsGpsTrackActive = false;
             lcd_clear();
             lcd_printlnf(false, 0, "%4d/%02d/%02d %02d:%02d", track.year, track.month, track.day, track.hour, track.minute);
             lcd_printlnf(false, 1, "Duration %02d:%02d", track.elapsedHours, track.elapsedMinutes);
@@ -160,14 +164,14 @@ static void ui_task(void *pvParameter) {
 
 
 static void gps_task(void *pvParameter) {
-	ESP_LOGI(TAG, "gps task started");
+	ESP_LOGI(TAG, "Starting gps task");
     if (!gps_config()) {
         ESP_LOGE(TAG, "error configuring gps");
 		lcd_clear();
 		lcd_printlnf(true,0,"gps error");
-        delayMs(3000);
-        lcd_clear();
+        while (1) delayMs(100);
         }
+    
     while(1) {
         gps_stateMachine();
         delayMs(5);
@@ -188,6 +192,7 @@ void IRAM_ATTR drdyHandler(void) {
 
 
 static void vario_taskConfig() {
+    ESP_LOGI(TAG, "vario config");
     lcd_clear();
     //lcd_printlnf(true,0,"MPU9250 config");
     if (mpu9250_config() < 0) {
@@ -266,7 +271,7 @@ static void vario_task(void *pvParameter) {
     float gxdps, gydps, gzdps, axmG, aymG, azmG, mx, my, mz;
     float gxNEDdps, gyNEDdps, gzNEDdps, axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED;
 
-    ESP_LOGI(TAG, "vario task started");
+    ESP_LOGI(TAG, "Starting vario task");
     uint32_t clockPrevious, clockNow; // time markers for imu, baro and kalman filter
     float 	imuTimeDeltaUSecs; // time between imu samples, in microseconds
     float 	kfTimeDeltaUSecs = 0.0f; // time between kalman filter updates, in microseconds
@@ -350,10 +355,10 @@ static void vario_task(void *pvParameter) {
 			    FlashLogIBGRecord.imu.mzNED = mzNED;
                 // worst case imu+baro+gps record = 80bytes,
                 //  ~130uS intra-page, ~210uS across page boundary
-                if (IsLogging) {
+                if (IsLoggingIBG) {
                     // out of memory, indicate in UI that logging has stopped
    	                if (flashlog_writeIBGRecord(&FlashLogIBGRecord) < 0) {
-                        IsLogging = false;
+                        IsLoggingIBG = false;
                         } 
                     memset(&FlashLogIBGRecord, 0, sizeof(FLASHLOG_IBG_RECORD));
                     }
@@ -476,7 +481,7 @@ extern "C" void app_main() {
         delayMs(10);
         }
 
-    if (IsServer) {
+    if (IsServer) { // Wifi Server mode
         initArduino();
         lcd_clear();
         lcd_printlnf(false,0,"HTTP Server Mode");
@@ -492,7 +497,7 @@ extern "C" void app_main() {
         ESP_LOGI(TAG,"AP IP address: %s", myIP.toString().c_str());
         xTaskCreatePinnedToCore(&server_task, "servertask", 16384, NULL, 20, NULL, 1);
         }
-    else {
+    else { // GPS Vario mode
         ui_screenInit();
         ui_displayOptions();
         btn_clear();
@@ -514,8 +519,9 @@ extern "C" void app_main() {
         // ui_task lower priority than gps_task
 	    xTaskCreatePinnedToCore(&ui_task, "uitask", 2048, NULL, 10, NULL, 0);
 	    if (opt.misc.btMsgFreqHz != 0) {
-	    	if (btspp_init("Esp32GpsVario")) { //Bluetooth device name
+	    	if (btspp_init("Esp32GpsVario")) { // Bluetooth device name
 	    		IsBluetoothEnabled = true;
+	    		// higher priority than ui task but lower priority than gps task
 	    		xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 2048, NULL, 15, NULL, 0);
 	    		}
 	    	}
@@ -545,24 +551,24 @@ extern "C" void app_main() {
             }
         if (BtnMPressed) {
             btn_clear();
-            ESP_LOGD(TAG,"Btn M"); // start/stop high-speed IBG data logging
+            ESP_LOGD(TAG,"Btn M"); // start/stop high-speed IBG data logging. Does nothing for GPS track logging.
             if (opt.misc.logType == LOGTYPE_IBG) {
-                if (!IsLogging) {
+                if (!IsLoggingIBG) {
                     delayMs(2000);
-                    IsLogging = true;
-                    ESP_LOGI(TAG,"Logging started");
+                    IsLoggingIBG = true;
+                    ESP_LOGI(TAG,"IBG Logging started");
                     }
                 else {
-                    IsLogging = false;
-                    ESP_LOGI(TAG,"Logging stopped");
+                    IsLoggingIBG = false;
+                    ESP_LOGI(TAG,"IBG Logging stopped");
                     }
                 }
             }
         if (Btn0Pressed) {
             btn_clear();
             ESP_LOGD(TAG,"Btn 0");
-            if (IsTrackActive)  {
-                EndTrack = true;
+            if (IsGpsTrackActive)  {
+                EndGpsTrack = true;
                 IsSpeakerEnabled = false;
                 }
             }

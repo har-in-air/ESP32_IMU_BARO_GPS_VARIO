@@ -21,12 +21,12 @@ extern "C" {
 bool IsRouteActive = false;
 bool IsSpeakerEnabled  = true;
 bool IsGpsFixStable = false;
-bool IsTrackActive = false;
+bool IsGpsTrackActive = false;
 bool IsLcdBkltEnabled = false;
-bool IsLogging = false;
+bool IsLoggingIBG = false;
 bool IsFlashDisplayRequired = false;
 bool IsGpsHeading = true;
-bool EndTrack = false;
+bool EndGpsTrack = false;
 bool IsBluetoothEnabled = false;
 
 int SupplyVoltageMV = 0;
@@ -403,8 +403,8 @@ static void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
       FrameBuf[128*FramePage + FrameCol + 0] = 0x22;
       FrameBuf[128*FramePage + FrameCol + 1] = 0x14;
       FrameBuf[128*FramePage + FrameCol + 2] = 0x7F;
-      FrameBuf[128*FramePage + FrameCol + 3] = 0x49;
-      FrameBuf[128*FramePage + FrameCol + 4] = 0x36;
+      FrameBuf[128*FramePage + FrameCol + 3] = 0x2A;
+      FrameBuf[128*FramePage + FrameCol + 4] = 0x14;
 		}
 	else {
 		for (int inx = 0; inx < 5; inx++) {
@@ -451,7 +451,7 @@ static void ui_printTrackTime(int page, int col, int nHrs, int nMin)	{
 		lcd_printf(false,page+1,col+22,"??");
 		return;
 		}
-	if (!IsTrackActive) {
+	if (!IsGpsTrackActive) {
 		lcd_printf(false,page+1,col+22,"OK");
 		return;
 		}
@@ -527,17 +527,17 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
 
    lcd_clearFrame();
    if (opt.misc.logType == LOGTYPE_IBG) {
-      lcd_printSz(1,74, IsLogging ? "I" : "i");
+      lcd_printSz(1,74, IsLoggingIBG ? "I" : "i");
       }
    else
    if (opt.misc.logType == LOGTYPE_GPS) {
-      lcd_printSz(1,74, IsTrackActive ? "G" : "g");
+      lcd_printSz(1,74, IsGpsTrackActive ? "G" : "g");
       }
    lcd_printf(false,6,104,"%3d*", dop);
    SupplyVoltageMV = adc_supplyVoltageMV();
    ui_printSupplyVoltage(7, 104, (SupplyVoltageMV+50)/100);
-   ui_printSpkrStatus(1,54, IsSpeakerEnabled);
-   ui_printBluetoothStatus(1,64, IsBluetoothEnabled);
+   ui_printSpkrStatus(1,56, IsSpeakerEnabled);
+   ui_printBluetoothStatus(1,65, IsBluetoothEnabled);
    ui_printAltitude(0,0,altm);
    lcd_printSz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
    lcd_printSz(1,45,"m");
@@ -550,7 +550,6 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       }
    ui_printClimbRate(2,0,INTEGER_ROUNDUP(DisplayClimbrateCps));
    lcd_printSz(3,34,"ms");
-
    int year,month,day,hour,minute;
    if (pn->nav.numSV > 0) {
       gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
@@ -567,8 +566,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
 
    if ((pn->nav.numSV > 3) && IsGpsFixStable) {
       pTrk->distanceFromStartm = gps_haversineDistancem(lat, lon, pTrk->startLatdeg, pTrk->startLondeg);
-      if ((!IsTrackActive) && (pTrk->distanceFromStartm >= opt.misc.trackStartThresholdm)) {
-         IsTrackActive = true;
+      if ((!IsGpsTrackActive) && (pTrk->distanceFromStartm >= opt.misc.trackStartThresholdm)) {
+         IsGpsTrackActive = true;
          pTrk->startTowmS = pn->nav.timeOfWeekmS;
          pTrk->year = year;
          pTrk->month = month;
@@ -594,7 +593,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          ui_printGlideRatio(6,0,1000);// climbing, display ++
          }
       lcd_printSz(7,23,"gr");
-      if (IsTrackActive) {
+      if (IsGpsTrackActive) {
          if (altm > pTrk->maxAltm) pTrk->maxAltm = altm;
          if (DisplayClimbrateCps > pTrk->maxClimbrateCps) pTrk->maxClimbrateCps = DisplayClimbrateCps;
          if (DisplayClimbrateCps < pTrk->maxSinkrateCps) pTrk->maxSinkrateCps = DisplayClimbrateCps;
@@ -629,7 +628,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          bearingDeg = RANGE_360(bearingDeg);
          distancem = pTrk->distanceFromStartm;
          }
-      ui_printBearingAnalog(4,55, horzVelKph, bearingDeg);
+      ui_printBearingAnalog(4,55, horzVelKph, bearingDeg);     
       ui_printDistance(0, 82, distancem);
       lcd_printSz(1,116,"km");
       }
