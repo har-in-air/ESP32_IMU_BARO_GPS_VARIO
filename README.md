@@ -90,7 +90,7 @@ I don't have one myself, I'm assuming the advertising is correct :-D.
 We're using the highest fix rate possible (10Hz), for future integration into the imu-vario algorithm. 
 Ublox documentation indicates that this is possible only when you restrict the module to the GPS constellation, rather than GPS+GLONASS etc. 
 So don't waste your time looking for multi-constellation modules.
-* ESP32 WROOM rev 1 module. Use any off-the-shelf breakout board with an onboard USB-UART interface (CH340, CP2102 etc).
+* Any off-the-shelf ESP32 development board with an onboard USB-UART chip (CH340, CP2102 etc).
 * W25Q128FVSG 128Mbit SPI flash
 * 128x64 reflective LCD display (ST7565 controller) with SPI interface.
 * For the power supply, I use a USB 5V output power bank. This allows me to 
@@ -98,8 +98,7 @@ detach the power bank and use it for other purposes, e.g. recharging my phone. A
 my hand-wired gpsvario in checked-in luggage (no battery => no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
 * Current draw from a 5V power bank is < 100mA in gpsvario mode with bluetooth transmission and volume set to 1, and < 150mA in wifi access point mode.
-* I don't have a schematic for the project because I used  off-the-shelf modules
- (and one homebrew board for the audio amplifier). Have a look at the file
+* I don't have a schematic for the project because I used  off-the-shelf modules. Have a look at the file
 /main/config.h to find the signal connections from the ESP32 (#define pinXXX). The 
 USB 5V pin supplies power for the GPS, MPU9250, MS5611, LCD modules (these modules have onboard 3.3V regulators) and audio amplifier. The
 ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  The LCD module PCB has a footprint for an
@@ -112,10 +111,9 @@ before the power switch along with an inline 1A resettable polyfuse. Note that i
 a power switch requires breaking the 5V supply line from the microusb connector on the ESP32 breakout board.
 The easiest way to do this is to desolder the schottky diode that is normally placed in the
 5V supply line between the microusb connector 5V pin and the rest of the circuit. Connect the power switch inline in its place.
-* I currently use a homebrew max4401 board for the audio amplifier, but you can 
-use an inexpensive and compact NS8002 amplifier module from Aliexpress. Make sure to use 
-a module with a shutdown(enable) pin to save power when not generating audio. If you're content with driving a piezo speaker, you can reduce power consumption 
-by omitting the audio amplifier and driving the piezo directly from an ESP32 pin with square wave signals.
+* I am now using an NS8002 module for the audio amplifier (/docs/ns8002_pinout.jpg). To avoid
+overdriving the speaker, replace the 47K resistor with a 10k to 15k resistor.  You also need to pull up the mute/enable pin to
+the 5V line with a 100k resistor.
 
 ## Usage
 * There are 4 user-interface buttons labeled as btnL(eft), btnM(iddle) and btnR(ight), plus btn0 (connected to gpio0). 
@@ -149,9 +147,10 @@ GPS DOP is displayed as a number on the lower right, just above the supply volta
 * The glide ratio field displays '+' when climbing and is clamped to a maximum of 99.9 when gliding. There is a damping filter to reduce jitter in the
 computed value using an IIR recursive filter. The highest damping value is 99, recommended range is ~90.
 * When connecting a smartphone/tablet navigation app (e.g. XCTrack) via bluetooth, the bluetooth device name is Esp32GpsVario. XCTrack applies heavy damping filters to incoming data such as
-climbrate or altitude, so you will see faster response on the XCTrack display if you increase the frequency of NMEA messages (upto a maximum of 10Hz). $LK8EX1 messages only contain
-barometric data ( pressure/altitude, climbrate) and power supply voltage. $XCTRC messages include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. To
-disable bluetooth transmission, set the bluetooth message frequency to 0Hz.
+climbrate or altitude, so you will see faster response on the XCTrack display if you increase the frequency of NMEA messages (upto a maximum of 10Hz). 
+* $LK8EX1 messages only contain barometric data ( pressure/altitude, climbrate) and power supply voltage. If you set bluetooth message type to LK8, ensure that 'Use external gps' option is disabled and 'Use external barometer' is enabled in the XCTrack preferences page.
+* $XCTRC messages include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. If you set bluetooth message type to XCT, and you want XCTrack to use GPS data from the gpsvario, ensure both 'Use external gps' and 'Use external barometer' are enabled in the XCTrack preferences page.  
+* To disable bluetooth transmission, set the bluetooth message frequency to 0Hz.
 
 ## Credits
 * SPIFFS code - https://github.com/loboris/ESP32_spiffs_example
