@@ -460,11 +460,23 @@ extern "C" void app_main() {
         }
     if (isEraseRequired) {
         ESP_LOGI(TAG, "Erasing flash...");
-        lcd_printlnf(true,3, FlashLogFreeAddress ? "Erasing logs" : "Erasing flash");
-        flashlog_erase(FlashLogFreeAddress);
-
-        ESP_LOGI(TAG, "Done");
+	    spiflash_globalUnprotect();
+        if (FlashLogFreeAddress == 0) {
+            FlashLogFreeAddress = FLASH_SIZE_BYTES-1; // manually force erase of entire chip
+            }
+        uint32_t lastSectorAddress = FlashLogFreeAddress & 0xFFFFF000; // sector size = 4096
+	    for (uint32_t sectorAddress = 0; sectorAddress <= lastSectorAddress; sectorAddress += 4096) {
+		    spiflash_sectorErase(sectorAddress);
+		    ESP_LOGI(TAG,"%4X",sectorAddress>>12);
+		    lcd_printlnf(true,3, "Erasing %03X", sectorAddress>>12);
+		    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+            TIMERG0.wdt_feed=1;
+            TIMERG0.wdt_wprotect=0;
+		    }
+        spiflash_reset();
+        FlashLogFreeAddress = 0;
         lcd_printlnf(false,2,"SPI flash %.2f%% full", 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES );
+	    ESP_LOGI(TAG,"Erased");
         lcd_printlnf(true,3,"Erased");
         }
     delayMs(1000);
@@ -487,8 +499,8 @@ extern "C" void app_main() {
         lcd_printlnf(false,0,"HTTP Server Mode");
         lcd_printlnf(false,1,"AP \"ESP32GpsVario\"");
         lcd_printlnf(false,2,"Configure");
-        lcd_printlnf(false,3," 192.168.4.1/config");
-        lcd_printlnf(false,4,"Datalog");
+        lcd_printlnf(false,3," 192.168.4.1");
+        lcd_printlnf(false,4,"Download log");
         lcd_printlnf(true, 5," 192.168.4.1/datalog");
         ESP_LOGI(TAG, "Wifi access point ESP32GpsVario starting...");
         WiFi.mode(WIFI_AP);

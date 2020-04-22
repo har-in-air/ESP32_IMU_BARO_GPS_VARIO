@@ -16,6 +16,14 @@ inline void spiflash_writeEnable(void) {
    spiEndTransaction(_vspi);
    }
 
+void spiflash_reset(void) {
+   spiSimpleTransaction(_vspi);
+   FLASH_CS_LO();
+   spiTransferByteNL(_vspi, 0x66); // enable reset
+   spiTransferByteNL(_vspi, 0x99); // reset
+   FLASH_CS_HI();
+   spiEndTransaction(_vspi);
+   }
 
 /// Send write-enable command prior to writing data
 inline void spiflash_writeDisable(void) {
@@ -40,7 +48,7 @@ void spiflash_globalUnprotect(void) {
    }
 
 
-/// Erase a 4kbyte sector, 18mS
+/// Erase a 4kbyte sector, 100mS
 /// @param address within the block
 void spiflash_sectorErase(uint32_t address){
    while (SPIFLASH_BUSY());
@@ -53,21 +61,26 @@ void spiflash_sectorErase(uint32_t address){
    spiTransferByteNL(_vspi, (uint8_t)(address&0xff));
    FLASH_CS_HI();
    spiEndTransaction(_vspi);
-   while (SPIFLASH_BUSY());
+   while (SPIFLASH_BUSY()) delayMs(2);
    }
 
 
-/// Erase the entire chip, 35mS
+/// Erase the entire chip, 40s max
 void spiflash_chipErase(void) {
-   while (SPIFLASH_BUSY());
-   spiflash_writeEnable();
-   spiSimpleTransaction(_vspi);
-   FLASH_CS_LO();
-   spiTransferByteNL(_vspi, 0xC7);
-   FLASH_CS_HI();
-   spiEndTransaction(_vspi);
-   while (SPIFLASH_BUSY());
-   }
+    while (SPIFLASH_BUSY());
+	spiflash_globalUnprotect();
+    spiflash_writeEnable();
+    spiSimpleTransaction(_vspi);
+    FLASH_CS_LO();
+//    spiTransferByteNL(_vspi, 0xC7);
+    spiTransferByteNL(_vspi, 0x60);
+    FLASH_CS_HI();
+    spiEndTransaction(_vspi);
+    while (SPIFLASH_BUSY()) {
+        ESP_LOGI(TAG,"x");
+        delayMs(1000);
+        }
+    }
 
 
 /// Check status of last command

@@ -1,4 +1,5 @@
 # ESP32 GPS Altimeter Variometer
+<img src="/docs/gps_vario_ui.jpg" alt="prototype_hardware"/>
 
 * Variometer zero-lag response with a Kalman filter fusing acceleration data from an IMU module and altitude data from a barometric pressure sensor.
 * High-speed data logging option for IMU (accelerometer, gyrosocope and magnetometer), barometer and gps 

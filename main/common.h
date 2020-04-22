@@ -32,6 +32,9 @@
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 
+#include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -24,6 +24,7 @@ void 	spiflash_chipErase(void);
 void 	spiflash_sectorErase(uint32_t address);
 void 	spiflash_globalUnprotect(void);
 void 	spiflash_writeEnable(void);
+void    spiflash_reset(void);
 void 	spiflash_writeDisable(void);
 uint16_t  spiflash_readID(void);
 void 	spiflash_writeBuffer(uint32_t address, uint8_t* pBuffer, int nBytes);
