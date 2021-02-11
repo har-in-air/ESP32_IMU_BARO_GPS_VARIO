@@ -13,7 +13,7 @@ other versions of esp-idf that are associated with different tool versions.
 
 export PATH="$HOME/esp32arduino/xtensa-esp32-elf/bin:$PATH"
 export IDF_PATH="$HOME/esp32arduino/esp-idf"
-./esp-idf/add_path.sh
+$IDF_PATH/add_path.sh
 
 --------------------
 
