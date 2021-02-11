@@ -25,7 +25,7 @@ arduino-ESP32 code for the web server.
 * [arduino-esp32 release tag 1.04](https://github.com/espressif/arduino-esp32/tree/1.0.4) : Note that I have only retained the directories 
 required for building this project
 * xtensa-esp32-elf-gcc v5.2.0 (crosstool-ng-1.22.0-80-g6c4433a) 
-* See the [readme file](docs/esp32_arduino__readme.txt) for installing ESP-IDF 3.2, associated toolchain, with Arduino-ESP32 as a project component.
+* See the [readme file](docs/arduino_esp32__readme.txt) for installing ESP-IDF 3.2, associated toolchain, with Arduino-ESP32 as a project component.
 
 ### Menuconfig
 
