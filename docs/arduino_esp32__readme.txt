@@ -20,17 +20,17 @@ $IDF_PATH/add_path.sh
 3. navigate to one of the esp-idf example directories, and verify you can build and flash
 the example using 'make menuconfig', 'make' and 'make flash'.
 
-4. Add arduino-esp32 as a component in your project
+4. Add arduino-esp32 as a component in your project as per
 https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md
-we are not using the esp32-arduino-lib-builder method but the other option :
+
 In project folder, 
 
-mkdir -p components && \
-cd components && \
-git clone https://github.com/espressif/arduino-esp32.git arduino && \
-cd arduino && \
-git submodule update --init --recursive && \
-cd ../.. && \
+mkdir -p components
+cd components
+git clone --recursive https://github.com/espressif/arduino-esp32.git arduino
+cd arduino
+git checkout tags/1.0.4
+cd ../..
 make menuconfig
 
 You can delete the arduino component library subdirectories that aren't being used in your
