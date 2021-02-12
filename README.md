@@ -19,7 +19,6 @@ an 8ohm cellphone speaker with sine-wave tones.
 
 ## Build environment
 * Ubuntu 20.04 amdx64
-* Software uses [esp-idf with Arduino as a component](https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md)
 * This [readme file](docs/arduino_esp32_readme.txt) has instructions for using ESP-IDF with Arduino-ESP32 as a project component.
 
 ### Menuconfig
