@@ -21,10 +21,6 @@ an 8ohm cellphone speaker with sine-wave tones.
 * Ubuntu 20.04 amdx64
 * Software uses [esp-idf with Arduino as a component](https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md), so we can take advantage of 
 arduino-ESP32 code for the web server. 
-* [esp-idf release tag v3.2.2](https://github.com/espressif/esp-idf/tree/v3.2.2)
-* [arduino-esp32 release tag 1.04](https://github.com/espressif/arduino-esp32/tree/1.0.4) : Note that I have only retained the directories 
-required for building this project
-* xtensa-esp32-elf-gcc v5.2.0 (crosstool-ng-1.22.0-80-g6c4433a) 
 * This [readme file](docs/arduino_esp32_readme.txt) has instructions for using ESP-IDF with Arduino-ESP32 as a project component.
 
 ### Menuconfig
