@@ -3,14 +3,14 @@ component. This requires specific versions of ESP-IDF, Arduino-ESP32 and the
 toolchain.
 
 This assumes the installation directory path for esp-idf + arduino-esp32 projects
-is $INSTALL_DIR
+is INSTALL_DIR
 
 Install esp-df v3.2 
 -------------------
 https://docs.espressif.com/projects/esp-idf/en/release-v3.2/get-started/index.html
 
 
-cd $INSTALL_DIR
+cd INSTALL_DIR
 git clone -b release/v3.2 --recursive https://github.com/espressif/esp-idf.git
 
 cd esp-idf
@@ -22,26 +22,26 @@ Download and install the compiler toolchain v1.22.0-80
 ------------------------------------------------------
 https://docs.espressif.com/projects/esp-idf/en/release-v3.2/get-started/linux-setup.html
 
-cd $INSTALL_DIR
+cd INSTALL_DIR
 tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
 
 
 Export path for IDF and tools
 -----------------------------
 
-## Create a file setpath.sh in $INSTALL_DIR with the following 3 lines :
+## Create a file setpath.sh in INSTALL_DIR with the following 3 lines :
 
-export PATH="$INSTALL_DIR/xtensa-esp32-elf/bin:$PATH"
-export IDF_PATH="$INSTALL_DIR/esp-idf"
+export PATH="INSTALL_DIR/xtensa-esp32-elf/bin:$PATH"
+export IDF_PATH="INSTALL_DIR/esp-idf"
 $IDF_PATH/add_path.sh 
 
-cd $INSTALL_DIR
+cd INSTALL_DIR
 chmod 755 setpath.sh
 
 When you want to work with an arduino-esp32+esp-idf project, 
 open a new terminal window and run the script.
 
-cd $INSTALL_DIR
+cd INSTALL_DIR
 . ./setpath.sh
 
 Better to do this rather than export the paths in .bashrc/.profile
@@ -53,7 +53,7 @@ Download and build the ESP32_IMU_BARO_GPS_VARIO project
 
 ## Open new terminal window
 
-cd $INSTALL_DIR
+cd INSTALL_DIR
 git clone https://github.com/har-in-air/ESP32_IMU_BARO_GPS_VARIO.git
 . ./setpath.sh
 cd ESP32_IMU_BARO_GPS_VARIO
