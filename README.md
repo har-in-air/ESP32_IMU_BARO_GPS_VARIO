@@ -47,7 +47,10 @@ We're using a mixture of C++ and C code for the project
 <img src="/docs/menuconfig_compiler.png" alt="menuconfig_compiler"/>
 
 #### Partition Table
-Custom partition table. Run 'make flashfs' once to create and flash the spiffs partition image.
+Custom partition table. Note : Before running 'make', run 'make erase_flash' to completely erase 
+the flash. The new partition scheme will be installed on the next build. You only need to do this
+once. As long as you don't change the partition configuration, you can subsequently just run
+'make', 'make flash' or 'make flash monitor'.
 
 <img src="/docs/menuconfig_partitiontable.png" alt="menuconfig_partitiontable"/>
 
