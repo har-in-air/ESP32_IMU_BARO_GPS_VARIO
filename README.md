@@ -114,12 +114,13 @@ FreeRTOS
    <img src="docs/boot5.jpg"><br>
    <img src="docs/boot6.jpg"><br>
    <br><br>
-8. After ensuring everything is working as expected, you can delete the unnecessary library folders from `components\arduino\libraries`. For this project we only need to retain the following library folders : 
+8. After ensuring everything is working as expected, you can delete the unnecessary library folders from `components\arduino\libraries`. For this project we only need to retain the following libraries : 
 ```
 ESP32
 FS
 WiFi
 ```
+You can prune these further by deleting the `/examples` sub-directory in each library folder.
 
 # Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
