@@ -125,15 +125,15 @@ WiFi
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 barometric pressure sensor, sampled at 50Hz.
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol at 115200 baud.
-I used a compact ublox gps module from Banggood (/docs/banggood_gpsmodule.jpg). Not a great choice - it was expensive, and 
+I used a compact [ublox gps module from Banggood](docs/banggood_gpsmodule.jpg). Not a great choice - it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
 And it doesn't save configuration settings to flash, so it needs to be configured on every power-up.
-I found another gps module on Aliexpress (/docs/aliexpress_gpsmodule.jpg) that is cheaper, has a larger patch antenna and flash configuration save. 
+I found [another gps module on Aliexpress](docs/aliexpress_gpsmodule.jpg) that is cheaper, has a larger patch antenna and flash configuration save. 
 I don't have one myself, I'm assuming the advertising is correct :-D. 
 We're using the highest fix rate possible (10Hz), for future integration into the imu-vario algorithm. 
 Ublox documentation indicates that this is possible only when you restrict the module to the GPS constellation, rather than GPS+GLONASS etc. 
 So don't waste your time looking for multi-constellation modules.
-* Any off-the-shelf ESP32 development board with an onboard USB-UART chip (CH340, CP2102 etc).
+* Any commercial or homebrew ESP32 development board with an onboard USB-UART chip (CH340, CP2102 etc).
 * W25Q128FVSG 128Mbit SPI flash
 * 128x64 reflective LCD display (ST7565 controller) with SPI interface.
 * For the power supply, I use a USB 5V output power bank. This allows me to 
@@ -148,13 +148,13 @@ ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  The LCD module PCB
 SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. All signal interfaces between the ESP32
 and other components are at 3.3V level. 
 * There are different versions of the 128x64 LCD module that may need 
-modifications to the initialization code. See the lcd_init() function in /ui/lcd7565.c, specifically lcd bias and display orientation. 
-* I added a 470uF 10V bypass capacitor on the USB5V supply
-before the power switch along with an inline 1A resettable polyfuse. Note that installing
+modifications to the initialization code. See the `lcd_init()` function in `/ui/lcd7565.c`. You may have to choose a different option for lcd bias and display orientation. 
+* I added a 1A resettable polyfuse and a 470uF 10V bypass capacitor on the USB 5V supply
+before the power switch. Note that installing
 a power switch requires breaking the 5V supply line from the microusb connector on the ESP32 breakout board.
 The easiest way to do this is to desolder the schottky diode that is normally placed in the
-5V supply line between the microusb connector 5V pin and the rest of the circuit. Connect the power switch inline in its place.
-* I am now using an NS8002 module for the audio amplifier (/docs/ns8002_pinout.jpg). To avoid
+5V supply line between the micro-usb connector 5V pin and the rest of the circuit. Connect the  polyfuse, capacitor to ground and power switch inline in its place.
+* I am now using an [NS8002 module](docs/ns8002_pinout.jpg) for the audio amplifier . To avoid
 overdriving the speaker, replace the 47K resistor with a 10k to 15k resistor.  You also need to pull up the mute/enable pin to
 the 5V line with a 100k resistor.
 
@@ -162,7 +162,7 @@ the 5V line with a 100k resistor.
 * There are 4 user-interface buttons labeled as btnL(eft), btnM(iddle) and btnR(ight), and btn0 (connected to gpio0). 
 * The gyroscope is automatically calibrated each time on power up. The unit needs to be at rest (in any orientation) during gyro calibration. If it's disturbed, it will use the last saved gyro calibration values.
 * You MUST calibrate the accelerometer and magnetometer correctly before using the gpsvario. 
-* If there is no calib.txt file in the spiffs file system, the unit will prompt you for the calibration. If you want to recalibrate, you can delete the calib.txt file using the webserver access.
+* If there is no `calib.txt` file in the spiffs file system, the unit will prompt you for the calibration. If you want to recalibrate, you can delete the calib.txt file using the webserver access.
  Or you can manually force accelerometer and magnetometer calibration by pressing the btn0 button during the onscreen countdown to gyro calibration.  When you see the lcd display countdown for accelerometer calibration,
 place the unit undisturbed on a flat horizontal surface, and wait until it completes. When you see the lcd display countdown for magnetometer calibration, pick up the unit and slowly and smoothly wave with a figure-of-8 motion while turning around 
 and rotating the unit so that magnetometer readings can be obtained with all possible 3D orientations and compass headings. Keep doing this until calibration completes. Make sure you are several feet away from large metal objects. 
@@ -172,9 +172,9 @@ and rotating the unit so that magnetometer readings can be obtained with all pos
 <img src="docs/screenshot_dir_listing.jpg" alt="screenshot_dir_listing"/><br><br>
 <img src="docs/screenshot_options_download.jpg" alt="screenshot_options_download"/>
 
-* Every time the gpsvario is powered on, it sets the user-configurable data to default values and then overrides them with the values in the option.txt file. So you don't have to specify all the options in the options.txt file, only the ones you want to modify from the 'factory default' values. 
-* Use [xcplanner](https://xcplanner.appspot.com) to generate a route with waypoints in FormatGEO format as a *.wpt text file. Note that xcplanner does not specify waypoint radii in the FormatGEO file. You can edit the .wpt file to add the waypoint radius (in meters) at the end of a waypoint entry line. If the radius is not specified for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. Upload the .wpt file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. You can upload up to 7 route files and select one of them (or none) on-screen. If there
-are no route files or you select `none`, the bearing-to-waypoint arrow and distance-to-waypoint field will display bearing and distance to the start position.
+* Every time the gpsvario is powered on, it sets the user-configurable data to default values and then overrides them with the values in `option.txt`. So you don't have to specify all the options in the file, only the ones you want to modify from 'factory default' values. 
+* Use [xcplanner](https://xcplanner.appspot.com) to generate a route with waypoints in FormatGEO format as a *.wpt text file. Note that xcplanner does not specify waypoint radii in the FormatGEO file. You can edit the .wpt file to add the waypoint radius (in meters) at the end of each waypoint entry line. If the radius is not specified for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. Upload the .wpt file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. You can upload up to 7 route files and select one of them (or none) on-screen. If there
+are no route files or you select `none`, the bearing-to-waypoint arrow and distance-to-waypoint field will display bearing-to-start and distance-to-start position.
 * In flight display mode, btnL toggles the heading display between GPS course-over-ground (direction of motion) and magnetic compass heading (direction the unit is facing). You will see the change reflected in the caret on top of the heading display - diamond for compass heading, bar for GPS course heading. For low velocities (< 2kph), the GPS course heading display is blanked out, as
 the uncertainty in direction is high.
 * In flight display mode, if you selected high-speed IBG data logging, btnM toggles data logging on and off. The display will show `I` if logging, `i` if not logging. 
@@ -189,10 +189,10 @@ altitude (+/-100m). Barometric pressure altitude depends on atmospheric conditio
 GPS DOP is displayed as a number on the lower right, just above the supply voltage, with a maximum value of 100. A good DOP value should be around 5 or less. This might take a couple of minutes after power up. If your GPS module has a battery backup to retain satellite ephemeris data for your location, you can get a good hot-start fix in a few seconds.
 * The glide ratio field displays `+` when climbing and is clamped to a maximum of 99.9 when gliding. There is a damping filter to reduce jitter in the
 computed value using an IIR recursive filter. The highest damping value is 99. Recommended value is ~90.
-* When connecting a smartphone/tablet navigation app (e.g. XCTrack) via bluetooth, the bluetooth device name is Esp32GpsVario. XCTrack applies heavy damping filters to incoming data such as
-climbrate or altitude, so you will see faster response on the XCTrack display if you increase the frequency of NMEA messages (upto a maximum of 10Hz). 
+* When connecting a navigation app (e.g. XCTrack) via bluetooth, the gpsvario device name is `Esp32GpsVario`. You can  transmit periodic $LK8EX1 or $XCTRC NMEA messages, at up to 10Hz. XCTrack applies heavy damping filters to external data such as
+climbrate or altitude. You will see faster response on the XCTrack display if you increase the frequency of NMEA messages. 
 * $LK8EX1 messages only contain barometric data ( pressure/altitude, climbrate) and power supply voltage. If you set bluetooth message type to LK8, ensure that `Use external gps` option is disabled and `Use external barometer` is enabled in the XCTrack preferences page.
-* $XCTRC messages include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. If you set bluetooth message type to XCT, and you want XCTrack to use GPS data from the gpsvario, ensure both `Use external gps` and `Use external barometer` are enabled in the XCTrack preferences page.  
+* $XCTRC messages include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. If you set bluetooth message type to XCT, and you want XCTrack to use GPS data from the gpsvario, ensure both `Use external barometer` and `Use external gps` are enabled in the XCTrack preferences page.  
 * To disable bluetooth transmission, set the bluetooth message frequency to 0Hz.
 
 # Credits
