@@ -18,11 +18,12 @@
 
 bool btInUse(){ return true; }
 
-#ifdef CONFIG_BLUEDROID_ENABLED
 #include "esp_bt.h"
 
-#ifdef CONFIG_CLASSIC_BT_ENABLED
+#ifdef CONFIG_BTDM_CONTROLLER_MODE_BTDM
 #define BT_MODE ESP_BT_MODE_BTDM
+#elif defined(CONFIG_BTDM_CONTROLLER_MODE_BR_EDR_ONLY)
+#define BT_MODE ESP_BT_MODE_CLASSIC_BT
 #else
 #define BT_MODE ESP_BT_MODE_BLE
 #endif
@@ -65,13 +66,21 @@ bool btStop(){
         while(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
     }
     if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED){
+        if (esp_bt_controller_deinit()) {
+			log_e("BT deint failed");
+			return false;
+		}
+		vTaskDelay(1);
+		if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_IDLE) {			
+			return false;		
+		}
         return true;
     }
     log_e("BT Stop failed");
     return false;
 }
 
-#else
+#else // CONFIG_BT_ENABLED
 bool btStarted()
 {
     return false;
@@ -86,6 +95,6 @@ bool btStop()
 {
     return false;
 }
-#endif
-#endif
+
+#endif // CONFIG_BT_ENABLED
 

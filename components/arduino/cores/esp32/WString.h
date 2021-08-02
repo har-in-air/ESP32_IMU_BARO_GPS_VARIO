@@ -203,8 +203,20 @@ class String {
         unsigned char equalsIgnoreCase(const String &s) const;
         unsigned char equalsConstantTime(const String &s) const;
         unsigned char startsWith(const String &prefix) const;
+        unsigned char startsWith(const char *prefix) const {
+            return this->startsWith(String(prefix));
+        }
+        unsigned char startsWith(const __FlashStringHelper *prefix) const {
+            return this->startsWith(String(prefix));
+        }
         unsigned char startsWith(const String &prefix, unsigned int offset) const;
         unsigned char endsWith(const String &suffix) const;
+        unsigned char endsWith(const char *suffix) const {
+            return this->endsWith(String(suffix));
+        }
+        unsigned char endsWith(const __FlashStringHelper * suffix) const {
+            return this->endsWith(String(suffix));
+        }
 
         // character access
         char charAt(unsigned int index) const;
@@ -238,7 +250,22 @@ class String {
 
         // modification
         void replace(char find, char replace);
-        void replace(const String& find, const String& replace);
+        void replace(const String &find, const String &replace);
+        void replace(const char *find, const String &replace) {
+            this->replace(String(find), replace);
+        }
+        void replace(const __FlashStringHelper *find, const String &replace) {
+            this->replace(String(find), replace);
+        }
+        void replace(const char *find, const char *replace) {
+            this->replace(String(find), String(replace));
+        }
+        void replace(const __FlashStringHelper *find, const char *replace) {
+            this->replace(String(find), String(replace));
+        }
+        void replace(const __FlashStringHelper *find, const __FlashStringHelper *replace) {
+            this->replace(String(find), String(replace));
+        }
         void remove(unsigned int index);
         void remove(unsigned int index, unsigned int count);
         void toLowerCase(void);
@@ -274,9 +301,19 @@ class String {
         inline unsigned int len() const { return isSSO() ? sso.len : ptr.len; }
         inline unsigned int capacity() const { return isSSO() ? (unsigned int)SSOSIZE - 1 : ptr.cap; } // Size of max string not including terminal NUL
         inline void setSSO(bool set) { sso.isSSO = set; }
-        inline void setLen(int len) { if (isSSO()) sso.len = len; else ptr.len = len; }
+        inline void setLen(int len) {
+            if (isSSO()) {
+                sso.len = len;
+                sso.buff[len] = 0;
+            } else {
+                ptr.len = len;
+                if (ptr.buff) {
+                    ptr.buff[len] = 0;
+                }
+            }
+        }
         inline void setCapacity(int cap) { if (!isSSO()) ptr.cap = cap; }
-	inline void setBuffer(char *buff) { if (!isSSO()) ptr.buff = buff; }
+        inline void setBuffer(char *buff) { if (!isSSO()) ptr.buff = buff; }
         // Buffer accessor functions
         inline const char *buffer() const { return (const char *)(isSSO() ? sso.buff : ptr.buff); }
         inline char *wbuffer() const { return isSSO() ? const_cast<char *>(sso.buff) : ptr.buff; } // Writable version of buffer
