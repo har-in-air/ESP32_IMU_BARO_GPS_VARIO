@@ -151,10 +151,8 @@ and other components are at 3.3V level.
 * There are different versions of the 128x64 LCD module that may need 
 modifications to the initialization code. See the `lcd_init()` function in `/ui/lcd7565.c`. You may have to choose a different option for lcd bias and display orientation. 
 * I added a 1A resettable polyfuse and a 470uF 10V bypass capacitor on the USB 5V supply
-before the power switch. Note that installing
-a power switch requires breaking the 5V supply line from the microusb connector on the ESP32 breakout board.
-The easiest way to do this is to desolder the schottky diode that is normally placed in the
-5V supply line between the micro-usb connector 5V pin and the rest of the circuit. Connect the  polyfuse, capacitor to ground and power switch inline in its place.
+before the power switch. 
+The easiest way to do this is to desolder the schottky diode that is normally placed between the ESP32 dev board micro-usb connector 5V pin and the rest of the circuit. Connect the  polyfuse, capacitor to ground and power switch in its place.
 * I am now using an [NS8002 module](docs/ns8002_pinout.jpg) for the audio amplifier . To avoid
 overdriving the speaker, replace the 47K resistor with a 10k to 15k resistor.  You also need to pull up the mute/enable pin to
 the 5V line with a 100k resistor.
