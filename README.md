@@ -67,7 +67,7 @@ git clone --recursive https://github.com/espressif/arduino-esp32.git arduino
 cd arduino
 git checkout tags/1.0.6
 ```
-In the `components\arduino\libraries` folder, delete the `SPIFFS` library folder as we are using a different version (see Credits below).<br><br>
+In the `components/arduino/libraries` folder, delete the `SPIFFS` library folder as we are using a different version (see Credits below).<br><br>
 6. From the project top level directory, run `make menuconfig` and ensure  the following settings : <br>
 ```
 Arduino Configuration
@@ -111,10 +111,10 @@ FreeRTOS
    <img src="docs/boot5.jpg"><br>
    <img src="docs/boot6.jpg"><br>
    <br><br>
-8. After ensuring everything is working as expected, you can delete unnecessary directories in your project `components\arduino` folder. You should be left with the following directory contents : <br><br>
+8. After ensuring everything is working as expected, you can delete unnecessary directories in your project `components/arduino` folder. You should be left with the following directory contents : <br><br>
 <img src="docs/arduino_directory.png"><br><br>
-In the `components\arduino\variants` folder, delete all the folders except `esp32`.<br>
-In the `components\arduino\libraries` folder, we only need to retain the following libraries for this project : 
+In the `components/arduino/variants` folder, delete all the folders except `esp32`.<br>
+In the `components/arduino/libraries` folder, we only need to retain the following libraries for this project : 
 ```
 ESP32
 FS
