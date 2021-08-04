@@ -1,19 +1,30 @@
-# vario
-climbThresholdCps 50 
-zeroThresholdCps 5
-sinkThresholdCps -200
-crossoverCps 400
+# Vario
+climbThresholdCps [20,100] 50
+zeroThresholdCps [-20,20] 5
+sinkThresholdCps [-400,-100] -250
+crossoverCps [300,800] 400
 
-# kalman filter
-accelVariance  50
-zMeasVariance  300
+varioDisplayIIR [90,99] 95
 
-# miscellaneous
-backlitSecs 10
-utcOffsetMins 330
-trackIntervalSecs 1
-gyroOffsetLimit1000DPS 180
-glideRatioIIR 90
-gpsStableDOP 4
-trackStartThresholdm 15
+# Kalman Filter
+accelVariance [10,100] 50
+zMeasVariance [100,500] 300
+
+# Miscellaneous
+backlitSecs [5,60] 30
+utcOffsetMins [-720,720] 330
+gyroOffsetLimit1000DPS [25,200] 150
+trackIntervalSecs [1,60] 3
+gpsStableDOP [3,15] 8
+glideRatioIIR [0,99] 90
+trackStartThresholdm [0,100] 20
+magDeclinationdeg [-60,60] 0
+speakerVolume [0,3] 2
+logType [NONE,GPS,IBG] NONE
+waypointRadiusm [5,20000] 50
+altitudeDisplay [GPS,BARO]  GPS
+btMsgType [LK8,XCT] LK8
+btMsgFreqHz [0,10] 0
+lcdContrast [1,10] 4
+
 
