@@ -97,8 +97,15 @@ PHY
 FreeRTOS
     (200) Tick rate (Hz)
 ```   
-7. Before flashing this project for the first time, run `make erase flash` once to ensure any existing partitions are wiped.   
-8. Run `make flash monitor` to build the project, flash the ESP32 and start the console serial debug monitor. <br>
+7. Before flashing this project for the first time, run `make erase_flash` once to ensure any existing partitions on the ESP32 are wiped. <br>
+Then navigate to the project `/spiffs_image` directory  and run the `mkspiffs.sh` script. This will generate the spiffs binary image from the files contained in the `/image` sub-directory and then flash the binary image to the spiffs partition specified in `partitions.csv`.
+```
+cd spiffs_image
+. ./mkspiffs.h
+```
+This step only has to be done once, unless you decide to change the contents of the `/image` sub-directory. <br>
+
+8. Run `make flash monitor` to build the project, flash the ESP32 and start the console serial debug monitor. If you have wiped the flash and flashed a new spiffs image, then you will be prompted to calibrate the accelerometer, magnetometer and gyroscope. Otherwise, only gyroscope calibration is required. The gpsvario can be in any orientation during gyroscope calibration but must not be disturbed.<br><br>
    Example log dump :
    <img src="docs/startup_log.png">
    <br><br>
@@ -111,7 +118,7 @@ FreeRTOS
    <img src="docs/boot5.jpg"><br>
    <img src="docs/boot6.jpg"><br>
    <br><br>
-8. After ensuring everything is working as expected, you can delete unnecessary directories in your project `components/arduino` folder. You should be left with the following directory contents : <br><br>
+9.  After ensuring everything is working as expected, you can delete unnecessary directories in your project `components/arduino` folder. You should be left with the following directory contents : <br><br>
 <img src="docs/arduino_directory.png"><br><br>
 In the `components/arduino/variants` folder, delete all the folders except `esp32`.<br>
 In the `components/arduino/libraries` folder, we only need to retain the following libraries for this project : 
