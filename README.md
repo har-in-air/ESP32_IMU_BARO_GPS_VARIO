@@ -37,7 +37,7 @@ cd esp-idf
 chmod 755 ./add_path.sh
 ```
 2. Download and install the ESP32 compiler toolchain v1.22.0-97 compatible with esp-idf v3.3.5<br>
-   [Reference](https://docs.espressif.com/projects/esp-idf/en/release-v3.2/get-started/linux-setup.html)<br>
+[Reference](https://docs.espressif.com/projects/esp-idf/en/release-v3.2/get-started/linux-setup.html)<br>
 ```
 cd $ESPIDF_ARDUINO_PROJECTS_DIR
 tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-97-gc752ad5-5.2.0.tar.gz
@@ -59,7 +59,7 @@ cd $ARDUINO_ESP32_PROJECTS_DIR
 ```
 5. Add Arduino-ESP32 v1.06 as a component in your esp-idf project. This step has already been done in the project code repository, but is described in case you want to build a esp-idf+arduino-esp32 project from scratch.<br>
    [Reference](https://docs.espressif.com/projects/arduino-esp32/en/latest/esp-idf_component.html) <br>
-In your project top folder, run the following commands<br>
+In your project top folder, run the following commands
 ```
 mkdir -p components
 cd components
@@ -67,13 +67,13 @@ git clone --recursive https://github.com/espressif/arduino-esp32.git arduino
 cd arduino
 git checkout tags/1.0.6
 ```
-In the `components/arduino/libraries` folder, delete the `SPIFFS` library folder as we are using a different version (see Credits below).<br><br>
+In `components/arduino/libraries`, delete the `SPIFFS` library folder as we are using a different version (see Credits below).
+
 6. From the project top level directory, run `make menuconfig` and ensure  the following settings : <br>
 ```
 Arduino Configuration
     [ ] Autostart Arduino setup and loop on boot
     [*] Disable mutex locks for HAL
-    Used partition scheme (No OTA (for large apps))
 SPIFFS Configuration
     (0x180000) SPIFFS Base address
     (65536) SPIFFS Size in bytes
@@ -97,31 +97,36 @@ PHY
 FreeRTOS
     (200) Tick rate (Hz)
 ```   
-7. Before flashing this project for the first time, run `make erase_flash` once to ensure any existing partitions on the ESP32 are wiped. <br>
-Then navigate to the project `/spiffs_image` directory  and run the `mkspiffs.sh` script. This will generate the spiffs binary image from the files contained in the `/image` sub-directory and then flash the binary image to the spiffs partition specified in `partitions.csv`.
+Note that the Arduino Configuration->partition setting is ignored when you specify a custom partition table.
+
+7. Before flashing this project for the first time, run `make erase_flash` once to ensure any existing partitions on the ESP32 are wiped.
+Then navigate to the project `/spiffs_image` directory  and run the `mkspiffs.sh` script. This will     
+* generate a spiffs binary image from the files contained in the `/image` sub-directory.
+* flash the binary image to the spiffs partition specified in `partitions.csv`.
 ```
 cd spiffs_image
+chmod 755 ./mkspiffs.sh
 . ./mkspiffs.h
 ```
-This step only has to be done once, unless you decide to change the contents of the `/image` sub-directory. <br>
+This step only has to be done once, unless you decide to change the contents of the `/image` sub-directory.
 
-8. Run `make flash monitor` to build the project, flash the ESP32 and start the console serial debug monitor. If you have wiped the flash and flashed a new spiffs image, then you will be prompted to calibrate the accelerometer, magnetometer and gyroscope. Otherwise, only gyroscope calibration is required. The gpsvario can be in any orientation during gyroscope calibration but must not be disturbed.<br><br>
-   Example log dump :
+8. Run `make flash monitor` to build the project, flash the ESP32 and start the console serial debug monitor. If you have wiped the flash and flashed a new spiffs image, then you will be prompted to calibrate the accelerometer, magnetometer and gyroscope (see Usage section below). <br>
+Example startup log dump :
    <img src="docs/startup_log.png">
    <br><br>
-   Boot Sequence to flight mode with no user interaction. This is indoors without GPS reception<br><br>
+   Startup sequence to flight mode with no user interaction. This is indoors without GPS reception<br><br>
    <img src="docs/boot0.jpg"><br>
    <img src="docs/boot1.jpg"><br>
    <img src="docs/boot2.jpg"><br>
    <img src="docs/boot3.jpg"><br>
    <img src="docs/boot4.jpg"><br>
    <img src="docs/boot5.jpg"><br>
-   <img src="docs/boot6.jpg"><br>
-   <br><br>
-9.  After ensuring everything is working as expected, you can delete unnecessary directories in your project `components/arduino` folder. You should be left with the following directory contents : <br><br>
+   <img src="docs/boot6.jpg">
+   
+9.  After ensuring everything is working as expected, you can delete unnecessary directories in your project `components/arduino` folder. This will reduce archive size and compile time after a `make clean`. You should be left with the following directory contents : <br><br>
 <img src="docs/arduino_directory.png"><br><br>
-In the `components/arduino/variants` folder, delete all the folders except `esp32`.<br>
-In the `components/arduino/libraries` folder, we only need to retain the following libraries for this project : 
+* In `components/arduino/variants`, delete all the folders except `esp32`.<br>
+* In `components/arduino/libraries`, we only need to retain the following libraries for this project :  
 ```
 ESP32
 FS
@@ -174,11 +179,11 @@ place the unit undisturbed on a flat horizontal surface, and wait until it compl
 and rotating the unit so that magnetometer readings can be obtained with all possible 3D orientations and compass headings. Keep doing this until calibration completes. Make sure you are several feet away from large metal objects. 
 * For downloading binary data logs, put the gpsvario into server mode, connect to the WiFi access point `ESP32GpsVario` and access the url `http://192.168.4.1/datalog` via a web browser. The binary datalog file can contain a mix of high-speed IBG (imu+baro+gps) data samples, and normal GPS track logs. There is some sample software in the /offline directory for splitting the binary datalog into separate IBG and GPS datalogs, and for converting GPS logs into .gpx text files that you can load in Google Earth or other GPS track visualization software.
 * For configuring the gpsvario, you can edit the user-configurable options on the LCD screen. In the options page, press the L or R buttons to select the option (cursor=o). Press the M button if you want to change the option (cursor=*). Now L and R will decrease/increase the value. Press the M button again to go back to the option select (cursor=o). Changes are saved to the file options.txt in the onboard SPIFFS flash file system. If there is no user activity for ~10 seconds on the option screen, the gpsvario will automatically transition into flight display mode. This is so that you can power up the unit and have it eventually start displaying the flight screen without user intervention. 
-* Alternatively, put the gpsvario into server mode, access the url `http://192.168.4.1/dir` and download the `options.txt` file from the gpsvario. Edit it as required, and upload the file back to the gpsvario. Make sure you only edit the last field on each line ! This way you can keep different versions of the file on your laptop/smartphone for different sites or site conditions. To reset to 'factory defaults', just delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. [Here's](docs/options.txt) a sample configuration file.<br><br>
+* Alternatively, put the gpsvario into server mode, access the url `http://192.168.4.1/dir` and download the `options.txt` file from the gpsvario. Edit it as required, and upload the file back to the gpsvario. Make sure you only edit the last field on each line ! This way you can keep different versions of the file on your laptop/smartphone for different sites or site conditions. To reset to 'factory defaults', just delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. [This is an options.txt example](docs/options.txt).<br><br>
 <img src="docs/screenshot_dir_listing.jpg" alt="screenshot_dir_listing"/><br><br>
 <img src="docs/screenshot_options_download.jpg" alt="screenshot_options_download"/>
 
-* Every time the gpsvario is powered on, it sets the user-configurable data to default values and then overrides them with the values in `option.txt`. So you don't have to specify all the options in the file, only the ones you want to modify from 'factory default' values. 
+* Every time the gpsvario is powered on, it sets user-configurable data to default values and then overrides them with the values in `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from 'factory default' values. 
 * Use [xcplanner](https://xcplanner.appspot.com) to generate a route with waypoints in FormatGEO format as a *.wpt text file. Note that xcplanner does not specify waypoint radii in the FormatGEO file. You can edit the .wpt file to add the waypoint radius (in meters) at the end of each waypoint entry line. If the radius is not specified for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. Upload the .wpt file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. You can upload up to 7 route files and select one of them (or none) on-screen. If there
 are no route files or you select `none`, the bearing-to-waypoint arrow and distance-to-waypoint field will display bearing-to-start and distance-to-start position.
 * In flight display mode, btnL toggles the heading display between GPS course-over-ground (direction of motion) and magnetic compass heading (direction the unit is facing). You will see the change reflected in the caret on top of the heading display - diamond for compass heading, bar for GPS course heading. For low velocities (< 2kph), the GPS course heading display is blanked out, as
