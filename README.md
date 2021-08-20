@@ -188,7 +188,7 @@ password = **admin**. You can re-build the firmware with a different user name a
 * Every time the gpsvario is powered on, it sets user-configurable data to default values and then overrides them with the values in `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from 'factory default' values. 
   
 ## Routes
-* Use [**xcplanner**](https://xcplanner.appspot.com) to generate a route with waypoints in **FormatGEO** format as a `.wpt` text file. 
+* Use [**xcplanner**](https://github.com/dkm/xcplanner) to generate a route with waypoints in **FormatGEO** format as a `.wpt` text file. 
 * Note that **xcplanner** does not specify waypoint radii in the FormatGEO file. Edit the `.wpt` file to add the waypoint radius (in meters) at the end of each waypoint entry line. 
 If you do not specify the radius for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. 
 * Upload the `.wpt` file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. 
