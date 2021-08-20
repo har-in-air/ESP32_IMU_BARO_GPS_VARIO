@@ -401,7 +401,7 @@ void setup() {
 	    delay(1000);
 	    ESP.restart();
 	    }    
-    spiffs_directory_listing();
+    //spiffs_directory_listing();
     // read calibration parameters from calib.txt
     calib_init();
     // set default configuration parameters, then override them with configuration parameters read from options.txt
@@ -434,7 +434,7 @@ void setup() {
     lcd_printlnf(true,3,"Data log : %d %% used", DATALOG_PERCENT_USED()); 
     delayMs(2000);
     btn_clear();
-#if 1
+
     ESP_LOGI(TAG,"Press BTN0 within 3 seconds to erase flash");
     LED_ON();
     bool isEraseRequired = false;
@@ -480,7 +480,6 @@ void setup() {
             }
         delayMs(10);
         }
-#endif
     if (IsServer) { // Wifi Configuration mode
         lcd_clear();
         lcd_printlnf(false,0,"WiFi Access Point :");
