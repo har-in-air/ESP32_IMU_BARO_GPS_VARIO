@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <h1>ESP32 GPS Vario</h1>
+  <p>Build time stamp: %BUILD_TIMESTAMP%</p>
+  <p>Data log storage : <span id="totaldatalog">%TOTALDATALOG%</span> | Used : <span id="usedflashlog">%USEDDATALOG%</span></p>
+  <p>
+  <button><a href='/datalog'>Data Log Download</a></button>
+  <button class='home_buttons' onclick="directory_handler()">SPIFFS Files</button>
+  <button class='home_buttons' onclick="upload_handler()">Upload File</button>
+  </p>
+  <p id="status"></p>
+  <p id="directory_details"></p>
+  <p id="upload_header"></p>
+  <p id="upload"></p>
+<script>
+
+
+function refreshPage() { 
+  location.reload(); 
+  }
+
+
+function directory_handler() {
+  xml = new XMLHttpRequest();
+  xml.open("GET", "/directory", false);
+  xml.send();
+  document.getElementById("status").innerHTML = "";
+  document.getElementById("directory_details").innerHTML = xml.responseText;
+  }
+
+
+function directory_button_handler(filename, action) {
+  var urltocall = "/file?name=" + filename + "&action=" + action;
+  xml = new XMLHttpRequest();
+  if (action == "delete") {
+    xml.open("GET", urltocall, false);
+    xml.send();
+    document.getElementById("status").innerHTML = "Deleted";
+    document.getElementById("directory_details").innerHTML = "";
+    }
+  if (action == "download") {
+    document.getElementById("status").innerHTML = "";
+    window.open(urltocall,"_blank");
+    }
+  }
+
+
+function upload_handler() {
+  document.getElementById("upload_header").innerHTML = "<h2>Upload File<h2>"
+  document.getElementById("status").innerHTML = "";
+  var uploadform =
+  "<form id=\"upload_form\" enctype=\"multipart/form-data\" method=\"post\">" +
+  "<input type=\"file\" name=\"file1\" id=\"file1\" onchange=\"uploadFile()\"><br>" +
+  "<progress id=\"progressBar\" value=\"0\" max=\"100\" style=\"width:300px;\"></progress>" +
+  "<h3 id=\"status\"></h3>" +
+  "<p id=\"loaded_n_total\"></p>" +
+  "</form>";
+  document.getElementById("upload").innerHTML = uploadform;
+  }
+
+
+function _(el) {
+  return document.getElementById(el);
+  }
+
+
+function uploadFile() {
+  var file = _("file1").files[0];
+  // alert(file.name+" | "+file.size+" | "+file.type);
+  var formdata = new FormData();
+  formdata.append("file1", file);
+  var ajax = new XMLHttpRequest();
+  ajax.upload.addEventListener("progress", upload_progress_handler, false);
+  ajax.addEventListener("load", upload_complete_handler, false);
+  ajax.addEventListener("error", upload_error_handler, false);
+  ajax.addEventListener("abort", upload_abort_handler, false);
+  ajax.open("POST", "/");
+  ajax.send(formdata);
+  }
+
+
+function upload_progress_handler(event) {
+  _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes";
+  var percent = (event.loaded / event.total) * 100;
+  _("progressBar").value = Math.round(percent);
+  _("status").innerHTML = Math.round(percent) + "% uploaded... please wait";
+  if (percent >= 100) {
+    document.getElementById("directory_details").innerHTML = "";
+    document.getElementById("upload_header").innerHTML = "";
+    document.getElementById("upload").innerHTML = "";
+  	}
+  }
+
+
+function upload_complete_handler(event) {
+  _("status").innerHTML = "Upload Complete";
+  _("progressBar").value = 0;
+  }
+
+
+function upload_error_handler(event) {
+  _("status").innerHTML = "Upload Failed";
+  }
+
+
+function upload_abort_handler(event) {
+  _("status").innerHTML = "Aborted";
+  }
+</script>
+</body>
+</html>

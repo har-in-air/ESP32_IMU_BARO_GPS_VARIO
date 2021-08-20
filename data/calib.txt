@@ -1,0 +1,13 @@
+axBias -10
+ayBias -107
+azBias -291
+gxBias -80
+gyBias 80
+gzBias -11
+mxBias 285
+myBias -74
+mzBias -186
+mxSens 306
+mySens 240
+mzSens 380
+
