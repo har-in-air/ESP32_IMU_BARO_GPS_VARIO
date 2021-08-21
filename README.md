@@ -44,44 +44,48 @@ appearance of the web page by editing these files, re-building and uploading the
 * Ubuntu 20.04 amdx64
 * Visual Studio Code + PlatformIO using Espressif ESP32 platform **esp32dev** with **arduino** framework.
 * The file **platformio.ini** specifies the ESP-IDF, arduino-esp32 and library dependencies.
-* [Example tutorial for setting up build environment](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/)
+* [Tutorial for setting up VSC+PlatformIO](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/)
 
 # Setting up build environment
 
 The previous repository release v1.0 required a complex build setup with esp-idf v3.3.5 and arduino-esp32 v1.06.
 
-The new build setup is far easier. PlatformIO takes care of generating a suitable build environment after you have specified framework and library dependencies in the file **platformio.ini**. For reference,
+The new build environment is much easier to set up and use. PlatformIO takes care of generating a suitable build environment after you have specified framework and library dependencies in the file **platformio.ini**. For reference,
 it's now using the **arduino-esp32** master release on Github (v2.00-rc1 as of this update), and a PlatformIO Espressif ESP32 SDK compatible with this framework.
 
 Before flashing this project for the first time, run **Erase Flash** in the PlatformIO **PROJECT TASKS > esp32dev > Platform** dropdown menu. This is to ensure any existing partitions on the ESP32 are wiped.
 
-Run **Build Filesystem Image**. This will generate a spiffs binary image from the files contained in the `/data` sub-directory. This includes :
-* root html page `index.html` and `style.css` files for the wifi configuration webpage
-* factory default `options.txt` file for configuring the gpsvario
-* example waypoint file
+Run **Build Filesystem Image**. This will generate a spiffs binary image from the files contained in the `/data` sub-directory. The project repository `/data` directory includes :
+* webserver root html page `index.html` and `style.css` files. (required)
+* example `options.txt` file for configuring the gpsvario. (optional)
+* example route file with waypoints in **FormatGEO** format. (optional)
   
-There is no default calibration file `calib.txt`. Calibration parameters are sensor-dependent. You will be prompted to calibrate the IMU sensor the first time you switch on the gpsvario.
-
 Run **Upload Filesystem Image**. This will flash the SPIFFS partition binary image to the SPIFFS partition address specified in `min_spiffs.csv`.
 This step needs to be executed again only if you change the contents of the project `/data` sub-directory.
 
 From the PlatformIO **PROJECT TASKS > esp32dev > General** menu, run  **Clean** and then **Build**. This will generate the firmware application binary `firmware.bin` in the project `.pio/build/esp32dev` directory.
 
-Connect a USB cable to the gpsvario and run **Upload and Monitor**. 
+Run **Upload and Monitor**. 
 
 You will be prompted to calibrate the accelerometer, magnetometer and gyroscope (see Usage section below). Calibration parameters are saved to the SPIFFS file `calib.txt`.
 
 Example Visual Studio Code screenshot of the debug log after running **Upload and Monitor** :
 
-   <img src="docs/vsc_boot_log.png">
-   <br><br>
-   Startup sequence to flight mode with no user interaction. This is indoors without GPS reception<br><br>
-   <img src="docs/boot0.jpg"><br>
-   <img src="docs/boot1.jpg"><br>
-   <img src="docs/boot2.jpg"><br>
-   <img src="docs/boot3.jpg"><br>
-   <img src="docs/boot4.jpg"><br>
-   <img src="docs/boot5.jpg"><br>
+<img src="docs/vsc_boot_log.png">
+   
+Startup sequence to flight mode with no user interaction. This is indoors without GPS reception.
+
+<img src="docs/boot0.jpg">
+
+<img src="docs/boot1.jpg">
+
+<img src="docs/boot2.jpg">
+
+<img src="docs/boot3.jpg">
+
+<img src="docs/boot4.jpg">
+
+<img src="docs/boot5.jpg">
    
 # Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
@@ -96,22 +100,23 @@ We're using the highest fix rate possible (10Hz), for future integration into th
 Ublox documentation indicates that this is possible only when you restrict the module to the GPS constellation, rather than GPS+GLONASS etc. 
 So don't waste your time looking for multi-constellation modules.
 * Any commercial or homebrew ESP32 development board with an onboard USB-UART chip (CH340, CP2102 etc).
-* W25Q128FVSG 128Mbit SPI flash
+* W25Q128FVSG 128Mbit (16Mbytes) SPI flash for storing data / track logs.
 * 128x64 reflective LCD display (ST7565 controller) with SPI interface.
 * For the power supply, I use a USB 5V output power bank. This allows me to 
 detach the power bank and use it for other purposes, e.g. recharging my phone. And I can put 
 my hand-wired gpsvario in checked-in luggage (no battery => no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
 * Current draw from a 5V power bank is < 100mA in gpsvario mode with bluetooth transmission and volume set to 1, and < 150mA in wifi access point mode.
-* I don't have a schematic for the project because I used  off-the-shelf modules. Have a look at the project file
-`/main/config.h` to find the gpio pin <-> signal connections from the ESP32. The 
-USB 5V pin supplies power for the GPS, MPU9250, MS5611, LCD modules (these modules have onboard 3.3V regulators) and audio amplifier. The
-ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  The LCD module PCB has a footprint for an
-SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. All signal interfaces between the ESP32
-and other components are at 3.3V level. 
+* I don't have a circuit schematic because I used  off-the-shelf modules. 
+  * The project file `/include/config.h` defines all ESP32 gpio pin <> sensor interface connections. 
+  * The USB 5V pin supplies power for the GPS, MPU9250, MS5611 and LCD modules. These modules have onboard 3.3V regulators.
+  * The LCD module PCB has a footprint for an SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. 
+  * The USB 5V pin supplies power to the NS8002 audio amplifier. 
+  * The ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  
+  * Signal interfaces between the ESP32 and other components are at 3.3V level. The exception is the NS8002 amplifier - the enable/shutdown pin is pulled up to 5V with a 100K resistor. The ESP32 gpio pin enabling the NS8002 is configured as output open-drain (external pullup).
 * There are different versions of the 128x64 LCD module that may need 
 modifications to the initialization code. See the `lcd_init()` function in `/ui/lcd7565.c`. You may have to choose a different option for lcd bias and display orientation. 
-* I added a 1A resettable polyfuse and a 470uF 10V bypass capacitor on the USB 5V supply
+* I added a 0.5A resettable polyfuse and a 470uF 10V bypass capacitor on the USB 5V supply
 before the power switch. 
 The easiest way to do this is to desolder the schottky diode that is normally placed between the ESP32 dev board micro-usb connector 5V pin and the rest of the circuit. Connect the  polyfuse, capacitor to ground and power switch in its place.
 * I am now using an [NS8002 module](docs/ns8002_pinout.jpg) for the audio amplifier . To avoid
@@ -127,13 +132,12 @@ the 5V line with a 100k resistor.
   * btn0
   
 ## Calibration 
-* The gyroscope is automatically calibrated each time on power up. The unit needs to be at rest (in any orientation) during gyro calibration. If it's disturbed, it will use the last saved gyro calibration values.
+* The gyroscope is automatically calibrated each time on power up. When you see the prompt for gyro calibration, make sure the gpsvario is stationary (in any orientation). If it's disturbed, it will use the last saved gyro calibration values.
 * You MUST calibrate the accelerometer and magnetometer correctly before using the gpsvario. 
 * If there is no `calib.txt` file in the SPIFFS partition, the unit will prompt you to calibrate the IMU sensors. If you want to force re-calibration, you can delete `calib.txt`  using the webserver access, and then reboot the unit.
 * You can also force accelerometer and magnetometer calibration by pressing **btn0**  during the on-screen countdown to gyro calibration.  
-* When you see the LCD display countdown for **accelerometer calibration**, place the unit undisturbed on a flat horizontal surface, and wait until it completes. 
-* When you see the LCD display countdown for **magnetometer calibration**, pick up the unit and _slowly and smoothly_ wave your hand with a figure-of-8 motion while you turn around 
-and rotate the unit. This is to ensure that magnetometer readings are obtained with all possible 3D orientations and compass headings. Keep doing this until calibration completes. Make sure you are several feet away from large metal objects. 
+* When you see the LCD display countdown for **accelerometer calibration**, place the gpsvario undisturbed on a flat **horizontal** surface, and wait until it completes. 
+* When you see the LCD display countdown for **magnetometer calibration**, [pick up the gpsvario and _slowly and smoothly_ wave your hand with a 3D figure-of-8 motion](https://calibratecompass.com/) while you simultaneously turn around 360 degrees. Magnetometer calibration requires readings with all possible 3D orientations and compass headings. Keep doing this until calibration completes. Make sure you are several feet away from large metal objects. 
 
 ## WiFi Configuration webpage
 * Switch on the gpsvario, press **btn0** when you see the prompt for  server mode. 
@@ -149,15 +153,17 @@ password = **admin**. You can re-build the firmware with a different user name a
   * Specify the external WiFi Access Point SSID and password in the variables `default_ssid` and `default_wifipassword`. 
   * Re-build and flash the firmware.
   
-<img src="docs/webpage_spiffs_directory.png" alt="webpage_directory"/>
 
  * Click on the **SPIFFS Files** button to get a listing of files in the SPIFFS partition. Note that the webpage `index.html` and `style.css` files are not displayed.
- * You can upload new files, e.g. custom waypoint files, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the SPIFFS partition. **First ensure that there is sufficient free space in the SPIFFS partition**. There is no currently working code to check if the uploaded file will fit in the free space.
+
+<img src="docs/webpage_spiffs_directory.png" alt="webpage_directory"/>
+
+ * You can upload new files, e.g. route files with waypoints, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the SPIFFS partition. Please ensure that there is sufficient free space in the SPIFFS partition **before** you upload the file. There is no working check to see if the uploaded file will fit in the free space.
  * For firmware updates, use the **Upload File** button. 
    * If you select a `.bin` file, it is assumed to be a firmware application binary  and will be uploaded to the OTA flash partition. 
    * On upload completion, the gpsvario will automatically reboot with the new firmware. 
    * Verify the new firmware build time stamp on the LCD boot screen. 
-   * The firmware build timestamp is also shown on the webpage header - make sure you flush the web browser cache so the updated webpage is shown.
+   * The firmware build timestamp is also shown on the webpage header. Make sure you flush the web browser cache so the updated webpage is shown.
 
 <img src="docs/webpage_ota_fw_update.png" alt="webpage_ota_fw_update"/>
   
@@ -182,18 +188,17 @@ password = **admin**. You can re-build the firmware with a different user name a
   * Delete the existing `options.txt` file using the webpage
   * Upload the modified `options.txt` file back to the gpsvario. Unfortunately there is an issue with replacing an existing file, so we need to first delete the file and then upload a replacement.
   * This way you can keep different versions of `options.txt` file on your laptop/smartphone for different sites or site conditions. 
-* To reset to 'factory defaults', delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. 
+* To reset to 'factory defaults', delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. Default values are in the file `\include\config.h` - search for the `USER-CONFIGURABLE PARAMETER DEFAULTS` section.
 * [This is an example of an `options.txt` file](docs/options.txt).
-  
-* Every time the gpsvario is powered on, it sets user-configurable data to default values and then overrides them with the values in `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from 'factory default' values. 
+* Every time the gpsvario is powered on, it sets user-configurable parameters to the default values and then overrides them with values found in the SPIFFS file `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from the default values. 
   
 ## Routes
 * Use [**xcplanner**](https://github.com/dkm/xcplanner) to generate a route with waypoints in **FormatGEO** format as a `.wpt` text file. 
-* Note that **xcplanner** does not specify waypoint radii in the FormatGEO file. Edit the `.wpt` file to add the waypoint radius (in meters) at the end of each waypoint entry line. 
+* Note that **xcplanner** does not specify waypoint radii in the **FormatGEO** file. Edit the `.wpt` file to add the waypoint radius (in meters) at the end of each waypoint entry line. 
 If you do not specify the radius for a waypoint, the gpsvario will apply a user-configurable default waypoint radius. 
 * Upload the `.wpt` file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. 
 * You can upload up to 7 route files and select one of them (or none) on-screen. 
-* If there are no route files or you select `none`, the **bearing-to-waypoint** arrow will display bearing to  the start position, and the **distance-to-waypoint** field will display distance to start position.
+* If there are no route files or you select `none`, the **bearing-to-waypoint** arrow will display bearing to start position, and the **distance-to-waypoint** field will display distance to start position.
   
 ## Heading display
 * In the flight display screen, **btnL** toggles the heading display between GPS course-over-ground (direction of motion) and magnetic compass heading (direction the unit is facing). 
@@ -201,14 +206,14 @@ If you do not specify the radius for a waypoint, the gpsvario will apply a user-
 * For low ground speeds (< 2kph), the GPS course heading display is blanked out, as
 the uncertainty in direction is high.
 
-## IMU data or GPS track loggnig
+## IMU data or GPS track logging
 * In the flight display screen, if you previously selected high-speed IBG data logging, **btnM** toggles data logging on and off. The display will show `I` if logging, `i` if not logging. 
-* Bear in mind that if you turn on IBG data logging, the 128Mb flash will be filled up in approximately 13minutes! When the flash is full, logging stops.
+* Bear in mind that if you turn on IBG data logging, the 128Mb flash will be filled up in approximately 13 minutes! When the flash is full, logging stops.
 * In the flight display screen, if you previously selected GPS track logging, the display will show `G` if track logging is active, `g` if track logging is inactive. 
 * GPS track logging will be activated when you have moved a user-configurable distance from your start position. 
 * Your start position will be fixed when the GPS Dilution of Precision (DOP) value goes below a user configurable threshold (i.e., the GPS has a good position fix). 
-* For logging options `GPS` or `NONE`, **btnM** has no effect, i.e. you cannot toggle GPS tracking on and off, it is automatically enabled as above. 
-* Press **btn0** at the end of a flight. If you have enabled GPS track logging, it will stop. You will see a flight summary.
+* For logging options `GPS` or `NONE`, **btnM** has no effect, i.e. you cannot toggle GPS tracking on and off, it is automatically activated as described above. 
+* Press **btn0** at the end of a flight. If you have enabled GPS track logging, it will stop. The LCD screen will display a flight summary.
 ## Vario audio mute  
 * In flight display mode, **btnR** toggles the audio on and off. You will see a speaker icon if audio is enabled. 
 ## Altitude display
@@ -217,7 +222,7 @@ the uncertainty in direction is high.
 * Barometric pressure altitude depends on atmospheric conditions. It will be higher in unstable low-pressure conditions, and lower in stable high-pressure conditions.
 * In the options screen, if you selected barometric altitude for display, the primary altitude field will have `bm` units, and the secondary altitude field will show GPS altitude. 
 * If you selected GPS altitude for display, the primary altitude field will have `gm` units, and the secondary field will show barometric altitude. 
-* When the GPS Dilution of Precision (DOP) is low, you have a good 3D position fix. There must be enough satellites in view with a good signal and a good 'geometry' w.r.t. your position. Then the GPS altitude will be stable and fairly close to the barometric altitude (+/-100m). 
+* When there are enough satellites in view with a good signal and a good 'geometry' w.r.t. your position, you can get a good 3D position fix. The GPS DOP will be low, GPS altitude will be stable and fairly close to the barometric altitude (+/-100m). 
 * If the GPS DOP is high, GPS altitude will be displayed as `----`.  
 * GPS DOP is displayed as a number on the lower right, just above the supply voltage, with a maximum value of 100. 
 * A good DOP value is <= 5 with the GPS module I used. This might take a couple of minutes after power-up in a new location. 
@@ -236,9 +241,9 @@ displayed glide ratio. The highest damping value is 99. Recommended range is 90-
 * The gpsvario Bluetooth device name is `Esp32GpsVario`. 
 * You can  transmit periodic `$LK8EX1` or `$XCTRC` NMEA sentencess, at rates of 1Hz to 10Hz. 
 * Navigation apps such as **XCTrack** apply heavy damping filters to external data. You will see faster response on the **XCTrack** display if you increase the frequency of NMEA sentences (max 10Hz). 
-* `$LK8EX1` messages only contain barometric pressure-derived data (pressure, altitude, climbrate) and gpsvario power supply voltage. 
+* `$LK8EX1` sentences only contain barometric pressure-derived data (pressure, altitude, climbrate) and gpsvario power supply voltage. 
 * If you set bluetooth message type to `LK8` in the options screen, ensure that `Use external gps` option is disabled and `Use external barometer` is enabled in the **XCTrack** preferences page.
-* `$XCTRC` messages include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. 
+* `$XCTRC` sentences additionally include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. 
 * If you set bluetooth message type to `XCT` in the options screen, and you want **XCTrack** to use GPS data from the gpsvario, ensure both `Use external barometer` and `Use external gps` are enabled in the **XCTrack** preferences page.  
 
 # Credits
