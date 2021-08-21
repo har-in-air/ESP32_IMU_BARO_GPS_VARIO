@@ -188,9 +188,9 @@ password = **admin**. You can re-build the firmware with a different user name a
   * Delete the existing `options.txt` file using the webpage
   * Upload the modified `options.txt` file back to the gpsvario. Unfortunately there is an issue with replacing an existing file, so we need to first delete the file and then upload a replacement.
   * This way you can keep different versions of `options.txt` file on your laptop/smartphone for different sites or site conditions. 
-* To reset to 'factory defaults', delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. Default values are in the file `\include\config.h` - search for the `USER-CONFIGURABLE PARAMETER DEFAULTS` section.
+* To reset to 'factory defaults', delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. Default values are in the file `/include/config.h`. Search for the `USER-CONFIGURABLE PARAMETER DEFAULTS` section.
 * [This is an example of an `options.txt` file](docs/options.txt).
-* Every time the gpsvario is powered on, it sets user-configurable parameters to the default values and then overrides them with values found in the SPIFFS file `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from the default values. 
+* Every time the gpsvario is powered on, it sets all user-configurable parameters to their default values and then overrides them with values found in the SPIFFS file `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from the default values. 
   
 ## Routes
 * Use [**xcplanner**](https://github.com/dkm/xcplanner) to generate a route with waypoints in **FormatGEO** format as a `.wpt` text file. 
