@@ -17,8 +17,6 @@ static const char* TAG = "async_server";
 // https://randomnerdtutorials.com/esp32-web-server-spiffs-spi-flash-file-system/
 // I also added OTA firmware update, chunked spiffs file and datalog downloads
 
-// connect to an existing WiFi access point as a station
-//#define STATION_WEBSERVER
 
 typedef struct WIFI_CONFIG_ {
   String ssid;               // wifi ssid
@@ -34,9 +32,11 @@ static File SpiffsDir;
 
 const char* host = "esp32"; // use http://esp32.local instead of 192.168.4.1
 
-// You must specify the WiFi Access point SSID and password if STATION_WEBSERVER is defined above
-const String default_ssid = "SSID";
-const String default_wifipassword = "PASSWORD";
+// connect to an external WiFi access point as a station
+#define STATION_WEBSERVER
+// You must specify the external WiFi Access point SSID and password if STATION_WEBSERVER is defined
+const String default_ssid = "bga";
+const String default_wifipassword = "7~4g@6964W21";
 
 // Access to webpage http://esp32.local is protected with a username and password
 // Change these to whatever you want
@@ -74,8 +74,7 @@ void server_init() {
   WiFi.setTxPower(WIFI_POWER_MINUS_1dBm);
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    //ESP_LOGD(TAG,".");
+    delay(100);
     }
   ESP_LOGD(TAG,"Network Configuration:");
   ESP_LOGD(TAG,"         SSID: %s", WiFi.SSID());
@@ -121,7 +120,7 @@ void server_init() {
 
   ESP_LOGD(TAG,"Starting Webserver ...");
   server->begin();
-}
+  }
 
 
 // Make size of files human readable
@@ -191,10 +190,8 @@ static String server_string_processor(const String& var) {
     }
 
 
-// chunked download for SPIFFS files, this is needed for files larger than a few hundred bytes.
-// returns buffer with up to maxLen bytes read
+// chunked download for SPIFFS files returns buffer with up to maxLen bytes read
 static int spiffs_chunked_read(uint8_t* buffer, size_t maxLen) {              
-  // ESP_LOGD(TAG, "MaxLen = %d", maxLen);
   if (!SpiffsFile.available()) {
     SpiffsFile.close();
     return 0;
@@ -250,8 +247,7 @@ void server_configure() {
     ESP_LOGD(TAG,"Client: %s %s",request->client()->remoteIP().toString().c_str(), request->url().c_str());
     if (FlashLogFreeAddress) {
       AsyncWebServerResponse *response = request->beginResponse("application/octet-stream", FlashLogFreeAddress, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
-        feed_watchdog();
-        delayMs(5);
+        feed_watchdog(); // prevent watchdog resets when downloading large files
         return datalog_chunked_read(buffer, maxLen, index);
       });
       response->addHeader("Content-Disposition", "attachment; filename=datalog");
@@ -297,7 +293,6 @@ void server_configure() {
             int sizeBytes = SpiffsFile.size();
             AsyncWebServerResponse *response = request->beginResponse("application/octet-stream", sizeBytes, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
               feed_watchdog();
-              delayMs(5);
               return spiffs_chunked_read(buffer, maxLen);
               });
             char szBuf[80];
@@ -385,9 +380,8 @@ static void server_handle_SPIFFS_upload(AsyncWebServerRequest *request, String f
 
     if (len) {
       // stream the incoming chunk to the opened file
-      SpiffsFile.write(data, len);
-      delayMs(5);
       feed_watchdog();
+      SpiffsFile.write(data, len);
       ESP_LOGD(TAG,"Writing file : %s, index = %d, len = %d", filename.c_str(), index, len);
       }
 
@@ -418,10 +412,9 @@ static void server_handle_OTA_update(AsyncWebServerRequest *request, String file
       }
 
     if (len) {
-     // flashing firmware to ESP
-     if (Update.write(data, len) != len) {
-        delayMs(5);
-        feed_watchdog();
+      feed_watchdog();
+      // flashing firmware to ESP
+      if (Update.write(data, len) != len) {
         Update.printError(Serial);
         }      
       ESP_LOGD(TAG,"Writing : %s index = %d len = %d", filename.c_str(), index, len);
@@ -435,7 +428,7 @@ static void server_handle_OTA_update(AsyncWebServerRequest *request, String file
         Update.printError(Serial);
         }
       delayMs(1000);
-      ESP.restart(); // reboot after firmware update
+      ESP.restart(); // force reboot after firmware update
       }
     } 
   else {

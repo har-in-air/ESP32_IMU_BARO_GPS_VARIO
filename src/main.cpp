@@ -543,7 +543,7 @@ void setup() {
 void loop() {
     if (IsServer) {
         //ESP_LOGD(TAG, "Loop priority = %d", uxTaskPriorityGet(NULL));
-        delayMs(5);
+        delayMs(500); // delay() is required to yield to other tasks
         return;
         }    
     btn_debounce();

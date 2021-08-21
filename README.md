@@ -169,7 +169,7 @@ password = **admin**. You can re-build the firmware with a different user name a
   
 ## Downloading the data log
 * To download the data log, put the gpsvario in WiFi configuration mode and access the webpage as above.
-* Click on the **Data Log Download** button to download the log as a binary file `datalog`. 
+* Click on the **Data Log Download** button to download the log as a binary file `datalog`. You can also download the datalog by accessing the url `http://esp32.local/datalog`.
 * The file can contain a mix of high-speed IBG (imu+baro+gps) data samples, and normal GPS track logs. 
 * There is some sample software in the project `/offline` directory for splitting the downloaded data log file into separate IBG and GPS data log files, and for converting GPS log files into `.gpx` track files. You can visualize `.gpx` tracks in Google Earth or other online GPS track visualization software.
   

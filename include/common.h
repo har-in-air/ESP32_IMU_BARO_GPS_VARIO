@@ -18,10 +18,13 @@ typedef struct KEY_VAL_ {
    char szValue[10];
    } KEY_VAL;
 
-#define delayMs(ms)     vTaskDelay((ms) / portTICK_PERIOD_MS)
+// Arduino defines delay() like this
+// vTaskDelay((ms) / portTICK_PERIOD_MS)
+// So minimum delay == FreeRTOS tick interval
+#define delayMs(ms)     delay((ms)) 
 
 #define MIN(x,y)                 ((x) < (y) ? (x) : (y))
-//#define MAX(x,y)                 ((x) > (y) ? (x) : (y))
+#define MAX(x,y)                 ((x) > (y) ? (x) : (y))
 #define ABS(x)                   ((x) < 0 ? -(x) : (x))
 #define CLAMP(x,mn,mx)           {if (x <= (mn)) x = (mn); else if (x >= (mx)) x = (mx);}
 #define CORE(x,t)                {if (ABS(x) <= (t)) x = 0;}
