@@ -33,10 +33,10 @@ static File SpiffsDir;
 const char* host = "esp32"; // use http://esp32.local instead of 192.168.4.1
 
 // connect to an external WiFi access point as a station
-#define STATION_WEBSERVER
+//#define STATION_WEBSERVER
 // You must specify the external WiFi Access point SSID and password if STATION_WEBSERVER is defined
-const String default_ssid = "bga";
-const String default_wifipassword = "7~4g@6964W21";
+const String default_ssid = "SSID";
+const String default_wifipassword = "PASSWORD";
 
 // Access to webpage http://esp32.local is protected with a username and password
 // Change these to whatever you want
