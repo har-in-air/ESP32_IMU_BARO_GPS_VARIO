@@ -41,6 +41,7 @@ volatile float YawDeg, PitchDeg, RollDeg;
 volatile SemaphoreHandle_t DrdySemaphore;
 volatile bool DrdyFlag = false;
 int BacklitCounter;
+bool IsGpsInitComplete = false;
 bool IsServer = false; 
 BluetoothSerial* pSerialBT = NULL;
 
@@ -145,7 +146,7 @@ static void gps_task(void *pvParameter) {
 		lcd_printlnf(true,0,"gps error");
         while (1) delayMs(100);
         }
-    
+    IsGpsInitComplete = true;
     while(1) {
         gps_stateMachine();
         delayMs(5);
@@ -368,7 +369,7 @@ static void vario_task(void *pvParameter) {
     vTaskDelete(NULL);
     }
 
-
+#if 0
 void spiffs_directory_listing(){
     ESP_LOGD(TAG,"SPIFFS Total : %s", server_ui_size(SPIFFS.totalBytes()));
     ESP_LOGD(TAG,"SPIFFS Used  : %s", server_ui_size(SPIFFS.usedBytes()));
@@ -381,16 +382,16 @@ void spiffs_directory_listing(){
         }
     root.close();
     }
-
+#endif
 
 // Core 0 : ui, GPS, Bluetooth tasks
 // Core 1 : setup() + loop(), wifi config / vario task
 void setup() {
-    ESP_LOGI(TAG, "Firmware compiled on %s at %s", __DATE__, __TIME__);
     pinConfig();
     // turn off radio to save power
     WiFi.mode(WIFI_OFF);
     btStop();
+    ESP_LOGI(TAG, "Firmware compiled on %s at %s", __DATE__, __TIME__);
     ESP_LOGD(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
     ESP_LOGD(TAG,"Setup and loop running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
     // initialize SPIFFS file system 
@@ -435,14 +436,14 @@ void setup() {
     delayMs(2000);
     btn_clear();
 
-    ESP_LOGI(TAG,"Press BTN0 within 3 seconds to erase flash");
+    ESP_LOGI(TAG,"Press btn0 within 3 seconds to erase flash");
     LED_ON();
     bool isEraseRequired = false;
     int counter = 300;
     while (counter--) {
         lcd_printlnf(true,4,"btn0 to erase : %ds",(counter+50)/100);
         if (BTN0() == LOW) {
-            ESP_LOGI(TAG,"BTN0 PRESSED");
+            ESP_LOGI(TAG,"btn0 PRESSED");
             isEraseRequired = true;
             break;
             }
@@ -469,12 +470,12 @@ void setup() {
         }
     delayMs(1000);
     IsServer = false;
-    ESP_LOGI(TAG,"Press BTN0 within 3 seconds to start http server");
+    ESP_LOGI(TAG,"Press btn0 within 3 seconds to start WiFi AP and web server");
     counter = 300;
     while (counter--) {
         lcd_printlnf(true,4,"btn0 for wifi cfg: %ds",(counter+50)/100);
         if (BTN0() == LOW) {
-            ESP_LOGI(TAG,"BTN0 Pressed, starting AP server");
+            ESP_LOGI(TAG,"btn0 Pressed, starting WiFi AP and web server");
             IsServer = 1;
             break;
             }
@@ -491,7 +492,7 @@ void setup() {
         WiFi.mode(WIFI_AP);
         WiFi.softAP("ESP32GpsVario");
         IPAddress myIP = WiFi.softAPIP();
-        ESP_LOGI(TAG,"AP IP address: %s", myIP.toString().c_str());
+        ESP_LOGI(TAG,"WiFi Access Point IP address: %s", myIP.toString().c_str());
         LCD_BKLT_OFF();
         server_init();
         }
@@ -514,8 +515,12 @@ void setup() {
         // vario task on core 1 needs to complete all processing within 2mS IMU data sampling period,
         // given highest priority on core 1
 	    xTaskCreatePinnedToCore(&vario_task, "variotask", 2048, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
+        IsGpsInitComplete = false;
         // gps task on core 0 given max priority
 	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, configMAX_PRIORITIES-1, NULL, CORE_0);
+        while(!IsGpsInitComplete){
+            delayMs(10);
+            }
         // ui_task on core 0 given lower priority than gps_task
 	    xTaskCreatePinnedToCore(&ui_task, "uitask", 2048, NULL, configMAX_PRIORITIES-3, NULL, CORE_0);
 	    if (opt.misc.btMsgFreqHz != 0) {
@@ -543,8 +548,10 @@ void loop() {
         }    
     btn_debounce();
     if (BtnRPressed || BtnLPressed || BtnMPressed || Btn0Pressed) {
-        IsFlashDisplayRequired = true; // invert display for one frame to acknowledge button press
-        BacklitCounter = opt.misc.backlitSecs*33;   // turn on backlight for user configurable time if a button is pressed
+        // invert display for one frame to acknowledge button press
+        IsFlashDisplayRequired = true; 
+        // turn on backlight for user configurable time if a button is pressed
+        BacklitCounter = opt.misc.backlitSecs*40;   // loop delay is ~25mS, 40*25 = 1second
         LCD_BKLT_ON();
         }
     if (BacklitCounter) {
@@ -583,5 +590,5 @@ void loop() {
             IsSpeakerEnabled = false;
             }
         }
-    delayMs(30);
+    delayMs(25);
     }
