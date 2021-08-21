@@ -440,7 +440,7 @@ void setup() {
     bool isEraseRequired = false;
     int counter = 300;
     while (counter--) {
-        lcd_printlnf(true,4,"BTN0 erase %ds",(counter+50)/100);
+        lcd_printlnf(true,4,"btn0 to erase : %ds",(counter+50)/100);
         if (BTN0() == LOW) {
             ESP_LOGI(TAG,"BTN0 PRESSED");
             isEraseRequired = true;
@@ -472,7 +472,7 @@ void setup() {
     ESP_LOGI(TAG,"Press BTN0 within 3 seconds to start http server");
     counter = 300;
     while (counter--) {
-        lcd_printlnf(true,4,"BTN0 server %ds",(counter+50)/100);
+        lcd_printlnf(true,4,"btn0 for wifi cfg: %ds",(counter+50)/100);
         if (BTN0() == LOW) {
             ESP_LOGI(TAG,"BTN0 Pressed, starting AP server");
             IsServer = 1;
