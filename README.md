@@ -1,5 +1,6 @@
 # ESP32 GPS Altimeter Variometer
-<img src="docs/gps_vario_ui.jpg" alt="prototype_hardware"/>
+
+<img src="docs/flight_deck.jpg"/>
 
 * Variometer features zero-lag response : a Kalman filter fuses earth-Z acceleration data from an IMU sensor and altitude data from a barometric pressure sensor.
 * High-speed data logging option for IMU sensor (accelerometer, gyrosocope and magnetometer), barometer and gps 
@@ -199,6 +200,8 @@ If you do not specify the radius for a waypoint, the gpsvario will apply a user-
 * Upload the `.wpt` file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. 
 * You can upload up to 7 route files and select one of them (or none) on-screen. 
 * If there are no route files or you select `none`, the **bearing-to-waypoint** arrow will display bearing to start position, and the **distance-to-waypoint** field will display distance to start position.
+
+<img src="docs/gps_vario_ui.jpg"/>
   
 ## Heading display
 * In the flight display screen, **btnL** toggles the heading display between GPS course-over-ground (direction of motion) and magnetic compass heading (direction the unit is facing). 
