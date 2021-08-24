@@ -118,7 +118,7 @@
 // is required to register the start position.
 #define GPS_STABLE_DOP_MIN             3
 #define GPS_STABLE_DOP_DEFAULT         8
-#define GPS_STABLE_DOP_MAX             25
+#define GPS_STABLE_DOP_MAX             15
 
 // vario thresholds in cm/sec for generating different
 // audio tones. Between the sink threshold and the zero threshold,
