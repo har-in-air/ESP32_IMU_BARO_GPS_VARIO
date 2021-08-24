@@ -155,7 +155,6 @@ and `default_httppassword` in the file `async_server.cpp`.
   * Specify the external WiFi Access Point SSID and password in the variables `default_ssid` and `default_wifipassword`. 
   * Re-build and flash the firmware.
   
-
  * Click on the **Directory** button to get a listing of files in the LittleFS partition. Note that the webpage `index.html` and `style.css` files are hidden.
  * You can upload new files, e.g. route files with waypoints, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the LittleFS partition. Please ensure that there is sufficient free space in the partition **before** you upload the file. There is no working check to see if the uploaded file will fit in the free space.
  * For firmware updates, use the **Upload File** button. 
@@ -180,16 +179,15 @@ and `default_httppassword` in the file `async_server.cpp`.
 * Click on **btn0** to exit the options page when done. 
 * Configuration options are saved to the file `options.txt`. 
 * If there is no user activity for ~10 seconds in the options screen, the gpsvario will automatically transition into flight display mode. This is so that you can power up the unit and have it eventually start displaying the flight screen without user intervention. 
-* You can also change options by replacing the `options.txt` file. 
+* You can also configure the gpsvario by replacing the `options.txt` file. 
   * Switch on the gpsvario, select server mode, access the url `http://esp32.local`
-  * Click on **Directory** and download `options.txt` file from the gpsvario. 
-  * Edit options as required - make sure you only edit the last field on each line !  
-  * Delete the existing `options.txt` file using the webpage
-  * Upload the modified `options.txt` file back to the gpsvario. Unfortunately there is an issue with replacing an existing file, so we need to first delete the file and then upload a replacement.
+  * Click on **Directory** and download `options.txt` file.
+  * Edit options as required. _Make sure you only change the last field on a line_.  
+  * Upload the modified `options.txt` file back to the gpsvario.
   * This way you can keep different versions of `options.txt` file on your laptop/smartphone for different sites or site conditions. 
-* To reset to 'factory defaults', delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. Default values are in the file `/include/config.h`. Search for the `USER-CONFIGURABLE PARAMETER DEFAULTS` section.
-* [This is an example of an `options.txt` file](docs/options.txt).
-* Every time the gpsvario is powered on, it sets all user-configurable parameters to their default values and then overrides them with values found in the file `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from the default values. 
+* To reset to 'factory defaults', delete `options.txt`. It will be regenerated with default values the next time you power up the gpsvario. Default values are in the file `/include/config.h`. Search for the `USER-CONFIGURABLE PARAMETER DEFAULTS` section.
+* [This is an example](docs/options.txt) of an `options.txt` file.
+* Every time the gpsvario is powered on, it sets all user-configurable parameters to default values and then overrides them with values found in the file `options.txt`. So you don't have to specify all options, only the ones you want to modify from the default values. 
   
 ## Routes
 * Use [**xcplanner**](https://github.com/dkm/xcplanner) to generate a route with waypoints in **FormatGEO** format as a `.wpt` text file. 
@@ -198,14 +196,14 @@ If you do not specify the radius for a waypoint, the gpsvario will apply a user-
 * Upload the `.wpt` file to the gpsvario using the webpage upload file function. Ensure that the filename length is at most 20 characters or it will be ignored. 
 * You can upload up to 7 route files and select one of them (or none) on-screen. 
 * If there are no route files or you select `none`, the **bearing-to-waypoint** arrow will display bearing to start position, and the **distance-to-waypoint** field will display distance to start position.
-
-<img src="docs/gps_vario_ui.jpg"/>
   
 ## Heading display
 * In the flight display screen, **btnL** toggles the heading display between GPS course-over-ground (direction of motion) and magnetic compass heading (direction the unit is facing). 
 * You will see the change reflected in the caret on top of the heading display. The caret is a **diamond** for compass heading, **bar** for GPS course heading. 
 * For low ground speeds (< 2kph), the GPS course heading display is blanked out, as
 the uncertainty in direction is high.
+
+<img src="docs/gps_vario_ui.jpg"/>
 
 ## IMU data or GPS track logging
 * In the flight display screen, if you previously selected high-speed IBG data logging, **btnM** toggles data logging on and off. The display will show `I` if logging, `i` if not logging. 
