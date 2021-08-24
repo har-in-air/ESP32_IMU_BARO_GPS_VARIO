@@ -156,10 +156,7 @@ and `default_httppassword` in the file `async_server.cpp`.
   * Re-build and flash the firmware.
   
 
- * Click on the **Directory** button to get a listing of files in the LittleFS partition. Note that the webpage `index.html` and `style.css` files are not displayed.
-
-<img src="docs/webpage_directory.png"/>
-
+ * Click on the **Directory** button to get a listing of files in the LittleFS partition. Note that the webpage `index.html` and `style.css` files are hidden.
  * You can upload new files, e.g. route files with waypoints, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the LittleFS partition. Please ensure that there is sufficient free space in the partition **before** you upload the file. There is no working check to see if the uploaded file will fit in the free space.
  * For firmware updates, use the **Upload File** button. 
    * If you select a `.bin` file, it is assumed to be a firmware application binary  and will be uploaded to the OTA flash partition. 
