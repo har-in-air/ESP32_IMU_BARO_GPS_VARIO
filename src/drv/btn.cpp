@@ -2,6 +2,7 @@
 #include "config.h"
 #include "btn.h"
 
+static const char* TAG = "btn";
 
 volatile uint16_t Btn0State;
 volatile uint16_t BtnLState;
@@ -11,8 +12,6 @@ volatile bool Btn0Pressed = false;
 volatile bool BtnLPressed = false;
 volatile bool BtnMPressed = false;
 volatile bool BtnRPressed = false;
-
-static const char* TAG = "btn";
 
 void btn_clear() {
    Btn0Pressed = BtnLPressed = BtnRPressed = BtnMPressed = false;

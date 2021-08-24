@@ -1,6 +1,6 @@
-#include <FS.h>
-#include <SPIFFS.h>
 #include "common.h"
+#include <FS.h>
+#include <LITTLEFS.h>
 #include "config.h"
 #include "drv/btn.h"
 #include "nv/options.h"
@@ -28,33 +28,36 @@ static bool rte_loadRoute(char* szFileName);
 
 
 bool rte_selectRoute(){
-	File root = SPIFFS.open("/");
+	ESP_LOGD(TAG, "select route");
+	File root = LITTLEFS.open("/");
 	if(!root){
-		ESP_LOGE(TAG, "− failed to open SPIFFS directory");
+		ESP_LOGE(TAG, "− failed to open LITTLES directory /");
 		return false;
 		}
 	if(!root.isDirectory()){
 		ESP_LOGE(TAG, " − not a directory");
+      root.close();
 		return false;
 		}
 	NumRoutes = 0;
 	File file = root.openNextFile();
 	while (file) {
 		if (file.isDirectory()) continue;
-		String fname = file.name();
+		String fname = "/";
+      fname += file.name();
 		if (fname.endsWith(".wpt")) {
 			if (fname.length() <= MAX_FILENAME_LENGTH) {
-				ESP_LOGI(TAG, "waypoint file %s found", fname.c_str());
+				ESP_LOGD(TAG, "Route file %s found", fname.c_str());
 				strcpy(RouteFileNames[NumRoutes], fname.c_str());
 				NumRoutes++;
 				if (NumRoutes == MAX_ROUTES) break;
 				}
 			else {
-				ESP_LOGE(TAG,"waypoint filename > %d chars", MAX_FILENAME_LENGTH);
+				ESP_LOGD(TAG,"Route filename > %d chars", MAX_FILENAME_LENGTH);
 				}
 			}
 		if (fname.endsWith(".txt")) {
-			ESP_LOGI(TAG, "txt file %s found", fname.c_str());
+			ESP_LOGV(TAG, "txt file %s found", fname.c_str());
 			}
 		file.close();
 		file = root.openNextFile();
@@ -62,7 +65,7 @@ bool rte_selectRoute(){
 	root.close();
 
 	if (NumRoutes == 0) return false;
-	ESP_LOGI(TAG, "Number of routes found = %d", NumRoutes);
+	ESP_LOGD(TAG, "Number of routes found = %d", NumRoutes);
 	RouteSel = 0; // default : do not use a route
 	rte_displayRouteSel();
 	btn_clear();
@@ -71,18 +74,18 @@ bool rte_selectRoute(){
 		delayMs(30);
 		}
 	if (RouteSel == 0) return false;
-	ESP_LOGI(TAG, "Selected route file %s", RouteFileNames[RouteSel-1]);
+	ESP_LOGD(TAG, "Selected route file %s", RouteFileNames[RouteSel-1]);
 	return rte_loadRoute(RouteFileNames[RouteSel-1]);
 	}
 
 
 static void rte_displayRouteSel() {
-	lcd_clearFrame();
+	lcd_clear_frame();
 	lcd_printlnf(false, 0, "%cNo route", RouteSel == 0 ? '*' : ' ');
 	for (int inx = 0; inx < NumRoutes; inx++) {
 		lcd_printlnf(false, 1+inx, "%c%s", RouteSel == 1+inx ? '*' : ' ', RouteFileNames[inx]);
 		}
-	lcd_sendFrame();
+	lcd_send_frame();
 	}
 
 
@@ -134,7 +137,7 @@ static bool rte_loadRoute(char* szFileName) {
 
    pRoute->numWpts = 0;
    pRoute->nextWptInx = 0;
-   File flrte = SPIFFS.open(szFileName, FILE_READ);
+   File flrte = LITTLEFS.open(szFileName, FILE_READ);
    if (!flrte){
       ESP_LOGE(TAG, "error opening file %s", szFileName);
       return false;
@@ -145,7 +148,7 @@ static bool rte_loadRoute(char* szFileName) {
       return false;
       }
    sz = flrte.readStringUntil('\n');
-   ESP_LOGD(TAG, "%s", sz.c_str());
+   ESP_LOGV(TAG, "%s", sz.c_str());
    szLine = (char*)sz.c_str();
    szToken = strtok(szLine," \r\n");
    if (strcmp(szToken, "$FormatGEO") != 0) {
@@ -157,8 +160,8 @@ static bool rte_loadRoute(char* szFileName) {
    // Waypoints without a radius are allowed, for these the waypoint radius from options.txt
    // is used. So xcplanner output files can be used without any modification if all the waypoints have the same radius.
    while (flrte.available()) {
-   	  sz = flrte.readStringUntil('\n');
-   	  ESP_LOGD(TAG, "%s", sz.c_str());
+   	sz = flrte.readStringUntil('\n');
+   	ESP_LOGV(TAG, "%s", sz.c_str());
       szLine = (char*)sz.c_str();
 
 	  szToken = strtok(szLine," ");
@@ -222,7 +225,6 @@ static bool rte_loadRoute(char* szFileName) {
     flrte.close();
     return true;
     }
-
 
 
 int32_t rte_totalDistance() {

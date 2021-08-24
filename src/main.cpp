@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include <SPIFFS.h>
+#include <FS.h>
+#include <LITTLEFS.h>
 #include <WiFi.h>              
 #include <BluetoothSerial.h>
 #include "common.h"
@@ -31,15 +32,15 @@
 static const char* TAG = "main";
 
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#error Bluetooth is not enabled!
 #endif
 
 volatile int LedState = 0;
 volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
 volatile float YawDeg, PitchDeg, RollDeg;
-
 volatile SemaphoreHandle_t DrdySemaphore;
 volatile bool DrdyFlag = false;
+
 int BacklitCounter;
 bool IsGpsInitComplete = false;
 bool IsServer = false; 
@@ -66,7 +67,7 @@ void pinConfig() {
     pinMode(pinAudioAmpEna, OUTPUT_OPEN_DRAIN); 
     AUDIO_AMP_DISABLE();
 
-    pinMode(pinBtn0, INPUT_PULLUP); // pullup
+    pinMode(pinBtn0, INPUT_PULLUP); 
     pinMode(pinBtnL, INPUT); // external 10K pullup
     pinMode(pinBtnM, INPUT); // external 10K pullup
     pinMode(pinBtnR, INPUT); // external 10K pullup
@@ -122,7 +123,7 @@ static void ui_task(void *pvParameter) {
 			}
         if (IsGpsTrackActive && EndGpsTrack) {
             IsGpsTrackActive = false;
-            lcd_clear();
+            lcd_clear_frame();
             lcd_printlnf(false, 1, "%4d/%02d/%02d %02d:%02d", track.year, track.month, track.day, track.hour, track.minute);
             lcd_printlnf(false, 2, "Duration %02dhr %02dmin", track.elapsedHours, track.elapsedMinutes);
             lcd_printlnf(false, 3, "Alt St %4dm Mx %4dm", track.startAltm, track.maxAltm);
@@ -142,8 +143,8 @@ static void gps_task(void *pvParameter) {
     ESP_LOGI(TAG, "Starting gps task on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
     if (!gps_config()) {
         ESP_LOGE(TAG, "error configuring gps");
-		lcd_clear();
-		lcd_printlnf(true,0,"gps error");
+		lcd_clear_frame();
+		lcd_printlnf(true,3,"GPS init error");
         while (1) delayMs(100);
         }
     IsGpsInitComplete = true;
@@ -168,10 +169,10 @@ void IRAM_ATTR drdyHandler(void) {
 
 static void vario_taskConfig() {
     ESP_LOGI(TAG, "vario config");
-    lcd_clear();
+    lcd_clear_frame();
     if (mpu9250_config() < 0) {
         ESP_LOGE(TAG, "error MPU9250 config");
-		lcd_printlnf(true,0,"MPU9250 config failed");
+		lcd_printlnf(true,3,"MPU9250 config failed");
         while (1) {delayMs(100);};
         }
 
@@ -230,6 +231,7 @@ static void vario_taskConfig() {
     ms5611_averagedSample(4);
     ESP_LOGD(TAG,"Baro Altitude %dm Temperature %dC", (int)(ZCmAvg/100.0f), (int)CelsiusSample);
     kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, ZCmAvg, 0.0f, 0.0f);
+    lcd_clear_frame();
     lcd_printlnf(false,3,"Baro Altitude %dm", (int)(ZCmAvg/100.0f));
     lcd_printlnf(true,4,"Temperature %dC", (int)CelsiusSample);
 	ms5611_initializeSampleStateMachine();
@@ -356,13 +358,14 @@ static void vario_task(void *pvParameter) {
             // ESP_LOGD(TAG,"mx %.1f my %.1f mz %.1f", mxNED, myNED, mzNED);
 
             // ESP_LOGD(TAG,"baro alt %dcm", (int)ZCmSample);
-            //lcd_clear();
+            //lcd_clear_frame();
             //lcd_printf(0,0,"a %d %d %d", (int)axmG, (int)aymG, (int)azmG);
             //lcd_printf(1,0,"g %d %d %d", (int)gxdps, (int)gydps, (int)gzdps);
             //lcd_printf(2,0,"m %d %d %d", (int)mx, (int)my, (int)mz);
             //lcd_printf(0,0,"a %d %d %d", (int)axNEDmG, (int)ayNEDmG, (int)azNEDmG);
             //lcd_printf(1,0,"g %d %d %d", (int)gxNEDdps, (int)gyNEDdps, (int)gzNEDdps);
             //lcd_printf(2,0,"m %d %d %d", (int)mxNED, (int)myNED, (int)mzNED);
+            //lcd_send_frame();
 #endif
             }
         }
@@ -370,13 +373,21 @@ static void vario_task(void *pvParameter) {
     }
 
 #if 0
-void spiffs_directory_listing(){
-    ESP_LOGD(TAG,"SPIFFS Total : %s", server_ui_size(SPIFFS.totalBytes()));
-    ESP_LOGD(TAG,"SPIFFS Used  : %s", server_ui_size(SPIFFS.usedBytes()));
-    File root = SPIFFS.open("/");
+void littlefs_directory_listing(){
+    ESP_LOGD(TAG,"LittleFS Total : %s", server_ui_size(LITTLEFS.totalBytes()));
+    ESP_LOGD(TAG,"LittleFS Used  : %s", server_ui_size(LITTLEFS.usedBytes()));
+    File root = LITTLEFS.open("/");
+    if(!root){
+        ESP_LOGE(TAG, "- failed to open directory /");
+        return;
+        }
+    if(!root.isDirectory()){
+        ESP_LOGE(TAG, " - not a directory");
+        return;
+        }
     File file = root.openNextFile();
     while(file){
-        ESP_LOGI(TAG, "FILE: %s", file.name());
+        ESP_LOGD(TAG, "FILE: %s", file.name());
         file.close();
         file = root.openNextFile();
         }
@@ -393,22 +404,20 @@ void setup() {
     btStop();
     ESP_LOGI(TAG, "Firmware compiled on %s at %s", __DATE__, __TIME__);
     ESP_LOGD(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
-    ESP_LOGD(TAG,"Setup and loop running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
-    // initialize SPIFFS file system 
-	ESP_LOGD(TAG, "Mounting SPIFFS ...");
-	if (!SPIFFS.begin()) {
-	    // SPIFFS will be configured on reboot
-	    ESP_LOGE(TAG, "Cannot mount SPIFFS, Rebooting");
+    ESP_LOGD(TAG, "Setup and loop running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+	ESP_LOGD(TAG, "Mounting LITTLEFS ...");
+    // do NOT format, partition is built and flashed using PlatformIO Build FileSystem Image + Upload FileSystem Image    
+	if (!LITTLEFS.begin(false)) { 
+	    ESP_LOGE(TAG, "Cannot mount LITTLEFS, Rebooting");
 	    delay(1000);
 	    ESP.restart();
 	    }    
-    //spiffs_directory_listing();
+    //littlefs_directory_listing();
     // read calibration parameters from calib.txt
     calib_init();
     // set default configuration parameters, then override them with configuration parameters read from options.txt
     // so you only have to specify the parameters you want to modify, in the file options.txt
     opt_init();
-
     // configure DAC sine-wave tone generation
     audio_config(pinAudioDAC);
  
@@ -416,7 +425,7 @@ void setup() {
     hspi_config(pinHSCLK,pinHMISO, pinHMOSI,-1,HSPI_CLK_FREQHZ);
     lcd_init(opt.misc.lcdContrast);
     LCD_BKLT_ON();
-    BacklitCounter = opt.misc.backlitSecs*33;
+    BacklitCounter = opt.misc.backlitSecs*40;
     adc_init();
     uint32_t supplyVoltagemV = adc_supplyVoltageMV();
     ESP_LOGD(TAG, "Power supply = %.1fV", (float) supplyVoltagemV/1000.0f);
@@ -482,7 +491,7 @@ void setup() {
         delayMs(10);
         }
     if (IsServer) { // Wifi Configuration mode
-        lcd_clear();
+        lcd_clear_frame();
         lcd_printlnf(false,0,"WiFi Access Point :");
         lcd_printlnf(false,1," \"ESP32GpsVario\"");
         lcd_printlnf(false,3,"Web Page :");
@@ -506,9 +515,9 @@ void setup() {
             }
         if (rte_selectRoute()) {
             int32_t rteDistance = rte_totalDistance();
-            lcd_clear();
+            lcd_clear_frame();
             lcd_printlnf(true,0,"Route %.2fkm", ((float)rteDistance)/1000.0f);
-            delayMs(2000);
+            delayMs(1000);
             IsRouteActive = true;
             }
         vario_taskConfig();   	
@@ -522,7 +531,7 @@ void setup() {
             delayMs(10);
             }
         // ui_task on core 0 given lower priority than gps_task
-	    xTaskCreatePinnedToCore(&ui_task, "uitask", 2048, NULL, configMAX_PRIORITIES-3, NULL, CORE_0);
+	    xTaskCreatePinnedToCore(&ui_task, "uitask", 4096, NULL, configMAX_PRIORITIES-3, NULL, CORE_0);
 	    if (opt.misc.btMsgFreqHz != 0) {
             pSerialBT = new BluetoothSerial;
             if (pSerialBT) {
@@ -542,7 +551,7 @@ void setup() {
 // loop runs on core 1 with default priority = 1
 void loop() {
     if (IsServer) {
-        //ESP_LOGD(TAG, "Loop priority = %d", uxTaskPriorityGet(NULL));
+        ESP_LOGV(TAG, "Loop priority = %d", uxTaskPriorityGet(NULL));
         delayMs(500); // delay() is required to yield to other tasks
         return;
         }    
@@ -560,31 +569,31 @@ void loop() {
         }
     if (BtnRPressed) {
         btn_clear();
-        ESP_LOGD(TAG,"Btn R");
+        ESP_LOGV(TAG,"Btn R");
         IsSpeakerEnabled = !IsSpeakerEnabled; // mute/enable speaker
         }
     if (BtnLPressed) {
         btn_clear();
-        ESP_LOGD(TAG,"Btn L");
+        ESP_LOGV(TAG,"Btn L");
         IsGpsHeading = !IsGpsHeading; // toggle between gps course heading and magnetic compass heading
         }
     if (BtnMPressed) {
         btn_clear();
-        ESP_LOGD(TAG,"Btn M"); // start/stop high-speed IBG data logging. Does nothing for GPS track logging.
+        ESP_LOGV(TAG,"Btn M"); // start/stop high-speed IBG data logging. Does nothing for GPS track logging.
         if (opt.misc.logType == LOGTYPE_IBG) {
             if (!IsLoggingIBG) {
                 IsLoggingIBG = true;
-                ESP_LOGI(TAG,"IBG Logging started");
+                ESP_LOGV(TAG,"IBG Logging started");
                 }
             else {
                 IsLoggingIBG = false;
-                ESP_LOGI(TAG,"IBG Logging stopped");
+                ESP_LOGV(TAG,"IBG Logging stopped");
                 }
             }
         }
     if (Btn0Pressed) {
         btn_clear();
-        ESP_LOGD(TAG,"Btn 0");
+        ESP_LOGV(TAG,"Btn 0");
         if (IsGpsTrackActive)  {
             EndGpsTrack = true;
             IsSpeakerEnabled = false;

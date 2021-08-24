@@ -1,4 +1,6 @@
 #include "common.h"
+#include <FS.h>
+#include <LITTLEFS.h>
 #include <math.h>
 #include "config.h"
 #include "drv/btn.h"
@@ -63,12 +65,12 @@ static void ui_printLatitude(int page, int col, int32_t nLat) {
 	int inx;
 	nL = ABS(nLat)/100;
 	sprintf(szBuf,"%c%d", (nLat >= 0 ? 'N' : 'S'), nL/100000);
-	lcd_setFramePos(page,col);
-	lcd_printSzLNum(page,col,szBuf);
+	lcd_set_frame_pos(page,col);
+	lcd_print_sz_lnum(page,col,szBuf);
 	sprintf(szBuf,"%05d", nL%100000);
 	inx = 0;
 	while (szBuf[inx]) {
-		lcd_putChar(szBuf[inx++]);
+		lcd_put_char(szBuf[inx++]);
         }
    }
 
@@ -79,12 +81,12 @@ static void ui_printLongitude(int page, int col, int32_t nLon) {
     int inx;
     nL = ABS(nLon)/100;
     sprintf(szBuf,"%c%d", (nLon >= 0 ? 'E' : 'W'), nL/100000);
-	lcd_setFramePos(page,col);
-	lcd_printSzLNum(page,col,szBuf);
+	lcd_set_frame_pos(page,col);
+	lcd_print_sz_lnum(page,col,szBuf);
     sprintf(szBuf,"%05d", nL%100000);
     inx = 0;
     while (szBuf[inx]) {
-		lcd_putChar(szBuf[inx++]);
+		lcd_put_char(szBuf[inx++]);
         }
    }
 
@@ -98,33 +100,33 @@ static void ui_printAltitude(int page, int col, int32_t altm) {
 	else {
 		sprintf(szBuf,"%4d",altm);
 		}
-	lcd_printSzLNum(page,col,szBuf);
+	lcd_print_sz_lnum(page,col,szBuf);
    }
 
 
 static void ui_printDistance(int page, int col, int distanceM) {
 	char szBuf[4];
-   CLAMP(distanceM,MIN_DISTANCE_M,MAX_DISTANCE_M);
-   distanceM = (distanceM + 5)/10;
-	lcd_setFramePos(page,col+40);
-	lcd_putChar(48+ (distanceM%10));
+	CLAMP(distanceM,MIN_DISTANCE_M,MAX_DISTANCE_M);
+	distanceM = (distanceM + 5)/10;
+	lcd_set_frame_pos(page,col+40);
+	lcd_put_char(48+ (distanceM%10));
 	distanceM = distanceM/10;
-	lcd_setFramePos(page,col+33);
-	lcd_putChar(48+(distanceM%10));
+	lcd_set_frame_pos(page,col+33);
+	lcd_put_char(48+(distanceM%10));
 	distanceM = distanceM/10;
-   sprintf(szBuf,"%3d", distanceM);
-	lcd_printSzLNum(page,col,szBuf);
-   }
+	sprintf(szBuf,"%3d", distanceM);
+	lcd_print_sz_lnum(page,col,szBuf);
+	}
 
 
 static void ui_printClimbRate(int page, int col, int nCps) {
-   char  sign;
-   int  dec,frac;
+	char  sign;
+	int  dec,frac;
 	char  szBuf[4];
 
 	szBuf[1] = ' ';
 	szBuf[0] = ' ';
-   CLAMP(nCps, MIN_CLIMBRATE_CPS, MAX_CLIMBRATE_CPS);
+	CLAMP(nCps, MIN_CLIMBRATE_CPS, MAX_CLIMBRATE_CPS);
 	nCps = (nCps < 0 ?  (nCps-5)/10 : (nCps+5)/10);
 	if (nCps > 0){
 		sign = '+';
@@ -137,16 +139,16 @@ static void ui_printClimbRate(int page, int col, int nCps) {
 	else {
 		sign = ' ';	
 		}	
-   szBuf[3] = '\0';
-	lcd_setFramePos(page,col+33);
-   if (sign == ' ') {
-		lcd_putChar('0');
+	szBuf[3] = '\0';
+	lcd_set_frame_pos(page,col+33);
+	if (sign == ' ') {
+		lcd_put_char('0');
 	  	szBuf[2] = '0';
      	}
-   else {
-   	dec = nCps/10;
-   	frac = nCps%10;
-		lcd_putChar(frac+48);
+	else {
+		dec = nCps/10;
+		frac = nCps%10;
+		lcd_put_char(frac+48);
 		if (dec == 0) {
 	  		szBuf[2] = '0';
 	  		szBuf[1] = sign;
@@ -163,36 +165,36 @@ static void ui_printClimbRate(int page, int col, int nCps) {
 				}
 			}
 		}
-	lcd_printSzLNum(page,col,szBuf);
+	lcd_print_sz_lnum(page,col,szBuf);
   	}
 
 
 static void ui_printVelocity(int page, int col, int nVel) {
 	char  szBuf[4];
-   CLAMP(nVel, 0, MAX_VELOCITY_KPH);
-   sprintf(szBuf, "%3d", nVel);
-	lcd_printSzLNum(page,col,szBuf);
-   }
+	CLAMP(nVel, 0, MAX_VELOCITY_KPH);
+	sprintf(szBuf, "%3d", nVel);
+	lcd_print_sz_lnum(page,col,szBuf);
+	}
 
 
 static void ui_printGlideRatio(int page, int col, int nGr) {
 	char  szBuf[3];
 	szBuf[2] = '\0';
 	if (nGr > 999) {
-	   lcd_setFramePos(page,col+24);
-	   lcd_putChar(' ');
+	   lcd_set_frame_pos(page,col+24);
+	   lcd_put_char(' ');
 		szBuf[1] = '+';
 		szBuf[0] = ' ';
 		}
 	else{
-	   lcd_setFramePos(page,col+24);
-	   lcd_putChar(48+(nGr%10));
+	   lcd_set_frame_pos(page,col+24);
+	   lcd_put_char(48+(nGr%10));
 	   nGr = nGr/10;
 		szBuf[1] = (nGr%10) + 48;
 		nGr = nGr/10;
 		szBuf[0] = nGr ? (nGr+48) : ' ';
 	   }
-	lcd_printSzLNum(page,col,szBuf);
+	lcd_print_sz_lnum(page,col,szBuf);
 	}
 
 
@@ -203,7 +205,7 @@ static uint8_t compassBuf[128];
 static void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg) {
 	int nrow,ncol,inx;
 	int tblOffset = 0;
-	lcd_setFramePos(page - 1, col+13);
+	lcd_set_frame_pos(page - 1, col+13);
 
 	// caret on top of the heading display
 	// bar => gps course over ground (direction of motion)
@@ -265,7 +267,7 @@ static void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg)
 
 	inx = 0;
 	for (nrow = 0; nrow < 4; nrow++)  {
-		lcd_setFramePos(page+nrow, col);
+		lcd_set_frame_pos(page+nrow, col);
 	 	for (ncol = 0; ncol < 32; ncol++){
          FrameBuf[128*FramePage + FrameCol+ ncol] = compassBuf[inx++];
          }
@@ -277,11 +279,11 @@ static void ui_printHeadingAnalog(int page, int col, int velkph, int headingdeg)
 
 static void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) {
 	int  nrow,ncol,inx;
-   int tblOffset;
+	int tblOffset;
 	if (IsGpsHeading && (velkph < 2)) { 
-      // if very low velocity, gps heading is uncertain, do not display bearing
+		// if very low velocity, gps heading is uncertain, do not display bearing
 		return;
-	   }
+		}
 	bearingdeg = bearingdeg % 360;
 	if (bearingdeg <= 11) tblOffset = 0;
 	else
@@ -322,7 +324,7 @@ static void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) 
 
 	inx = 0;
 	for (nrow = 0; nrow < 4; nrow++)  {
-		lcd_setFramePos(page+nrow, col);
+		lcd_set_frame_pos(page+nrow, col);
 	 	for (ncol = 0; ncol < 32; ncol++) {
          FrameBuf[128*FramePage + FrameCol + ncol] = compassBuf[inx++];
          }
@@ -332,18 +334,18 @@ static void ui_printBearingAnalog(int page, int col,int velkph, int bearingdeg) 
 
 static void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
 	char szBuf[3];
-   CLAMP(nHrs,0,23);
-   CLAMP(nMin,0,59);
+	CLAMP(nHrs,0,23);
+	CLAMP(nMin,0,59);
 	szBuf[2] = '\0';
 
-	lcd_setFramePos(page,col+22);
-	lcd_putChar((nMin/10) + 48);
-	lcd_putChar((nMin%10) + 48);
+	lcd_set_frame_pos(page,col+22);
+	lcd_put_char((nMin/10) + 48);
+	lcd_put_char((nMin%10) + 48);
 
-	lcd_setFramePos(page+1,col+22);
-   if (nHrs/12){
-      lcd_putChar('p');
-	   lcd_putChar('m');
+	lcd_set_frame_pos(page+1,col+22);
+	if (nHrs/12){
+		lcd_put_char('p');
+		lcd_put_char('m');
 		if (nHrs == 12) {
 			szBuf[1] = '2';
          szBuf[0] = '1';
@@ -357,23 +359,23 @@ static void ui_printRealTime(int page, int col, int nHrs, int nMin) 	{
       	}
    	else
    	if (nHrs < 10)	{
-         lcd_putChar('a');
-	      lcd_putChar('m');
+         lcd_put_char('a');
+	      lcd_put_char('m');
 		   szBuf[1] = nHrs+48;
 		   szBuf[0] = ' ';
 		   }
    	else {
-         lcd_putChar('a');
-	      lcd_putChar('m');
+         lcd_put_char('a');
+	      lcd_put_char('m');
 		   szBuf[1] = (nHrs%10)+48;
 		   szBuf[0] = (nHrs/10)+48;
          }
-	lcd_printSzLNum(page,col,szBuf);
+	lcd_print_sz_lnum(page,col,szBuf);
    }
 
 
 static void ui_printSpkrStatus(int page, int col, bool bAudioEn) {
-	lcd_setFramePos(page, col);
+	lcd_set_frame_pos(page, col);
 	if (bAudioEn) {
       FrameBuf[128*FramePage + FrameCol + 0] = 0x1C;
       FrameBuf[128*FramePage + FrameCol + 1] = 0x14;
@@ -388,8 +390,9 @@ static void ui_printSpkrStatus(int page, int col, bool bAudioEn) {
 		}
 	}
 
+
 static void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
-	lcd_setFramePos(page, col);
+	lcd_set_frame_pos(page, col);
 	if (bBluetoothEn) {
       FrameBuf[128*FramePage + FrameCol + 0] = 0x22;
       FrameBuf[128*FramePage + FrameCol + 1] = 0x14;
@@ -405,34 +408,35 @@ static void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn) {
 	}
 
 static void ui_printBatteryStatus(int page, int col, int bV) {
-	lcd_setFramePos(page,col);
-   FrameBuf[128*FramePage + FrameCol] = 0xFF;
-   for (int inx = 0; inx < 14; inx++) {
-      FrameBuf[128*FramePage + FrameCol + inx +1] = 0x81;
-      }
-   FrameBuf[128*FramePage + FrameCol + 15] = 0xE7;
-   FrameBuf[128*FramePage + FrameCol + 16] = 0x3C;
+	lcd_set_frame_pos(page,col);
+	FrameBuf[128*FramePage + FrameCol] = 0xFF;
+	for (int inx = 0; inx < 14; inx++) {
+		FrameBuf[128*FramePage + FrameCol + inx +1] = 0x81;
+		}
+	FrameBuf[128*FramePage + FrameCol + 15] = 0xE7;
+	FrameBuf[128*FramePage + FrameCol + 16] = 0x3C;
 
-	lcd_setFramePos(page,col+2);
+	lcd_set_frame_pos(page,col+2);
 	int cnt;  // 12 segments, using battery capacity versus voltage data from antoine
 	if (bV <= 30) cnt = 0;
 	else if (bV == 31) cnt = 1;
 	else if (bV < 36) cnt = 2;
-   else if (bV < 37) cnt = 5;
-   else if (bV < 38) cnt = 8;
-   else if (bV < 39)  cnt = 9;
-   else if (bV < 40) cnt = 10;
-   else if (bV < 41)  cnt = 11;
-   else cnt = 12 ;
+	else if (bV < 37) cnt = 5;
+	else if (bV < 38) cnt = 8;
+	else if (bV < 39)  cnt = 9;
+	else if (bV < 40) cnt = 10;
+	else if (bV < 41)  cnt = 11;
+	else cnt = 12 ;
 	for(int inx = 0; inx < cnt; inx++) {
-      FrameBuf[128*FramePage + FrameCol + inx] = 0xBD;
-      }
+		FrameBuf[128*FramePage + FrameCol + inx] = 0xBD;
+		}
 	}
+
 
 static void ui_printSupplyVoltage(int page, int col, int bV) {
 	char  szBuf[6];
     sprintf(szBuf,"%d.%dv", bV/10, bV%10);
-	lcd_printSz(page,col,szBuf);
+	lcd_print_sz(page,col,szBuf);
 	}
 
 
@@ -446,26 +450,24 @@ static void ui_printTrackTime(int page, int col, int nHrs, int nMin)	{
 		lcd_printf(false,page+1,col+22,"OK");
 		return;
 		}
-   CLAMP(nHrs,0,99);
-   CLAMP(nMin,0,59);
+	CLAMP(nHrs,0,99);
+	CLAMP(nMin,0,59);
 	szBuf[2] = '\0';
 	szBuf[1] = (nHrs%10) + 48;
-   nHrs = nHrs/10;
+	nHrs = nHrs/10;
 	szBuf[0] = nHrs ?  nHrs + 48 : ' ';
-	lcd_printSzLNum(page,col,szBuf);
-	lcd_setFramePos(page,col+22);
-	lcd_putChar((nMin/10) + 48);
-	lcd_putChar((nMin%10) + 48);
-   }
-
-
+	lcd_print_sz_lnum(page,col,szBuf);
+	lcd_set_frame_pos(page,col+22);
+	lcd_put_char((nMin/10) + 48);
+	lcd_put_char((nMin%10) + 48);
+	}
 
 
 static void ui_calcTrackElapsedTime(int32_t startmS, int32_t currentmS, int32_t* pHours, int32_t* pMinutes) {
-   int32_t elapsedSecs = ((currentmS - startmS)+500)/1000;
-   *pHours = elapsedSecs/3600;
-   *pMinutes = (elapsedSecs%3600)/60;
-   }
+	int32_t elapsedSecs = ((currentmS - startmS)+500)/1000;
+	*pHours = elapsedSecs/3600;
+	*pMinutes = (elapsedSecs%3600)/60;
+	}
 
 
 static void ui_printRouteSegment(int page, int col, int start, int end) {
@@ -516,13 +518,13 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       pTrk->maxSinkrateCps = 999;
       }    
 
-   lcd_clearFrame();
+   lcd_clear_frame();
    if (opt.misc.logType == LOGTYPE_IBG) {
-      lcd_printSz(1,74, IsLoggingIBG ? "I" : "i");
+      lcd_print_sz(1,74, IsLoggingIBG ? "I" : "i");
       }
    else
    if (opt.misc.logType == LOGTYPE_GPS) {
-      lcd_printSz(1,74, IsGpsTrackActive ? "G" : "g");
+      lcd_print_sz(1,74, IsGpsTrackActive ? "G" : "g");
       }
    lcd_printf(false,6,104,"%3d*", dop);
    SupplyVoltageMV = adc_supplyVoltageMV();
@@ -530,17 +532,17 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
    ui_printSpkrStatus(1,56, IsSpeakerEnabled);
    ui_printBluetoothStatus(1,65, IsBluetoothEnabled);
    ui_printAltitude(0,0,altm);
-   lcd_printSz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
-   lcd_printSz(1,45,"m");
+   lcd_print_sz(0,45,opt.misc.altitudeDisplay == ALTITUDE_DISPLAY_GPS ? "g" : "b");
+   lcd_print_sz(1,45,"m");
    // secondary altitude display (if primary=baro, secondary=gps, and vice versa)
    if (xaltm == 9999) {
-	   lcd_printSz(0,55,"----");
+	   lcd_print_sz(0,55,"----");
    	   }
    else {
 	   lcd_printf(false,0,55,"%4d",xaltm);
       }
    ui_printClimbRate(2,0,INTEGER_ROUNDUP(DisplayClimbrateCps));
-   lcd_printSz(3,34,"ms");
+   lcd_print_sz(3,34,"m/s");
    int year,month,day,hour,minute;
    if (pn->nav.numSV > 0) {
       gps_localDateTime(pn,&year,&month,&day,&hour,&minute);
@@ -573,7 +575,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       float horzVelmmps = sqrt((float)(vn*vn + ve*ve));
       int32_t horzVelKph = (int32_t)(horzVelmmps*0.0036f + 0.5f);
       ui_printVelocity(4,0,horzVelKph);
-      lcd_printSz(5,34,"kh");
+      lcd_print_sz(5,34,"kph");
       static float glideRatio = 1.0f;
       if (pn->nav.velDownmmps > 0) { // sinking, display glideratio
          float glideRatioNew = horzVelmmps/(float)pn->nav.velDownmmps;
@@ -583,7 +585,7 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       else {
          ui_printGlideRatio(6,0,1000);// climbing, display ++
          }
-      lcd_printSz(7,23,"gr");
+      lcd_print_sz(7,23,"GR");
       if (IsGpsTrackActive) {
          if (altm > pTrk->maxAltm) pTrk->maxAltm = altm;
          if (DisplayClimbrateCps > pTrk->maxClimbrateCps) pTrk->maxClimbrateCps = DisplayClimbrateCps;
@@ -621,82 +623,134 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
          }
       ui_printBearingAnalog(4,55, horzVelKph, bearingDeg);     
       ui_printDistance(0, 82, distancem);
-      lcd_printSz(1,116,"km");
+      lcd_print_sz(1,116,"km");
       }
    
-
    // invert (white on black) frame, used to acknowledge button press
    if (IsFlashDisplayRequired) {
       IsFlashDisplayRequired = false;
-      lcd_invertFrame();
+      lcd_invert_frame();
       }
-   lcd_sendFrame();
+   lcd_send_frame();
 //   uint32_t eus = cct_elapsedUs(marker);
   // ESP_LOGI(TAG,"updateFlightDisplay = %dus", eus);
    }
 
+#if 0
 
 int ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk) {
-   FILE *fd;
-   char szbuf[30];
-   char szEntry[110];
-   ssize_t nwrote;
-   int len;
-   fd = fopen("/spiffs/flightlog.txt", "rb");
-   if (fd == NULL) {
-      fd = fopen("/spiffs/flightlog.txt", "wb");
-      sprintf(szEntry,"Year Month Day sHour sMin durHour durMin sLat sLon sAlt eLat eLon eAlt maxAlt maxClimb maxSink\r\n");
-      len = strlen(szEntry);
+	FILE *fd;
+	char szbuf[30];
+	char szEntry[110];
+	ssize_t nwrote;
+	int len;
+	fd = fopen("/spiffs/flightlog.txt", "rb");
+	if (fd == NULL) {
+		fd = fopen("/spiffs/flightlog.txt", "wb");
+		sprintf(szEntry,"Year Month Day sHour sMin durHour durMin sLat sLon sAlt eLat eLon eAlt maxAlt maxClimb maxSink\r\n");
+		len = strlen(szEntry);
 		nwrote = fwrite(szEntry, 1, len, fd);
 		if (nwrote != len) {
-	    	ESP_LOGI(TAG,"Error writing comment header to flightlog.txt");
-         fclose(fd);
-         return -1;
-         }
-      }  
-   fclose(fd);
+			ESP_LOGI(TAG,"Error writing comment header to flightlog.txt");
+			fclose(fd);
+			return -1;
+			}
+		}  
+	fclose(fd);
 
-   fd = fopen("/spiffs/flightlog.txt", "ab");
-   if (fd == NULL) {
-    	ESP_LOGI(TAG,"Error opening flightlog.txt in append mode");
-      return -2;
-      }
+	fd = fopen("/spiffs/flightlog.txt", "ab");
+	if (fd == NULL) {
+		ESP_LOGI(TAG,"Error opening flightlog.txt in append mode");
+		return -2;
+		}
 
-   sprintf(szEntry,"%4d %2d %2d %2d %2d ", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
+	sprintf(szEntry,"%4d %2d %2d %2d %2d ", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
+	sprintf(szbuf,"%2d %2d ", pTrk->elapsedHours, pTrk->elapsedMinutes);
+	strcat(szEntry, szbuf);
 
-   sprintf(szbuf,"%2d %2d ", pTrk->elapsedHours, pTrk->elapsedMinutes);
-   strcat(szEntry, szbuf);
+	sprintf(szbuf,"%f %f %4d ", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
+	strcat(szEntry, szbuf);
 
-   sprintf(szbuf,"%f %f %4d ", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
-   strcat(szEntry, szbuf);
+	sprintf(szbuf,"%f %f %4d ", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
+	strcat(szEntry, szbuf);
 
-   sprintf(szbuf,"%f %f %4d ", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
-   strcat(szEntry, szbuf);
+	sprintf(szbuf,"%4d ", (int)(pTrk->maxAltm+0.5f));
+	strcat(szEntry, szbuf);
 
-   sprintf(szbuf,"%4d ", (int)(pTrk->maxAltm+0.5f));
-   strcat(szEntry, szbuf);
+	sprintf(szbuf,"%.1f %.1f\r\n", pTrk->maxClimbrateCps/100.0f, pTrk->maxSinkrateCps/100.0f);
+	strcat(szEntry, szbuf);
 
-   sprintf(szbuf,"%.1f %.1f\r\n", pTrk->maxClimbrateCps/100.0f, pTrk->maxSinkrateCps/100.0f);
-   strcat(szEntry, szbuf);
-
-   len = strlen(szEntry);   
+	len = strlen(szEntry);   
 	nwrote = fwrite(szEntry, 1, len, fd);
 	if (nwrote != len) {
-	  	ESP_LOGI(TAG,"Error appending log data to flightlog.txt");
-      fclose(fd);
-      return -1;
-      }
-   fclose(fd);
-   return 0;
-   }
+		ESP_LOGI(TAG,"Error appending log data to flightlog.txt");
+		fclose(fd);
+		return -1;
+		}
+	fclose(fd);
+   	return 0;
+   	}
+#else
 
+int ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk) {
+	char szbuf[30];
+	char szEntry[110];
+	ssize_t nwrote;
+	int len;
+	File fd = LITTLEFS.open("/flightlog.txt", FILE_READ);
+	// if flight log does not exist, create it with a comment header
+	if (!fd) {
+		fd = LITTLEFS.open("/flightlog.txt", FILE_WRITE);
+		sprintf(szEntry,"Year Month Day sHour sMin durHour durMin sLat sLon sAlt eLat eLon eAlt maxAlt maxClimb maxSink\r\n");
+		nwrote = fd.print(szEntry);
+		if (nwrote != len) {
+			ESP_LOGE(TAG,"Error writing comment header to flightlog.txt");
+			fd.close();
+			return -1;
+			}
+		}  
+	fd.close();
+
+	// open in append mode
+	fd = LITTLEFS.open("/flightlog.txt", FILE_APPEND);
+	if (!fd) {
+		ESP_LOGE(TAG,"Error opening flightlog.txt in append mode");
+		return -2;
+		}
+
+	sprintf(szEntry,"%4d %2d %2d %2d %2d ", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
+	sprintf(szbuf,"%2d %2d ", pTrk->elapsedHours, pTrk->elapsedMinutes);
+	strcat(szEntry, szbuf);
+
+	sprintf(szbuf,"%f %f %4d ", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
+	strcat(szEntry, szbuf);
+
+	sprintf(szbuf,"%f %f %4d ", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
+	strcat(szEntry, szbuf);
+
+	sprintf(szbuf,"%4d ", (int)(pTrk->maxAltm+0.5f));
+	strcat(szEntry, szbuf);
+
+	sprintf(szbuf,"%.1f %.1f\r\n", pTrk->maxClimbrateCps/100.0f, pTrk->maxSinkrateCps/100.0f);
+	strcat(szEntry, szbuf);
+
+	nwrote = fd.print(szEntry);
+	if (nwrote != strlen(szEntry)) {
+		ESP_LOGE(TAG,"Error appending entry to flightlog.txt");
+		fd.close();
+		return -1;
+		}
+	fd.close();
+   	return 0;
+   	}
+#endif
 
 void ui_screenInit() {
-   ParChanged = 0;
-   ScreenParOffset = 0;
-   ParDisplaySel = 0;
-   ParSel = 0;
-   }
+	ParChanged = 0;
+	ScreenParOffset = 0;
+	ParDisplaySel = 0;
+	ParSel = 0;
+	}
 
 
 void ui_displayOptions(void) {
@@ -778,7 +832,7 @@ void ui_displayOptions(void) {
   if (ScreenParOffset < 22) {
      lcd_printf(false, row, 7, "LCD Contrast      %2d",  opt.misc.lcdContrast); row++;
      }
-  lcd_sendFrame();
+  lcd_send_frame();
   }
 
 #define OPT_IDLE_COUNT 330 // this is ~10 seconds of inactivity with 30mS debounce interval
@@ -789,7 +843,7 @@ bool ui_optionsEventHandler(void)  {
 		btn_clear();
 		if (ParChanged) {
 			ParChanged = 0;
-			lcd_clear();
+			lcd_clear_frame();
 			lcd_printlnf(true, 0, "Saving options");
 			opt_save();
 			delayMs(1000);
@@ -877,8 +931,8 @@ bool ui_optionsEventHandler(void)  {
 
 				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast > LCD_CONTRAST_MIN  ) {
 					opt.misc.lcdContrast--;
-				    lcd_sendCmd(CMD_SET_VOLUME_FIRST);
-				    lcd_sendCmd(CMD_SET_VOLUME_SECOND | (opt.misc.lcdContrast & 0x3f));
+				    lcd_send_cmd(CMD_SET_VOLUME_FIRST);
+				    lcd_send_cmd(CMD_SET_VOLUME_SECOND | (opt.misc.lcdContrast & 0x3f));
 					}
 				break;
  	      	  	}
@@ -966,8 +1020,8 @@ bool ui_optionsEventHandler(void)  {
 
 				case SEL_LCD_CONTRAST : if (opt.misc.lcdContrast < LCD_CONTRAST_MAX  ) {
 					opt.misc.lcdContrast++;
-				    lcd_sendCmd(CMD_SET_VOLUME_FIRST);
-				    lcd_sendCmd(CMD_SET_VOLUME_SECOND | (opt.misc.lcdContrast & 0x3f));
+				    lcd_send_cmd(CMD_SET_VOLUME_FIRST);
+				    lcd_send_cmd(CMD_SET_VOLUME_SECOND | (opt.misc.lcdContrast & 0x3f));
 					}
 				break;
 		      	  }

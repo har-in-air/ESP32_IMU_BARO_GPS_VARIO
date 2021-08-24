@@ -1,6 +1,5 @@
-#include <Arduino.h>
+#include "common.h"
 #include <driver/timer.h>
-
 
 void feed_watchdog() {
     TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;

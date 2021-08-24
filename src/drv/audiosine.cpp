@@ -1,14 +1,11 @@
 // code modified from https://github.com/krzychb/dac-cosine
-
 #include "common.h"
 #include "config.h"
-
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
-#include "soc/rtc.h"
-
-#include "driver/dac.h"
+#include <soc/rtc_io_reg.h>
+#include <soc/rtc_cntl_reg.h>
+#include <soc/sens_reg.h>
+#include <soc/rtc.h>
+#include <driver/dac.h>
 #include "nv/options.h"
 #include "audio.h"
 
@@ -19,7 +16,6 @@ static int frequency_step = 8;  // Frequency step for CW generator
 static int scale = 0;           // full scale
 static int offset;              // leave it default / 0 = no any offset
 static int invert = 2;          // invert MSB to get sine waveform
-
 
 
 static void dac_cosine_enable(dac_channel_t channel){

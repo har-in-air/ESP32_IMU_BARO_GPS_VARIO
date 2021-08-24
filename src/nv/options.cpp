@@ -1,6 +1,6 @@
-#include <Arduino.h>
-#include <SPIFFS.h>
 #include "common.h"
+#include <FS.h>
+#include <LITTLEFS.h>
 #include "config.h"
 #include "options.h"
 #include "ui/ui.h"
@@ -14,8 +14,8 @@ int opt_init(void) {
    opt_setDefaults();
 
    // override defaults with any options found in options.txt
-   ESP_LOGD(TAG,"Opening spiffs options.txt file... ");
-   File fdopt = SPIFFS.open("/options.txt", FILE_READ);
+   ESP_LOGD(TAG,"Opening LITTLEFS options.txt file... ");
+   File fdopt = LITTLEFS.open("/options.txt", FILE_READ);
    if (!fdopt) {
       ESP_LOGD(TAG,"options.txt file not found, saving file with default values");
       opt_save();
@@ -32,12 +32,12 @@ int opt_init(void) {
    int numKeys = 0;
    while (fdopt.available()) {
       szLine = fdopt.readStringUntil('\n');
-      ESP_LOGD(TAG, "%s", szLine.c_str());
+      ESP_LOGV(TAG, "%s", szLine.c_str());
       char *p = (char*)szLine.c_str();
       while (*p == ' ' || *p == '\t') p++;
       //  skip lines beginning with '#' or blank lines
       if (*p == '#'  ||  *p == '\r' || *p == '\n') continue;
-      ESP_LOGD(TAG,"%s", p);
+      ESP_LOGV(TAG,"%s", p);
       szToken = strtok(p," \t[");
       if (szToken != NULL)   {
          strcpy(pkeys[numKeys].szName, szToken);
@@ -46,7 +46,7 @@ int opt_init(void) {
             szToken = strtok(NULL," \r\n");
             if (szToken != NULL) {
                strcpy(pkeys[numKeys].szValue, szToken);
-               ESP_LOGD(TAG,"[%d]  %s =  %s",numKeys,pkeys[numKeys].szName, pkeys[numKeys].szValue);
+               ESP_LOGV(TAG,"[%d]  %s =  %s",numKeys,pkeys[numKeys].szName, pkeys[numKeys].szValue);
                numKeys++;
                }
             }
@@ -56,9 +56,9 @@ int opt_init(void) {
 
    if (numKeys != NUM_OPTIONS) {
 	   ESP_LOGE(TAG, "numKeys %d != NUM_OPTIONS (%d)", numKeys, NUM_OPTIONS);
-   	   }
+      }
    for (int key = 0; key < numKeys; key++) {
-     // ESP_LOGD(TAG,"[%d]  %s  = %s",key, pkeys[key].szName, pkeys[key].szValue);
+      ESP_LOGV(TAG,"[%d]  %s  = %s",key, pkeys[key].szName, pkeys[key].szValue);
       if (!strcmp(pkeys[key].szName, "climbThresholdCps")) {
          opt.vario.climbThresholdCps = atoi(pkeys[key].szValue);
          CLAMP(opt.vario.climbThresholdCps,VARIO_CLIMB_THRESHOLD_CPS_MIN, VARIO_CLIMB_THRESHOLD_CPS_MAX);
@@ -262,8 +262,8 @@ int opt_save() {
     char buf[80];
     ssize_t nwrote;
 
-    SPIFFS.remove("/options.txt");
-    File fdopt = SPIFFS.open("/options.txt", FILE_WRITE);
+    LITTLEFS.remove("/options.txt");
+    File fdopt = LITTLEFS.open("/options.txt", FILE_WRITE);
     if (!fdopt) {
       ESP_LOGE(TAG, "Error opening options.txt to write");
       return -1;

@@ -1,11 +1,11 @@
-#include <Arduino.h>
+#include "common.h"
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <SPIFFS.h>
+#include <FS.h>
+#include <LITTLEFS.h>
 #include <Update.h>
-#include "common.h"
 #include "drv/wdog.h"
 #include "nv/flashlog.h"
 #include "async_server.h"
@@ -15,7 +15,7 @@ static const char* TAG = "async_server";
 // Credits : this is a mashup and modification of code from the following repositories
 // https://github.com/smford/esp32-asyncwebserver-fileupload-example
 // https://randomnerdtutorials.com/esp32-web-server-spiffs-spi-flash-file-system/
-// I also added OTA firmware update, chunked spiffs file and datalog downloads
+// I also added OTA firmware update, chunked LITTLEFS file and datalog downloads
 
 
 typedef struct WIFI_CONFIG_ {
@@ -27,8 +27,7 @@ typedef struct WIFI_CONFIG_ {
 } WIFI_CONFIG;
 
 AsyncWebServer *server = NULL;  
-static File SpiffsFile;
-static File SpiffsDir;
+static File LittleFSFile;
 
 const char* host = "esp32"; // use http://esp32.local instead of 192.168.4.1
 
@@ -50,11 +49,11 @@ static String server_directory(bool ishtml = false);
 static void server_not_found(AsyncWebServerRequest *request);
 static bool server_authenticate(AsyncWebServerRequest * request);
 static void server_handle_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-static void server_handle_SPIFFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+static void server_handle_LITTLEFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 static String server_string_processor(const String& var);
 static void server_configure();
 static void server_handle_OTA_update(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-static int spiffs_chunked_read(uint8_t* buffer, size_t maxLen);
+static int littlefs_chunked_read(uint8_t* buffer, size_t maxLen);
 static int datalog_chunked_read(uint8_t* buffer, size_t maxLen, size_t index);
 
 
@@ -133,15 +132,15 @@ String server_ui_size(const size_t bytes) {
   }
 
 
-// list all spiffs partition files. If isHtml == true, return html formatted table rather than simple text
+// list all LittleFS partition files. If isHtml == true, return html formatted table rather than simple text
 static String server_directory(bool isHtml) {
   String returnText = "";
-  ESP_LOGD(TAG,"Listing files stored on SPIFFS");
-  File root = SPIFFS.open("/");
+  ESP_LOGD(TAG,"Listing files stored on LittleFS");
+  File root = LITTLEFS.open("/");
   File foundfile = root.openNextFile();
   String fileName = foundfile.name();
   if (isHtml) {
-    returnText += "<p align='center'>SPIFFS file storage : <span id='totalspiffs'>" + server_ui_size(SPIFFS.totalBytes()) + "</span> | Used : <span id='usedspiffs'>" + server_ui_size(SPIFFS.usedBytes()) + "</span></p>";
+    returnText += "<p align='center'>File storage : <span id='total_littlefs'>" + server_ui_size(LITTLEFS.totalBytes()) + "</span> | Used : <span id='used_littlefs'>" + server_ui_size(LITTLEFS.usedBytes()) + "</span></p>";
     returnText += "<table align='center'><tr><th align='left'>Name</th><th align='left'>Size</th><th></th><th></th></tr>";
     }
   while (foundfile) {
@@ -190,16 +189,16 @@ static String server_string_processor(const String& var) {
     }
 
 
-// chunked download for SPIFFS files returns buffer with up to maxLen bytes read
-static int spiffs_chunked_read(uint8_t* buffer, size_t maxLen) {              
-  if (!SpiffsFile.available()) {
-    SpiffsFile.close();
+// chunked download for LITTLEFS files returns buffer with up to maxLen bytes read
+static int littlefs_chunked_read(uint8_t* buffer, size_t maxLen) {              
+  if (!LittleFSFile.available()) {
+    LittleFSFile.close();
     return 0;
     }
   else {
     int count = 0;
-    while (SpiffsFile.available() && (count < maxLen)) {
-      buffer[count] = SpiffsFile.read();
+    while (LittleFSFile.available() && (count < maxLen)) {
+      buffer[count] = LittleFSFile.read();
       count++;
       }
     return count;
@@ -230,7 +229,7 @@ void server_configure() {
     ESP_LOGD(TAG,"Client: %s %s",request->client()->remoteIP().toString().c_str(), request->url().c_str());
     if (server_authenticate(request)) {
       ESP_LOGD(TAG," Auth: Success");
-      request->send(SPIFFS, "/index.html", String(), false, server_string_processor);
+      request->send(LITTLEFS, "/index.html", String(), false, server_string_processor);
       }  
     else {
       ESP_LOGD(TAG," Auth: Failed");
@@ -240,7 +239,7 @@ void server_configure() {
 
   // Route to load style.css file
   server->on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/style.css", "text/css");
+    request->send(LITTLEFS, "/style.css", "text/css");
   });
 
   server->on("/datalog", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -281,7 +280,7 @@ void server_configure() {
         const char* fileName = fname.c_str();
         const char *fileAction = request->getParam("action")->value().c_str();
         ESP_LOGD(TAG, "Client : %s %s ?name = %s &action = %s",request->client()->remoteIP().toString().c_str(), request->url().c_str(), fileName, fileAction);
-        if (!SPIFFS.exists(fileName)) {
+        if (!LITTLEFS.exists(fileName)) {
           ESP_LOGE(TAG," ERROR: file does not exist");
           request->send(400, "text/plain", "ERROR: file does not exist");
           } 
@@ -289,11 +288,11 @@ void server_configure() {
           ESP_LOGD(TAG," file exists");
           if (strcmp(fileAction, "download") == 0) {
             ESP_LOGD(TAG, " downloaded");
-            SpiffsFile = SPIFFS.open(fileName, "r");
-            int sizeBytes = SpiffsFile.size();
+            LittleFSFile = LITTLEFS.open(fileName, "r");
+            int sizeBytes = LittleFSFile.size();
             AsyncWebServerResponse *response = request->beginResponse("application/octet-stream", sizeBytes, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
               feed_watchdog();
-              return spiffs_chunked_read(buffer, maxLen);
+              return littlefs_chunked_read(buffer, maxLen);
               });
             char szBuf[80];
             sprintf(szBuf, "attachment; filename=%s", &fileName[1]);// get past the leading '/'
@@ -303,7 +302,7 @@ void server_configure() {
             } 
           else if (strcmp(fileAction, "delete") == 0) {
             ESP_LOGD(TAG, " deleted");
-            SPIFFS.remove(fileName);
+            LITTLEFS.remove(fileName);
             request->send(200, "text/plain", "Deleted File: " + String(fileName));
             } 
           else {
@@ -348,21 +347,21 @@ static void server_handle_upload(AsyncWebServerRequest *request, String filename
     server_handle_OTA_update(request, filename, index, data, len, final);
     }
   else {
-    // non .bin files are uploaded to the SPIFFS partition
-    size_t freeBytes = SPIFFS.totalBytes() - SPIFFS.usedBytes();
+    // non .bin files are uploaded to the LITTLEFS partition
+    size_t freeBytes = LITTLEFS.totalBytes() - LITTLEFS.usedBytes();
     if (len < freeBytes) {
-      server_handle_SPIFFS_upload(request, filename, index, data, len, final);
+      server_handle_LITTLEFS_upload(request, filename, index, data, len, final);
       }
     else {
-      ESP_LOGD(TAG, "Cannot upload file size %d bytes, as SPIFFS free space = %d bytes", len, freeBytes);
-      request->send(404, "text/plain", "Not enough free space in SPIFFS partition");
+      ESP_LOGD(TAG, "Cannot upload file size %d bytes, as LITTLEFS free space = %d bytes", len, freeBytes);
+      request->send(404, "text/plain", "Not enough free space in LITTLEFS partition");
       }
     }
   }
 
 
-// handles non .bin file uploads to the SPIFFS directory
-static void server_handle_SPIFFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+// handles non .bin file uploads to the LITTLEFS directory
+static void server_handle_LITTLEFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   // make sure authenticated before allowing upload
   if (server_authenticate(request)) {
     ESP_LOGD(TAG,"Client: %s %s",request->client()->remoteIP().toString().c_str(), request->url().c_str());
@@ -370,26 +369,24 @@ static void server_handle_SPIFFS_upload(AsyncWebServerRequest *request, String f
     if (index == 0) {
       ESP_LOGD(TAG,"Upload Start : %s", filename.c_str());
       filename = "/" + filename;
-      SpiffsDir = SPIFFS.open("/");
-      if (SPIFFS.exists(filename)) {
-        bool res = SPIFFS.remove(filename);
+      if (LITTLEFS.exists(filename)) {
+        bool res = LITTLEFS.remove(filename);
         ESP_LOGD(TAG, "Delete file %s : %s", filename, res == false ? "Error" : "OK");
         }
-      SpiffsFile = SPIFFS.open(filename, FILE_WRITE);
+      LittleFSFile = LITTLEFS.open(filename, FILE_WRITE);
       }
 
     if (len) {
       // stream the incoming chunk to the opened file
       feed_watchdog();
-      SpiffsFile.write(data, len);
+      LittleFSFile.write(data, len);
       ESP_LOGD(TAG,"Writing file : %s, index = %d, len = %d", filename.c_str(), index, len);
       }
 
     if (final) {
       ESP_LOGD(TAG,"Upload Complete : %s, size = %d", filename.c_str(), index+len);
       // close the file handle after upload
-      SpiffsFile.close();
-      SpiffsDir.close();
+      LittleFSFile.close();
       }
     } 
   else {

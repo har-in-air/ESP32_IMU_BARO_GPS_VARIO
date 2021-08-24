@@ -61,40 +61,37 @@ extern int FrameCol;
 
 void lcd_init(uint8_t brightness);
 void lcd_clear();
-void lcd_putChar(uint8_t ch);
-void lcd_putCharX2(uint8_t ch );
-void lcd_sendData(uint8_t data);
-void lcd_sendCmd(uint8_t cmd);
-void lcd_printSz(int page, int c,  const char* sz);
-void lcd_printSzX2(int page, int c,  const char* sz);
+void lcd_put_char(uint8_t ch);
+void lcd_put_charX2(uint8_t ch );
+void lcd_send_data(uint8_t data);
+void lcd_send_cmd(uint8_t cmd);
+void lcd_print_sz(int page, int c,  const char* sz);
+void lcd_print_szX2(int page, int c,  const char* sz);
 void lcd_printf(bool immed, int page, int c, const char* format, ...);
 void lcd_printlnf(bool immed, int page, const char* format, ...);
 
 
 // 11x16 numeric font +,-,space
 
-void lcd_putLNum(char ch);
-void lcd_printSzLNum(int page, int col, const char* sz);
+void lcd_put_lnum(char ch);
+void lcd_print_sz_lnum(int page, int col, const char* sz);
+void lcd_put_image(int page, int col, const uint8_t *pIm);
+void lcd_draw_circle(int x0, int y0, int r );
+void lcd_draw_rect(int x, int y, int w, int h);
+void lcd_fill_rect(int x, int y, int w, int h);
+void lcd_clear_pixel(int x, int y);
+void lcd_set_pixel(int x, int y);
+void lcd_draw_line(int x0, int y0, int x1, int y1);
 
-
-void lcd_putImage(int page, int col, const uint8_t *pIm);
-
-void lcd_drawCircle(int x0, int y0, int r );
-void lcd_drawRect(int x, int y, int w, int h);
-void lcd_fillRect(int x, int y, int w, int h);
-void lcd_clearPixel(int x, int y);
-void lcd_setPixel(int x, int y);
-void lcd_drawLine(int x0, int y0, int x1, int y1);
-
-inline void lcd_setFramePos(int page, int col) {   
+inline void lcd_set_frame_pos(int page, int col) {   
     FramePage = page;
     FrameCol = col;
     }
-void lcd_clearFrame(void);
-void lcd_invertFrame(void);
-void lcd_clearSubFrame(int page, int col, int numPages, int numCols);
-void lcd_invertSubFrame(int page, int col, int numPages, int numCols);
-void lcd_sendFrame(void);
-void lcd_clearPage(int page);
+void lcd_clear_frame(void);
+void lcd_invert_frame(void);
+void lcd_clear_subframe(int page, int col, int numPages, int numCols);
+void lcd_invert_subframe(int page, int col, int numPages, int numCols);
+void lcd_send_frame(void);
+void lcd_clear_page(int page);
 
 #endif
