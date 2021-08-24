@@ -13,20 +13,20 @@ access point and web server. So you can access datalogs/configuration with a sma
 * Navigate a route with waypoints from one of up to 7 route files in **FormatGEO** .wpt format that were previously uploaded to the gpsvario.
 * 128x64 LCD display of 
   * GPS and barometric altitude
-  * climb/sink rate
-  * distance from start/to waypoint
-  * ground speed
-  * glide ratio
-  * course-over-ground or magnetic compass heading
-  * bearing to start/waypoint
-  * time-of-day
-  * elapsed-time
+  * Climb / sink rate
+  * Distance-from-start / distance-to-waypoint
+  * Ground speed
+  * Glide ratio
+  * Course-over-ground / magnetic compass heading
+  * Bearing-to-start / bearing-to-waypoint
+  * Time-of-day
+  * Elapsed time
   * GPS Dilution of Precision (DOP)
-  * supply voltage
-  * status icons for vario audio feedback, data logging, bluetooth status
-* Variometer audio feedback uses the esp32 onboard DAC and external audio amplifier driving
+  * Supply voltage
+  * Status icons for vario audio feedback, data logging, bluetooth
+* Variometer audio feedback uses the esp32 DAC and external audio amplifier driving
 an 8ohm cellphone speaker with sine-wave tones.
-* Flight summaries are stored as single line entries in the file `flightlog.txt` in the SPIFFS file system. The flight summary has flight date, start time, start and end coordinates, duration, max altitude, max climb and sink rates. This text file can be downloaded using WiFi and opened in a spreadsheet for analysis (open as CSV file).
+* Flight summaries are stored as single line entries in the file `flightlog.txt`. The flight summary has flight date, start time, start and end coordinates, duration, max altitude, max climb and sink rates. This text file can be downloaded using WiFi and opened in a spreadsheet for analysis (open as CSV file).
 * Bluetooth transmission of `$LK8EX1` or `$XCTRC` NMEA sentences at a frequency of up to 10Hz. Validated with **XCTrack** app on my Android phone.
 
 # Changes from release v1.0
@@ -34,10 +34,10 @@ an 8ohm cellphone speaker with sine-wave tones.
 * Uses arduino framework instead of esp-idf with arduino-esp32 as a component
 * Works with latest arduino-esp32 master on Github (v2.00-rc1 instead of v1.06)
 * All source code refactored as C++ files (trivial changes)
-* Uses Arduino SPIFFS library instead of custom code
+* Uses Arduino LittleFS library
 * WiFi configuration webpage server uses asynchronous  Arduino **ESP32AsyncServer** library instead of blocking code.
-* Root **index.html** page and **style.css** files are served from the SPIFFS partition instead of being embedded in the source code. These two files are in the `/data` project directory. You can easily modify the
-appearance of the web page by editing these files, re-building and uploading the SPIFFS partition binary image (see below).
+* Root **index.html** page and **style.css** files are served from a LittleFS partition instead of being embedded in the source code. These two files are in the `/data` project directory. You can modify the
+appearance of the web page by editing these files, re-building and uploading the LittleFS partition binary image (see below).
 * Bluetooth NMEA sentence transmission now uses the Arduino **BluetoothSerial** library.
 * Support for OTA firmware updates via WiFi.
   
@@ -56,19 +56,19 @@ it's now using the **arduino-esp32** master release on Github (v2.00-rc1 as of t
 
 Before flashing this project for the first time, run **Erase Flash** in the PlatformIO **PROJECT TASKS > esp32dev > Platform** dropdown menu. This is to ensure any existing partitions on the ESP32 are wiped.
 
-Run **Build Filesystem Image**. This will generate a spiffs binary image from the files contained in the `/data` sub-directory. The project repository `/data` directory includes :
+Run **Build Filesystem Image**. This will generate a LittleFS binary image from the files contained in the `/data` sub-directory. The project repository `/data` directory includes :
 * webserver root html page `index.html` and `style.css` files. (required)
 * example `options.txt` file for configuring the gpsvario. (optional)
 * example route file with waypoints in **FormatGEO** format. (optional)
   
-Run **Upload Filesystem Image**. This will flash the SPIFFS partition binary image to the SPIFFS partition address specified in `min_spiffs.csv`.
+Run **Upload Filesystem Image**. This will flash the LittleFS partition binary image to the LittleFS partition address specified in `partitions.csv`.
 This step needs to be executed again only if you change the contents of the project `/data` sub-directory.
 
 From the PlatformIO **PROJECT TASKS > esp32dev > General** menu, run  **Clean** and then **Build**. This will generate the firmware application binary `firmware.bin` in the project `.pio/build/esp32dev` directory.
 
 Run **Upload and Monitor**. 
 
-You will be prompted to calibrate the accelerometer, magnetometer and gyroscope (see Usage section below). Calibration parameters are saved to the SPIFFS file `calib.txt`.
+You will be prompted to calibrate the accelerometer, magnetometer and gyroscope (see Usage section below). Calibration parameters are saved to the file `calib.txt`.
 
 Example Visual Studio Code screenshot of the debug log after running **Upload and Monitor** :
 
@@ -135,7 +135,7 @@ the 5V line with a 100k resistor.
 ## Calibration 
 * The gyroscope is automatically calibrated each time on power up. When you see the prompt for gyro calibration, make sure the gpsvario is stationary (in any orientation). If it's disturbed, it will use the last saved gyro calibration values.
 * You MUST calibrate the accelerometer and magnetometer correctly before using the gpsvario. 
-* If there is no `calib.txt` file in the SPIFFS partition, the unit will prompt you to calibrate the IMU sensors. If you want to force re-calibration, you can delete `calib.txt`  using the webserver access, and then reboot the unit.
+* If there is no `calib.txt` file found, the unit will prompt you to calibrate the IMU sensors and then save the file. If you want to force re-calibration, you can delete `calib.txt`  using the webserver access, and then reboot the unit.
 * You can also force accelerometer and magnetometer calibration by pressing **btn0**  during the on-screen countdown to gyro calibration.  
 * When you see the LCD display countdown for **accelerometer calibration**, place the gpsvario undisturbed on a flat **horizontal** surface, and wait until it completes. 
 * When you see the LCD display countdown for **magnetometer calibration**, [pick up the gpsvario and _slowly and smoothly_ wave your hand with a 3D figure-of-8 motion](https://calibratecompass.com/) while you simultaneously turn around 360 degrees. Magnetometer calibration requires readings with all possible 3D orientations and compass headings. Keep doing this until calibration completes. Make sure you are several feet away from large metal objects. 
@@ -145,21 +145,22 @@ the 5V line with a 100k resistor.
 * Connect to the WiFi access point `Esp32GpsVario`
 * Open a web browser and enter the url `http://esp32.local`
 * The webpage is protected by user and password access. Username = **admin**, default
-password = **admin**. You can re-build the firmware with a different user name and password.
+password = **admin**. If you want to use a different user name and password, edit the values for `default_httpuser`
+and `default_httppassword` in the file `async_server.cpp`.
 
 <img src="docs/webpage_login.png" alt="webpage_login"/>
 
-* The firmware can be built to connect as a station to an existing external WiFi access point. This is not much use in the field. But if you only plan to configure the gpsvario at home, it is a viable option. In this case, 
+* The firmware can optinally be built to connect as a station to an existing external WiFi access point. This is not much use in the field. But if you only plan to configure the gpsvario at home, it is a viable option. In this case, 
   * Uncomment `#define STATION_WEBSERVER` at the top of `async_server.cpp`. 
   * Specify the external WiFi Access Point SSID and password in the variables `default_ssid` and `default_wifipassword`. 
   * Re-build and flash the firmware.
   
 
- * Click on the **SPIFFS Files** button to get a listing of files in the SPIFFS partition. Note that the webpage `index.html` and `style.css` files are not displayed.
+ * Click on the **Directory** button to get a listing of files in the LittleFS partition. Note that the webpage `index.html` and `style.css` files are not displayed.
 
-<img src="docs/webpage_spiffs_directory.png" alt="webpage_directory"/>
+<img src="docs/webpage_directory.png"/>
 
- * You can upload new files, e.g. route files with waypoints, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the SPIFFS partition. Please ensure that there is sufficient free space in the SPIFFS partition **before** you upload the file. There is no working check to see if the uploaded file will fit in the free space.
+ * You can upload new files, e.g. route files with waypoints, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the LittleFS partition. Please ensure that there is sufficient free space in the partition **before** you upload the file. There is no working check to see if the uploaded file will fit in the free space.
  * For firmware updates, use the **Upload File** button. 
    * If you select a `.bin` file, it is assumed to be a firmware application binary  and will be uploaded to the OTA flash partition. 
    * On upload completion, the gpsvario will automatically reboot with the new firmware. 
@@ -180,18 +181,18 @@ password = **admin**. You can re-build the firmware with a different user name a
 * Press the **btnM** button if you want to change the selected option (cursor -> solid circle). 
 * Now **btnL** and **btnR** will decrease/increase the value. Press the **btnM** button again to go back to the option select (cursor = empty circle). 
 * Click on **btn0** to exit the options page when done. 
-* Configuration options are saved to the file `options.txt` in the SPIFFS paritition. 
+* Configuration options are saved to the file `options.txt`. 
 * If there is no user activity for ~10 seconds in the options screen, the gpsvario will automatically transition into flight display mode. This is so that you can power up the unit and have it eventually start displaying the flight screen without user intervention. 
 * You can also change options by replacing the `options.txt` file. 
   * Switch on the gpsvario, select server mode, access the url `http://esp32.local`
-  * Click on **SPIFFS Files** and download `options.txt` file from the gpsvario. 
+  * Click on **Directory** and download `options.txt` file from the gpsvario. 
   * Edit options as required - make sure you only edit the last field on each line !  
   * Delete the existing `options.txt` file using the webpage
   * Upload the modified `options.txt` file back to the gpsvario. Unfortunately there is an issue with replacing an existing file, so we need to first delete the file and then upload a replacement.
   * This way you can keep different versions of `options.txt` file on your laptop/smartphone for different sites or site conditions. 
 * To reset to 'factory defaults', delete the `options.txt` file from the gpsvario using the webserver. It will be regenerated with default values the next time you power up the gpsvario. Default values are in the file `/include/config.h`. Search for the `USER-CONFIGURABLE PARAMETER DEFAULTS` section.
 * [This is an example of an `options.txt` file](docs/options.txt).
-* Every time the gpsvario is powered on, it sets all user-configurable parameters to their default values and then overrides them with values found in the SPIFFS file `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from the default values. 
+* Every time the gpsvario is powered on, it sets all user-configurable parameters to their default values and then overrides them with values found in the file `options.txt`. So you don't have to specify all options in the file, only the ones you want to modify from the default values. 
   
 ## Routes
 * Use [**xcplanner**](https://github.com/dkm/xcplanner) to generate a route with waypoints in **FormatGEO** format as a `.wpt` text file. 
