@@ -74,7 +74,7 @@ Example Visual Studio Code screenshot of the debug log after running **Upload an
 
 <img src="docs/vsc_boot_log.png">
    
-Startup sequence to flight mode with no user interaction. This is indoors without GPS reception.
+Start-up sequence to flight mode with no user interaction. This is indoors without GPS reception.
 
 <img src="docs/boot0.jpg">
 
@@ -87,7 +87,11 @@ Startup sequence to flight mode with no user interaction. This is indoors withou
 <img src="docs/boot4.jpg">
 
 <img src="docs/boot5.jpg">
-   
+
+<img src="docs/boot6.jpg">
+
+<img src="docs/boot7.jpg">
+
 # Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 barometric pressure sensor, sampled at 50Hz.
