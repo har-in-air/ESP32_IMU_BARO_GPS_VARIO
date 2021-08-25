@@ -3,7 +3,12 @@
 #include "drv/hspi.h"
 #include "lcd7565.h"
 #include "font_6x8.h"
-#include "font_bignum.h"
+
+// choose one of these fonts for the large number fields
+#include "font_semonotxt.h"
+//#include "font_libermonobold14.h"
+//#include "font_libersans14.h"
+//#include "font_mssansserif.h"
 
 static const char* TAG = "lcd7565";
 
