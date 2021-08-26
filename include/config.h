@@ -147,16 +147,16 @@
 
 // Kalman filter configuration
 // actual variance value used is accel_variance*1000
-#define KF_ACCEL_VARIANCE_DEFAULT            50
-#define KF_ACCEL_VARIANCE_MIN                10
+#define KF_ACCEL_VARIANCE_DEFAULT            70
+#define KF_ACCEL_VARIANCE_MIN                30
 #define KF_ACCEL_VARIANCE_MAX                100
 
 // This can be measured offline by calculating the 
 // statistical variance in cm^2 of about one second of
 // altitude (in cm) samples from the MS5611.
-#define KF_ZMEAS_VARIANCE_DEFAULT            300
+#define KF_ZMEAS_VARIANCE_DEFAULT            220
 #define KF_ZMEAS_VARIANCE_MIN                100
-#define KF_ZMEAS_VARIANCE_MAX                500
+#define KF_ZMEAS_VARIANCE_MAX                400
 
 
 // If you find that gyro calibration fails when you leave

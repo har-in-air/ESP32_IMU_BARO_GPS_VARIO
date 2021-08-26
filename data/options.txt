@@ -6,22 +6,22 @@ crossoverCps [300,800] 400
 varioDisplayIIR [90,99] 95
 
 # Kalman Filter
-accelVariance [10,100] 70
-zMeasVariance [100,500] 300
+accelVariance [30,100] 70
+zMeasVariance [100,400] 220
 
 # Miscellaneous
 backlitSecs [5,60] 30
 utcOffsetMins [-720,720] 330
 gyroOffsetLimit1000DPS [25,200] 150
 trackIntervalSecs [1,60] 3
-gpsStableDOP [3,15] 12
+gpsStableDOP [3,15] 10
 glideRatioIIR [80,99] 90
-trackStartThresholdm [0,100] 0
+trackStartThresholdm [0,100] 10
 magDeclinationdeg [-60,60] 0
 speakerVolume [0,3] 2
 logType [NONE,GPS,IBG]  GPS
 waypointRadiusm [5,20000] 50
-altitudeDisplay [GPS,BARO] BARO
+altitudeDisplay [GPS,BARO] GPS
 btMsgType [LK8,XCT] LK8
-btMsgFreqHz [0,10] 0
-lcdContrast [1,10] 4
+btMsgFreqHz [0,10] 10
+lcdContrast [1,10] 3
