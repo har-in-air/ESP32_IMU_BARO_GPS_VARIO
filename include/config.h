@@ -50,7 +50,7 @@
 // lcd uses HSPI IOMux compatible pins
 #define pinHSCLK    14
 #define pinHMOSI    27 
-#define pinHMISO    15
+#define pinHMISO    (-1)
 
 #define pinLcdCS    12
 #define pinLcdRST   13
