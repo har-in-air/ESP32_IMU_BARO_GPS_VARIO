@@ -31,7 +31,10 @@ static File LittleFSFile;
 
 const char* host = "esp32"; // use http://esp32.local instead of 192.168.4.1
 
-// connect to an external WiFi access point as a station
+// Uncomment the #define below, to connect as a station to an existing WiFi Access Point.
+// This is useful when doing development and debugging of the wifi webserver interface
+// as it saves time switching between your internet AP and the gpsvario AP.
+
 //#define STATION_WEBSERVER
 // You must specify the external WiFi Access point SSID and password if STATION_WEBSERVER is defined
 const String default_ssid = "SSID";

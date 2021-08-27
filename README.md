@@ -153,11 +153,6 @@ password = **admin**. If you want to use a different user name and password, edi
 and `default_httppassword` in the file `async_server.cpp`.
 
 <img src="docs/webpage_login.png" alt="webpage_login"/>
-
-* The firmware can optinally be built to connect as a station to an existing external WiFi access point. This is not much use in the field. But if you only plan to configure the gpsvario at home, it is a viable option. In this case, 
-  * Uncomment `#define STATION_WEBSERVER` at the top of `async_server.cpp`. 
-  * Specify the external WiFi Access Point SSID and password in the variables `default_ssid` and `default_wifipassword`. 
-  * Re-build and flash the firmware.
   
  * Click on the **Directory** button to get a listing of files in the LittleFS partition. Note that the webpage `index.html` and `style.css` files are hidden.
  * You can upload new files, e.g. route files with waypoints, using the **Upload File** button. Any file not ending with a `.bin` suffix will be uploaded to the LittleFS partition. Please ensure that there is sufficient free space in the partition **before** you upload the file. There is no working check to see if the uploaded file will fit in the free space.
