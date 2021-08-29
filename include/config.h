@@ -34,7 +34,6 @@
 #define pinGpsCTS  (-1)
 
 #define GPS_UART_NUM          UART_NUM_1
-//#define UART_RX_BUFFER_SIZE   512
 #define UART_RX_BUFFER_SIZE   256
 
 #define pinBtn0     0
@@ -47,10 +46,10 @@
 #define BTNM()  ((GPIO.in1.val >> (pinBtnM - 32)) & 0x1)
 #define BTNR()  ((GPIO.in1.val >> (pinBtnR - 32)) & 0x1)
 
-// lcd uses HSPI IOMux compatible pins
+// lcd uses HSPI IOMux compatible pins, write-only (no need to reserve MISO pin)
 #define pinHSCLK    14
 #define pinHMOSI    27 
-#define pinHMISO    15
+#define pinHMISO    (-1)
 
 #define pinLcdCS    12
 #define pinLcdRST   13
