@@ -2,8 +2,6 @@
 #include "config.h"
 #include "hspi.h"
 
-// If only using HSPI for driving the LCD, no need to reserve gpio for MISO
-#define USE_HMISO false
 
 spi_t * _hspi = NULL;
 static bool 	_use_hw_ss = false;
@@ -44,9 +42,10 @@ void hspi_config(int8_t pinsck, int8_t pinmiso, int8_t pinmosi, int8_t pinss, in
         _pinss = pinss;
         }
     spiAttachSCK(_hspi, _pinsck);
-#if USE_HMISO    
-    spiAttachMISO(_hspi, _pinmiso);
-#endif    
+    // if not using hmiso, no need to reserve gpio pin
+    if (_pinmiso != -1) {
+        spiAttachMISO(_hspi, _pinmiso);
+        }
     spiAttachMOSI(_hspi, _pinmosi);
     if (_pinss == -1) {
         spiSSDisable(_hspi);
