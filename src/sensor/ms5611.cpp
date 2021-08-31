@@ -4,31 +4,31 @@
 #include "drv/vspi.h"
 #include "sensor/ms5611.h"
 
-float ZCmAvg;
-float ZCmSample;
-float PaSample;
-int   CelsiusSample;
+float ZCmAvg_MS5611;
+float ZCmSample_MS5611;
+float PaSample_MS5611;
+int   CelsiusSample_MS5611;
 
-static uint8_t 	Prom_[16];
-static uint16_t   Cal_[6];
-static int64_t 	Tref_;
-static int64_t 	OffT1_;
-static int64_t 	SensT1_;	
-static int32_t 	TempCx100_;
-static uint32_t   D1_;
-static uint32_t   D2_;
-static int64_t 	DT_;	
-static int 		   SensorState_;
+static uint8_t  Prom_[16];
+static uint16_t Cal_[6];
+static int64_t  Tref_;
+static int64_t  OffT1_;
+static int64_t  SensT1_;	
+static int32_t  TempCx100_;
+static uint32_t D1_;
+static uint32_t D2_;
+static int64_t  DT_;	
+static int      SensorState_;
 
 static const char* TAG = "ms5611";
 
 
 int ms5611_config(void) {
-	BARO_CS_HI();
-	PaSample = 0.0f;
-	ZCmSample = 0.0f;
-	CelsiusSample = 0;
-	ZCmAvg = 0.0f;
+	MS5611_CS_HI();
+	PaSample_MS5611 = 0.0f;
+	ZCmSample_MS5611 = 0.0f;
+	CelsiusSample_MS5611 = 0;
+	ZCmAvg_MS5611 = 0.0f;
 	//ms5611_reset();
 	if (!ms5611_readPROM()) {
 		ESP_LOGE(TAG, "Error reading calibration PROM");
@@ -46,29 +46,28 @@ void ms5611_initializeSampleStateMachine(void) {
 
 
 int ms5611_sampleStateMachine(void) {
-   if (SensorState_ == MS5611_READ_TEMPERATURE) {
-      D2_ = ms5611_readSample();
-      ms5611_triggerPressureSample();
-      ms5611_calculateTemperatureC();
-      PaSample = ms5611_calculatePressurePa();
-	   ZCmSample = ms5611_pa2Cm(PaSample);
-	   SensorState_ = MS5611_READ_PRESSURE;
-      return 1;  // new altitude sample is available
-      }
-   else
-   if (SensorState_ == MS5611_READ_PRESSURE) {
-      D1_ = ms5611_readSample();
-      ms5611_triggerTemperatureSample();
-      SensorState_ = MS5611_READ_TEMPERATURE;
-      return 0; // intermediate state, no new result available
-      }
-   return 0;    
-   }
+   	if (SensorState_ == MS5611_READ_TEMPERATURE) {
+      	D2_ = ms5611_readSample();
+      	ms5611_triggerPressureSample();
+      	ms5611_calculateTemperatureC();
+      	PaSample_MS5611 = ms5611_calculatePressurePa();
+	   	ZCmSample_MS5611 = ms5611_pa2Cm(PaSample_MS5611);
+	   	SensorState_ = MS5611_READ_PRESSURE;
+      	return 1;  // new altitude sample is available
+      	}
+   	else
+   	if (SensorState_ == MS5611_READ_PRESSURE) {
+      	D1_ = ms5611_readSample();
+      	ms5611_triggerTemperatureSample();
+      	SensorState_ = MS5611_READ_TEMPERATURE;
+      	return 0; // intermediate state, no new result available
+      	}
+   	return 0;    
+   	}
 
-#ifdef MS5611_TEST
+#if 0
 
-#define MAX_TEST_SAMPLES    100
-extern char gszBuf[];
+#define MAX_TEST_SAMPLES    32
 static float pa[MAX_TEST_SAMPLES];
 static float z[MAX_TEST_SAMPLES];
 
@@ -80,39 +79,39 @@ void ms5611_test(int nSamples) {
     paVariance = 0.0f;
     zVariance = 0.0f;
     for (n = 0; n < nSamples; n++) {
-	    ms5611_triggerTemperatureSample();
-		delayMs(MS5611_SAMPLE_PERIOD_MS);
-	    D2_ = ms5611_readSample();
-	    ms5611_calculateTemperatureCx10();
-		ms5611_triggerPressureSample();
-		delayMs(MS5611_SAMPLE_PERIOD_MS);
-		D1_ = ms5611_readSample();
-		pa[n] = ms5611_calculatePressurePa();
+	ms5611_triggerTemperatureSample();
+	delayMs(MS5611_SAMPLE_PERIOD_MS);
+	D2_ = ms5611_readSample();
+	ms5611_calculateTemperatureC();
+	ms5611_triggerPressureSample();
+	delayMs(MS5611_SAMPLE_PERIOD_MS);
+	D1_ = ms5611_readSample();
+	pa[n] = ms5611_calculatePressurePa();
         z[n] =  ms5611_pa2Cm(pa[n]);
         paMean += pa[n];
         zMean += z[n];
         }
     paMean /= nSamples;
     zMean /= nSamples;
+    ESP_LOGD(TAG,"%f %f\r\n",paMean,zMean);
     for (n = 0; n < nSamples; n++) {
         paVariance += (pa[n]-paMean)*(pa[n]-paMean);
         zVariance += (z[n]-zMean)*(z[n]-zMean);
-        ESP_LOGI(TAG,"%f %f\r\n",pa[n],z[n]);
        }
     paVariance /= (nSamples-1);
     zVariance /= (nSamples-1);
-    ESP_LOGI(TAG,"paVariance %f  zVariance %f",paVariance,zVariance);    
+    ESP_LOGD(TAG,"paVariance %f  zVariance %f",paVariance,zVariance);    
 	}
 #endif
 
 
 void ms5611_averagedSample(int nSamples) {
 	int32_t tc,tAccum,n;
-   float pa,pAccum;
+   	float pa,pAccum;
 	pAccum = 0.0f;
-   tAccum = 0;
+   	tAccum = 0;
 	n = nSamples;
-   while (n--) {
+   	while (n--) {
 		ms5611_triggerTemperatureSample();
 		delayMs(MS5611_SAMPLE_PERIOD_MS);
 		D2_ = ms5611_readSample();
@@ -125,9 +124,9 @@ void ms5611_averagedSample(int nSamples) {
 		tAccum += TempCx100_;
 		}
 	tc = tAccum/nSamples;
-	CelsiusSample = (tc >= 0 ?  (tc+50)/100 : (tc-50)/100);
-	PaSample = (pAccum+nSamples/2)/nSamples;
-	ZCmAvg = ZCmSample = ms5611_pa2Cm(PaSample);
+	CelsiusSample_MS5611 = (tc >= 0 ?  (tc+50)/100 : (tc-50)/100);
+	PaSample_MS5611 = (pAccum+nSamples/2)/nSamples;
+	ZCmAvg_MS5611 = ZCmSample_MS5611 = ms5611_pa2Cm(PaSample_MS5611);
 	}
 	
 	
@@ -161,18 +160,18 @@ float ms5611_pa2Cm(float paf)  {
 
 void ms5611_triggerPressureSample(void) {
 	spiSimpleTransaction(_vspi);
-   BARO_CS_LO();
+   	MS5611_CS_LO();
 	spiTransferByteNL(_vspi, MS5611_CMD_CONVERT_D1|MS5611_CMD_ADC_4096);
-	BARO_CS_HI();
+	MS5611_CS_HI();
 	spiEndTransaction(_vspi);
 	}
 
 
 void ms5611_triggerTemperatureSample(void) {
 	spiSimpleTransaction(_vspi);
-   BARO_CS_LO();
-   spiTransferByteNL(_vspi, MS5611_CMD_CONVERT_D2|MS5611_CMD_ADC_4096);
-   BARO_CS_HI();
+   	MS5611_CS_LO();
+   	spiTransferByteNL(_vspi, MS5611_CMD_CONVERT_D2|MS5611_CMD_ADC_4096);
+   	MS5611_CS_HI();
 	spiEndTransaction(_vspi);
 	}
 
@@ -180,13 +179,13 @@ void ms5611_triggerTemperatureSample(void) {
 uint32_t ms5611_readSample(void)	{
 	uint32_t w, b0, b1, b2;
 	spiSimpleTransaction(_vspi);
-	BARO_CS_LO();
+	MS5611_CS_LO();
 	spiTransferByteNL(_vspi, MS5611_CMD_ADC_READ);
 	b0 = (uint32_t)spiTransferByteNL(_vspi, 0);
 	b1 = (uint32_t)spiTransferByteNL(_vspi, 0);
 	b2 = (uint32_t)spiTransferByteNL(_vspi, 0);
 	w = ((b0<<16) | (b1<<8) | b2);
-	BARO_CS_HI();
+	MS5611_CS_HI();
 	spiEndTransaction(_vspi);
 	return w;
 	}
@@ -195,7 +194,7 @@ uint32_t ms5611_readSample(void)	{
 void ms5611_calculateTemperatureC(void) {
 	DT_ = (int64_t)D2_ - Tref_;
 	TempCx100_ = 2000 + ((DT_*((int32_t)Cal_[5]))>>23);
-   CelsiusSample = (TempCx100_ >= 0? (TempCx100_+50)/100 : (TempCx100_-50)/100);
+   	CelsiusSample_MS5611 = (TempCx100_ >= 0? (TempCx100_+50)/100 : (TempCx100_-50)/100);
 	}
 
 
@@ -224,9 +223,9 @@ float ms5611_calculatePressurePa(void) {
 
 
 void ms5611_reset(void) {
-	BARO_CS_LO();
+	MS5611_CS_LO();
 	spiTransferByteNL(_vspi, MS5611_CMD_RESET);
-	BARO_CS_HI();
+	MS5611_CS_HI();
 	spiEndTransaction(_vspi);
 	cct_delayUs(4000); // > 3mS as per app note AN520	
    }
@@ -246,23 +245,23 @@ void ms5611_getCalibrationParameters(void)  {
 
 int ms5611_readPROM(void)    {
    for (int inx = 0; inx < 8; inx++) {
-    	BARO_CS_LO();
-		spiTransferByteNL(_vspi, 0xA0 + inx*2);
-		Prom_[inx*2] = spiTransferByteNL(_vspi, 0);
-		Prom_[inx*2+1] = spiTransferByteNL(_vspi, 0);
-		BARO_CS_HI();
-		}			
+    	MS5611_CS_LO();
+	spiTransferByteNL(_vspi, 0xA0 + inx*2);
+	Prom_[inx*2] = spiTransferByteNL(_vspi, 0);
+	Prom_[inx*2+1] = spiTransferByteNL(_vspi, 0);
+	MS5611_CS_HI();
+	}			
    uint8_t crcPROM = Prom_[15] & 0x0F;
-	uint8_t crcCalculated = ms5611_CRC4(Prom_);
-	return (crcCalculated == crcPROM ? 1 : 0);
-	}
+   uint8_t crcCalculated = ms5611_CRC4(Prom_);
+   return (crcCalculated == crcPROM ? 1 : 0);
+   }
 	
 	
 uint8_t ms5611_CRC4(uint8_t prom[] ) {
    int cnt, nbit; 
    uint16_t crcRemainder; 
    uint8_t crcSave = prom[15]; // crc byte in PROM
-   ESP_LOGI(TAG,"PROM CRC = 0x%x", prom[15] & 0x0F);
+   ESP_LOGD(TAG,"PROM CRC = 0x%x", prom[15] & 0x0F);
    crcRemainder = 0x0000;
    prom[15] = 0; //CRC byte is replaced by 0
 
@@ -279,7 +278,7 @@ uint8_t ms5611_CRC4(uint8_t prom[] ) {
 		}
    crcRemainder= (0x000F & (crcRemainder >> 12)); // final 4-bit reminder is CRC code
    prom[15] = crcSave; // restore the crc byte
-   ESP_LOGI(TAG, "Calculated CRC = 0x%x",  crcRemainder ^ 0x0);
+   ESP_LOGD(TAG, "Calculated CRC = 0x%x",  crcRemainder ^ 0x0);
    return (uint8_t)(crcRemainder ^ 0x0);
    } 
 

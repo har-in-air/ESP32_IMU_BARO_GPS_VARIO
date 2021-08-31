@@ -1,12 +1,7 @@
 #ifndef MS5611_H_
 #define MS5611_H_
 
-
-//#define MS5611_TEST
-
-// 10mS enough, but we're using vTaskDelay with a tick period of 10mS
-// so 2 ticks are required to ensure at least one tick delay !
-#define MS5611_SAMPLE_PERIOD_MS         20
+#define MS5611_SAMPLE_PERIOD_MS         10
 
 #define MS5611_READ_TEMPERATURE 		11
 #define MS5611_READ_PRESSURE			22
@@ -34,9 +29,9 @@ int 	ms5611_readPROM(void);
 void 	ms5611_getCalibrationParameters(void);
 void 	ms5611_reset(void);
 
-extern	float ZCmAvg;
-extern	float ZCmSample;
-extern	float PaSample;
-extern	int   CelsiusSample;
+extern	float ZCmAvg_MS5611;
+extern	float ZCmSample_MS5611;
+extern	float PaSample_MS5611;
+extern	int   CelsiusSample_MS5611;
 
 #endif // MS5611_H_

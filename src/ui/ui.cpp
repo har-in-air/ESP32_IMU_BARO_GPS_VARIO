@@ -636,61 +636,6 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
   // ESP_LOGI(TAG,"updateFlightDisplay = %dus", eus);
    }
 
-#if 0
-
-int ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk) {
-	FILE *fd;
-	char szbuf[30];
-	char szEntry[110];
-	ssize_t nwrote;
-	int len;
-	fd = fopen("/spiffs/flightlog.txt", "rb");
-	if (fd == NULL) {
-		fd = fopen("/spiffs/flightlog.txt", "wb");
-		sprintf(szEntry,"Year Month Day sHour sMin durHour durMin sLat sLon sAlt eLat eLon eAlt maxAlt maxClimb maxSink\r\n");
-		len = strlen(szEntry);
-		nwrote = fwrite(szEntry, 1, len, fd);
-		if (nwrote != len) {
-			ESP_LOGI(TAG,"Error writing comment header to flightlog.txt");
-			fclose(fd);
-			return -1;
-			}
-		}  
-	fclose(fd);
-
-	fd = fopen("/spiffs/flightlog.txt", "ab");
-	if (fd == NULL) {
-		ESP_LOGI(TAG,"Error opening flightlog.txt in append mode");
-		return -2;
-		}
-
-	sprintf(szEntry,"%4d %2d %2d %2d %2d ", pTrk->year, pTrk->month, pTrk->day, pTrk->hour, pTrk->minute);
-	sprintf(szbuf,"%2d %2d ", pTrk->elapsedHours, pTrk->elapsedMinutes);
-	strcat(szEntry, szbuf);
-
-	sprintf(szbuf,"%f %f %4d ", pTrk->startLatdeg, pTrk->startLondeg, (int)(pTrk->startAltm+0.5f));
-	strcat(szEntry, szbuf);
-
-	sprintf(szbuf,"%f %f %4d ", FLOAT_DEG(pn->nav.latDeg7), FLOAT_DEG(pn->nav.lonDeg7), (pn->nav.heightMSLmm+500)/1000);
-	strcat(szEntry, szbuf);
-
-	sprintf(szbuf,"%4d ", (int)(pTrk->maxAltm+0.5f));
-	strcat(szEntry, szbuf);
-
-	sprintf(szbuf,"%.1f %.1f\r\n", pTrk->maxClimbrateCps/100.0f, pTrk->maxSinkrateCps/100.0f);
-	strcat(szEntry, szbuf);
-
-	len = strlen(szEntry);   
-	nwrote = fwrite(szEntry, 1, len, fd);
-	if (nwrote != len) {
-		ESP_LOGI(TAG,"Error appending log data to flightlog.txt");
-		fclose(fd);
-		return -1;
-		}
-	fclose(fd);
-   	return 0;
-   	}
-#else
 
 int ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk) {
 	char szbuf[30];
@@ -743,7 +688,7 @@ int ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk) {
 	fd.close();
    	return 0;
    	}
-#endif
+
 
 void ui_screenInit() {
 	ParChanged = 0;
@@ -782,7 +727,7 @@ void ui_displayOptions(void) {
      lcd_printf(false, row, 7, "Vario display IIR %2d", opt.vario.varioDisplayIIR); row++;
      }   
   if (ScreenParOffset < 6) {
-     lcd_printf(false, row, 7, "Accel variance    %2d", opt.kf.accelVariance); row++;
+     lcd_printf(false, row, 7, "Accel variance   %3d", opt.kf.accelVariance); row++;
      }
   if (ScreenParOffset < 7) {
      lcd_printf(false, row, 7, "Zmeas variance   %3d", opt.kf.zMeasVariance); row++;
@@ -835,7 +780,7 @@ void ui_displayOptions(void) {
   lcd_send_frame();
   }
 
-#define OPT_IDLE_COUNT 330 // this is ~10 seconds of inactivity with 30mS debounce interval
+#define OPT_IDLE_COUNT 320 // this is ~8 seconds of inactivity with 25mS debounce interval
 
 bool ui_optionsEventHandler(void)  {
 	static int countDown = OPT_IDLE_COUNT;
@@ -884,7 +829,7 @@ bool ui_optionsEventHandler(void)  {
 				case SEL_ACCEL_VAR : if (opt.kf.accelVariance >= KF_ACCEL_VARIANCE_MIN+5) opt.kf.accelVariance -= 5;
 				break;
 
-				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance >= KF_ZMEAS_VARIANCE_MIN+10) opt.kf.zMeasVariance -= 10;
+				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance >= KF_ZMEAS_VARIANCE_MIN+5) opt.kf.zMeasVariance -= 5;
 				break;
 
 				case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins >= UTC_OFFSET_MINS_MIN+15) opt.misc.utcOffsetMins -= 15;
@@ -973,7 +918,7 @@ bool ui_optionsEventHandler(void)  {
 				case SEL_ACCEL_VAR : if (opt.kf.accelVariance <= KF_ACCEL_VARIANCE_MAX-5) opt.kf.accelVariance += 5;
 				break;
 
-				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance <= KF_ZMEAS_VARIANCE_MAX-10) opt.kf.zMeasVariance += 10;
+				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance <= KF_ZMEAS_VARIANCE_MAX-5) opt.kf.zMeasVariance += 5;
 				break;
 
 				case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins <= UTC_OFFSET_MINS_MAX-15) opt.misc.utcOffsetMins += 15;

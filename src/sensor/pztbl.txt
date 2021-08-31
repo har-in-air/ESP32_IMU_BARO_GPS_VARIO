@@ -8,7 +8,7 @@
 #define PA_INIT         106956L
 #define PA_DELTA        1024L
 
-const int32_t PZTable[PZLUT_ENTRIES] = {
+static const int32_t PZTable[PZLUT_ENTRIES] = {
 -45853,
 -37662,
 -29407,

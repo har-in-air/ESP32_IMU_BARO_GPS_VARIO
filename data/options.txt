@@ -6,7 +6,7 @@ crossoverCps [300,800] 400
 varioDisplayIIR [90,99] 95
 
 # Kalman Filter
-accelVariance [30,100] 70
+accelVariance [30,120] 70
 zMeasVariance [100,400] 220
 
 # Miscellaneous
@@ -23,5 +23,5 @@ logType [NONE,GPS,IBG]  GPS
 waypointRadiusm [5,20000] 50
 altitudeDisplay [GPS,BARO] GPS
 btMsgType [LK8,XCT] LK8
-btMsgFreqHz [0,10] 10
+btMsgFreqHz [0,10] 0
 lcdContrast [1,10] 3

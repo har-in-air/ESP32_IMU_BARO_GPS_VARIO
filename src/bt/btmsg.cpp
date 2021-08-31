@@ -2,7 +2,13 @@
 #include "config.h"
 #include "btmsg.h"
 #include "sensor/gps.h"
+#if USE_MS5611
 #include "sensor/ms5611.h"
+#endif
+#if USE_BMP388
+#include "sensor/bmp388.h"
+#endif
+
 #include "ui/ui.h"
 
 static const char* TAG = "btmsg";
@@ -60,7 +66,12 @@ Field 4, battery voltage or charge percentage
 	Percentage should be 0 to 100, with no decimals, added by 1000!
 */
 void btmsg_genLK8EX1(char* szmsg) {
-	sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample+0.5f), (int32_t)KFAltitudeCm, (int32_t)KFClimbrateCps, CelsiusSample,((float)SupplyVoltageMV)/1000.0f);
+#if USE_MS5611
+	sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample_MS5611+0.5f), (int32_t)KFAltitudeCm, (int32_t)KFClimbrateCps, CelsiusSample_MS5611,((float)SupplyVoltageMV)/1000.0f);
+#endif
+#if USE_BMP388
+	sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample_BMP388+0.5f), (int32_t)KFAltitudeCm, (int32_t)KFClimbrateCps, CelsiusSample_BMP388,((float)SupplyVoltageMV)/1000.0f);
+#endif
 	uint8_t cksum = btmsg_nmeaChecksum(szmsg);
 	char szcksum[5];
 	sprintf(szcksum,"%02X\r\n", cksum);
@@ -90,7 +101,12 @@ void btmsg_genXCTRC(char* szmsg) {
 	float sogKph = ((float)NavPvt.nav.groundSpeedmmps)*0.0036f;
 //	float courseDeg = ((float)NavPvt.nav.headingMotionDeg5)/100000.0f; not implemented on gps module, junk readings
 	float courseDeg = (float)GpsCourseHeadingDeg;
-	sprintf(szmsg, "$XCTRC,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.2f,%.2f,%.1f,%.2f,,,,%.2f,%d*",year,month,day,hour,minute,second,centisecond,latDeg,lonDeg,altM,sogKph,courseDeg,KFClimbrateCps/100.0f, PaSample/100.0f,batteryPercent);
+#if USE_MS5611
+	sprintf(szmsg, "$XCTRC,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.2f,%.2f,%.1f,%.2f,,,,%.2f,%d*",year,month,day,hour,minute,second,centisecond,latDeg,lonDeg,altM,sogKph,courseDeg,KFClimbrateCps/100.0f, PaSample_MS5611/100.0f,batteryPercent);
+#endif
+#if USE_BMP388
+	sprintf(szmsg, "$XCTRC,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.2f,%.2f,%.1f,%.2f,,,,%.2f,%d*",year,month,day,hour,minute,second,centisecond,latDeg,lonDeg,altM,sogKph,courseDeg,KFClimbrateCps/100.0f, PaSample_BMP388/100.0f,batteryPercent);
+#endif
 	uint8_t cksum = btmsg_nmeaChecksum(szmsg);
 	char szcksum[5];
 	sprintf(szcksum,"%02X\r\n", cksum);

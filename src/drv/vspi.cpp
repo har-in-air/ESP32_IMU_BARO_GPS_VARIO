@@ -27,6 +27,7 @@ void vspi_config(int pnSCLK, int pnMOSI, int pnMISO, int freqHz) {
 
    spiAttachSCK(_vspi, _sclk);
    spiAttachMOSI(_vspi, _mosi);
+   spiSSDisable(_vspi);
    if (_miso != -1) spiAttachMISO(_vspi, _miso);
    }
 

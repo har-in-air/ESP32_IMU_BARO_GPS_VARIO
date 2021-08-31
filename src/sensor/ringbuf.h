@@ -11,5 +11,6 @@ typedef struct RINGBUF_ {
 void ringbuf_init();
 void ringbuf_addSample(float sample);
 float ringbuf_averageOldestSamples(int numSamples);
+float ringbuf_averageNewestSamples(int numSamples);
 
 #endif

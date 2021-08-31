@@ -1,7 +1,6 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#include <Arduino.h>
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 
@@ -16,8 +15,20 @@
 #define pinVMISO    19
 
 #define pinImuCS    17 
-#define pinBaroCS   16
 #define pinFlashCS  5
+
+// barometric sensor option : set only one of the following true
+#define USE_MS5611 false
+#define USE_BMP388 true
+
+// chip select for MS5611 and BMP388 different for testing purposes
+#define pinMS5611CS     16
+#define MS5611_CS_HI() 	{GPIO.out_w1ts = (1 << pinMS5611CS);}
+#define MS5611_CS_LO() 	{GPIO.out_w1tc = (1 << pinMS5611CS);}
+
+#define pinBMP388CS     15
+#define BMP388_CS_HI() 	{GPIO.out_w1ts = (1 << pinBMP388CS);}
+#define BMP388_CS_LO() 	{GPIO.out_w1tc = (1 << pinBMP388CS);}
 
 #define IMU_CS_HI() 	{GPIO.out_w1ts = (1 << pinImuCS);}
 #define IMU_CS_LO() 	{GPIO.out_w1tc = (1 << pinImuCS);}
@@ -49,7 +60,6 @@
 // lcd uses HSPI IOMux compatible pins, write-only (no need to reserve MISO pin)
 #define pinHSCLK    14
 #define pinHMOSI    27 
-#define pinHMISO    (-1)
 
 #define pinLcdCS    12
 #define pinLcdRST   13
@@ -148,12 +158,18 @@
 // actual variance value used is accel_variance*1000
 #define KF_ACCEL_VARIANCE_DEFAULT            70
 #define KF_ACCEL_VARIANCE_MIN                30
-#define KF_ACCEL_VARIANCE_MAX                100
+#define KF_ACCEL_VARIANCE_MAX                120
 
-// This can be measured offline by calculating the 
-// statistical variance in cm^2 of about one second of
-// altitude (in cm) samples from the MS5611.
+// altitude noise variance can be measured offline by calculating the 
+// statistical variance in cm^2 of ~ 1 second of altitude samples from 
+// the baro sensor at rest
+#if USE_MS5611
 #define KF_ZMEAS_VARIANCE_DEFAULT            220
+#endif
+#if USE_BMP388
+#define KF_ZMEAS_VARIANCE_DEFAULT            120
+#endif
+
 #define KF_ZMEAS_VARIANCE_MIN                100
 #define KF_ZMEAS_VARIANCE_MAX                400
 
@@ -163,8 +179,8 @@
 // with a high gyro bias on one or more axes. Try increasing this limit  
 // until you find the calibration works consistently.
 
-#define GYRO_OFFSET_LIMIT_1000DPS_DEFAULT   150
-#define GYRO_OFFSET_LIMIT_1000DPS_MIN       25
+#define GYRO_OFFSET_LIMIT_1000DPS_DEFAULT  	150
+#define GYRO_OFFSET_LIMIT_1000DPS_MIN     	25
 #define GYRO_OFFSET_LIMIT_1000DPS_MAX		200
 
 
