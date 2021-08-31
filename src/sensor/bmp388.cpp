@@ -348,7 +348,6 @@ float bmp388_pa2Cm(float paf)  {
    	return zf;
    	}
 
-
 int bmp388_config() {
     bmp388_write_register(BMP3_REG_CMD, BMP3_SOFT_RESET);
     delayMs(5);
@@ -360,12 +359,14 @@ int bmp388_config() {
     bmp388_read_calib_data(&dev);
     // power on defaults : FIFO is disabled, SPI 4-wire interface, interrupts disabled
     // configure : 8x pressure, 1x temperature oversampling, IIR coeff = 2, 50Hz ODR, normal mode
+    // Tconv = 234 + (392 + 8*2000) + (313 + 1*2000) = 18939uS
+    // => Fconv_max = 52.8Hz. So configure ODR = 50Hz
     bmp388_write_register(BMP3_REG_OSR, BMP3_OVERSAMPLING_8X | (BMP3_NO_OVERSAMPLING << 3));
     bmp388_write_register(BMP3_REG_ODR, BMP3_ODR_50_HZ);
     bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_COEFF_1 << 1 );
     // pressure and temperature measurement enabled, normal mode
     bmp388_write_register(BMP3_REG_PWR_CTRL, 0x3 | (0x3 << 4));
-    //bmp388_measure_noise(40);
+    //bmp388_measure_noise(32);
     return 0;
     }
 
