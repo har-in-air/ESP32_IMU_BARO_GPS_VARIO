@@ -94,7 +94,7 @@ Start-up sequence to flight mode with no user interaction. This is indoors witho
 
 # Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
-* MS5611 barometric pressure sensor, sampled at 50Hz.
+* MS5611 or BMP388 barometric pressure sensor, sampled at 50Hz.
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol at 115200 baud.
 I used a compact [ublox gps module from Banggood](docs/banggood_gpsmodule.jpg). Not a great choice - it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
