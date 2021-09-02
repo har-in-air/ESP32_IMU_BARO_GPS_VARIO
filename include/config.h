@@ -18,8 +18,8 @@
 #define pinFlashCS  5
 
 // barometric sensor option : set only one of the following true
-#define USE_MS5611 true
-#define USE_BMP388 false
+#define USE_MS5611 false
+#define USE_BMP388 true
 
 #define NUM_TEST_SAMPLES 32
 
@@ -158,9 +158,9 @@
 
 // Kalman filter configuration
 // actual variance value used is accel_variance*1000
-#define KF_ACCEL_VARIANCE_DEFAULT            70
-#define KF_ACCEL_VARIANCE_MIN                30
-#define KF_ACCEL_VARIANCE_MAX                120
+#define KF_ACCEL_VARIANCE_DEFAULT            120
+#define KF_ACCEL_VARIANCE_MIN                50
+#define KF_ACCEL_VARIANCE_MAX                150
 
 // altitude noise variance can be measured offline by calculating the 
 // statistical variance in cm^2 of ~ 1 second of altitude samples from 
@@ -172,7 +172,7 @@
 #define KF_ZMEAS_VARIANCE_DEFAULT            150
 #endif
 
-#define KF_ZMEAS_VARIANCE_MIN                50
+#define KF_ZMEAS_VARIANCE_MIN                80
 #define KF_ZMEAS_VARIANCE_MAX                400
 
 
