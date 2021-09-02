@@ -15,7 +15,7 @@
 void 	ms5611_triggerPressureSample(void);
 void 	ms5611_triggerTemperatureSample(void);
 uint32_t  	ms5611_readSample(void);
-void 	ms5611_averagedSample(int nSamples);	
+void 	ms5611_averagedSample(int numSamples);	
 void  	ms5611_calculateTemperatureC(void);
 float  	ms5611_calculatePressurePa(void);
 void 	ms5611_calculateSensorNoisePa(void);
@@ -23,7 +23,7 @@ int 	ms5611_config(void);
 int 	ms5611_sampleStateMachine(void);
 void 	ms5611_initializeSampleStateMachine(void);
 float  	ms5611_pa2Cm(float pa);
-void 	ms5611_test(int nSamples);	
+void 	ms5611_measure_noise();	
 uint8_t ms5611_CRC4(uint8_t prom[] );
 int 	ms5611_readPROM(void);
 void 	ms5611_getCalibrationParameters(void);

@@ -35,6 +35,7 @@ int ms5611_config(void) {
 		return -1;
 		}
 	ms5611_getCalibrationParameters();
+	//ms5611_measure_noise();
 	return 0;
 	}
 
@@ -67,50 +68,48 @@ int ms5611_sampleStateMachine(void) {
 
 #if 0
 
-#define MAX_TEST_SAMPLES    32
-static float pa[MAX_TEST_SAMPLES];
-static float z[MAX_TEST_SAMPLES];
+static float pa[NUM_TEST_SAMPLES];
+static float z[NUM_TEST_SAMPLES];
 
-void ms5611_test(int nSamples) {
-	int32_t n;
+void ms5611_measure_noise() {
     float paMean, zMean, zVariance, paVariance;
     paMean = 0.0f;
     zMean = 0.0f;
     paVariance = 0.0f;
     zVariance = 0.0f;
-    for (n = 0; n < nSamples; n++) {
-	ms5611_triggerTemperatureSample();
-	delayMs(MS5611_SAMPLE_PERIOD_MS);
-	D2_ = ms5611_readSample();
-	ms5611_calculateTemperatureC();
-	ms5611_triggerPressureSample();
-	delayMs(MS5611_SAMPLE_PERIOD_MS);
-	D1_ = ms5611_readSample();
-	pa[n] = ms5611_calculatePressurePa();
+    for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
+		ms5611_triggerTemperatureSample();
+		delayMs(MS5611_SAMPLE_PERIOD_MS);
+		D2_ = ms5611_readSample();
+		ms5611_calculateTemperatureC();
+		ms5611_triggerPressureSample();
+		delayMs(MS5611_SAMPLE_PERIOD_MS);
+		D1_ = ms5611_readSample();
+		pa[n] = ms5611_calculatePressurePa();
         z[n] =  ms5611_pa2Cm(pa[n]);
         paMean += pa[n];
         zMean += z[n];
         }
-    paMean /= nSamples;
-    zMean /= nSamples;
-    ESP_LOGD(TAG,"%f %f\r\n",paMean,zMean);
-    for (n = 0; n < nSamples; n++) {
+    paMean /= NUM_TEST_SAMPLES;
+    zMean /= NUM_TEST_SAMPLES;
+    ESP_LOGD(TAG,"pa_mean %fPa z_mean %fcm",paMean,zMean);
+    for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
         paVariance += (pa[n]-paMean)*(pa[n]-paMean);
         zVariance += (z[n]-zMean)*(z[n]-zMean);
        }
-    paVariance /= (nSamples-1);
-    zVariance /= (nSamples-1);
-    ESP_LOGD(TAG,"paVariance %f  zVariance %f",paVariance,zVariance);    
+    paVariance /= (NUM_TEST_SAMPLES-1);
+    zVariance /= (NUM_TEST_SAMPLES-1);
+    ESP_LOGD(TAG,"pa_variance %fPA^2  z_variance %fcm^2",paVariance, zVariance);    
 	}
 #endif
 
 
-void ms5611_averagedSample(int nSamples) {
+void ms5611_averagedSample(int numSamples) {
 	int32_t tc,tAccum,n;
    	float pa,pAccum;
 	pAccum = 0.0f;
    	tAccum = 0;
-	n = nSamples;
+	n = numSamples;
    	while (n--) {
 		ms5611_triggerTemperatureSample();
 		delayMs(MS5611_SAMPLE_PERIOD_MS);
@@ -123,9 +122,9 @@ void ms5611_averagedSample(int nSamples) {
 		pAccum += pa;
 		tAccum += TempCx100_;
 		}
-	tc = tAccum/nSamples;
+	tc = tAccum/numSamples;
 	CelsiusSample_MS5611 = (tc >= 0 ?  (tc+50)/100 : (tc-50)/100);
-	PaSample_MS5611 = (pAccum+nSamples/2)/nSamples;
+	PaSample_MS5611 = (pAccum + numSamples/2) / numSamples;
 	ZCmAvg_MS5611 = ZCmSample_MS5611 = ms5611_pa2Cm(PaSample_MS5611);
 	}
 	

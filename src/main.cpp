@@ -243,10 +243,10 @@ static void vario_taskConfig() {
         }
 #if USE_MS5611
     if (ms5611_config() < 0) {
-	ESP_LOGE(TAG, "error MS5611 config");
-	lcd_printlnf(true,3, "MS5611 config fail");
-	while (1) {delayMs(100);}
-	}	
+        ESP_LOGE(TAG, "error MS5611 config");
+        lcd_printlnf(true,3, "MS5611 config fail");
+        while (1) {delayMs(100);}
+        }	
     ms5611_averagedSample(4);
     ESP_LOGD(TAG,"MS5611 Altitude %dm Temperature %dC", (int)(ZCmAvg_MS5611/100.0f), (int)CelsiusSample_MS5611);
     float zcm = ZCmAvg_MS5611;
@@ -254,14 +254,15 @@ static void vario_taskConfig() {
 #endif
 #if USE_BMP388    
     if (bmp388_config() < 0) {
-	ESP_LOGE(TAG, "error BMP388 config");
-	lcd_printlnf(true,3, "BMP388 config fail");
-	while (1) {delayMs(100);}
-	}	
+        ESP_LOGE(TAG, "error BMP388 config");
+        lcd_printlnf(true,3, "BMP388 config fail");
+        while (1) {delayMs(100);}
+        }	
     bmp388_averaged_sample(4);
     ESP_LOGD(TAG,"BMP388 Altitude %dm Temperature %dC", (int)(ZCmAvg_BMP388/100.0f), (int)CelsiusSample_BMP388);
     float zcm = ZCmAvg_BMP388;
 #endif
+
     kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, zcm, 0.0f, 0.0f);
     lcd_clear_frame();
     lcd_printlnf(true,3,"Baro Altitude %dm", (int)(zcm/100.0f));

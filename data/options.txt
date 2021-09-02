@@ -6,8 +6,8 @@ crossoverCps [300,800] 400
 varioDisplayIIR [90,99] 95
 
 # Kalman Filter
-accelVariance [30,120] 70
-zMeasVariance [100,400] 220
+accelVariance [30,120] 100
+zMeasVariance [50,400] 120
 
 # Miscellaneous
 backlitSecs [5,60] 30

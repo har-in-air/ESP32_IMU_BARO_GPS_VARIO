@@ -18,8 +18,10 @@
 #define pinFlashCS  5
 
 // barometric sensor option : set only one of the following true
-#define USE_MS5611 false
-#define USE_BMP388 true
+#define USE_MS5611 true
+#define USE_BMP388 false
+
+#define NUM_TEST_SAMPLES 32
 
 // chip select for MS5611 and BMP388 different for testing purposes
 #define pinMS5611CS     16
@@ -167,10 +169,10 @@
 #define KF_ZMEAS_VARIANCE_DEFAULT            220
 #endif
 #if USE_BMP388
-#define KF_ZMEAS_VARIANCE_DEFAULT            120
+#define KF_ZMEAS_VARIANCE_DEFAULT            150
 #endif
 
-#define KF_ZMEAS_VARIANCE_MIN                100
+#define KF_ZMEAS_VARIANCE_MIN                50
 #define KF_ZMEAS_VARIANCE_MAX                400
 
 
@@ -249,7 +251,7 @@
 
 // This is set low as the residual acceleration bias after calibration
 // is expected to have little variation/drift
-#define KF_ACCELBIAS_VARIANCE   1.0f
+#define KF_ACCELBIAS_VARIANCE   2.0f
 
 // print debug information to the serial port for different code modules
 

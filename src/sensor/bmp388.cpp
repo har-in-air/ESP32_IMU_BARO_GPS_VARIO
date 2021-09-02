@@ -17,15 +17,14 @@ int   CelsiusSample_BMP388;
 
 // credits : adapted from https://github.com/BoschSensortec/BMP3-Sensor-API, using float instead of double, removed pow()
 
-struct bmp3_dev dev;
+static struct bmp3_dev BMP3_Dev;
 
 static void bmp388_write_register(uint8_t regAddress, uint8_t data);
 static uint8_t bmp388_read_register(uint8_t regAddress);
 static void bmp388_read_registers(uint8_t regAddress, uint8_t* dest, uint8_t count);
-static void bmp388_read_calib_data(struct bmp3_dev *dev);
-static void bmp388_parse_calib_data(const uint8_t *reg_data, struct bmp3_dev *dev);
+static void bmp388_read_calib_data();
+static void bmp388_parse_calib_data(const uint8_t *reg_data);
 static void bmp388_parse_sensor_data(const uint8_t *reg_data, struct bmp3_uncomp_data *uncomp_data);
-static void bmp388_get_sensor_data(uint8_t sensor_comp, struct bmp3_data *comp_data, struct bmp3_dev *dev);
 static void bmp388_compensate_temperature(float *temperature,
                                      const struct bmp3_uncomp_data *uncomp_data,
                                      struct bmp3_calib_data *calib_data);
@@ -36,7 +35,6 @@ static void bmp388_compensate_data(uint8_t sensor_comp,
                               const struct bmp3_uncomp_data *uncomp_data,
                               struct bmp3_data *comp_data,
                               struct bmp3_calib_data *calib_data);
-float bmp388_pa2Cm(float paf);
 
 
 static void bmp388_write_register(uint8_t regAddress, uint8_t data){
@@ -70,18 +68,18 @@ static uint8_t bmp388_read_register(uint8_t regAddress){
     }
 
 
-static void bmp388_read_calib_data(struct bmp3_dev *dev){
+static void bmp388_read_calib_data(){
     uint8_t reg_addr = BMP3_REG_CALIB_DATA;
     uint8_t calib_data[BMP3_LEN_CALIB_DATA] = { 0 };
     bmp388_read_registers(BMP3_REG_CALIB_DATA, calib_data, BMP3_LEN_CALIB_DATA);
-    bmp388_parse_calib_data(calib_data, dev);
+    bmp388_parse_calib_data(calib_data);
     }
 
 
-static void bmp388_parse_calib_data(const uint8_t *reg_data, struct bmp3_dev *dev){
+static void bmp388_parse_calib_data(const uint8_t *reg_data){
     /* Temporary variable to store the aligned trim data */
-    struct bmp3_reg_calib_data *reg_calib_data = &dev->calib_data.reg_calib_data;
-    struct bmp3_quantized_calib_data *quantized_calib_data = &dev->calib_data.quantized_calib_data;
+    struct bmp3_reg_calib_data *reg_calib_data = &(BMP3_Dev.calib_data.reg_calib_data);
+    struct bmp3_quantized_calib_data *quantized_calib_data = &(BMP3_Dev.calib_data.quantized_calib_data);
     float temp_var;
     /* 1 / 2^8 */
     temp_var = 0.00390625f;
@@ -147,12 +145,12 @@ static void bmp388_parse_sensor_data(const uint8_t *reg_data, struct bmp3_uncomp
     uncomp_data->temperature = data_msb | data_lsb | data_xlsb;
     }
 
-static void bmp388_get_sensor_data(uint8_t sensor_comp, struct bmp3_data *comp_data, struct bmp3_dev *dev) {
+void bmp388_get_sensor_data(uint8_t sensor_comp, struct bmp3_data *comp_data) {
     uint8_t reg_data[BMP3_LEN_P_T_DATA] = { 0 };
     struct bmp3_uncomp_data uncomp_data = { 0 };
     bmp388_read_registers(BMP3_REG_DATA, reg_data, BMP3_LEN_P_T_DATA);
     bmp388_parse_sensor_data(reg_data, &uncomp_data);
-    bmp388_compensate_data(sensor_comp, &uncomp_data, comp_data, &dev->calib_data);
+    bmp388_compensate_data(sensor_comp, &uncomp_data, comp_data, &(BMP3_Dev.calib_data));
     }
 
 static void bmp388_compensate_temperature(float *temperature,
@@ -270,53 +268,51 @@ static void bmp388_compensate_data(uint8_t sensor_comp,
     }
 
 #if 0
-#define MAX_TEST_SAMPLES 32
 
-static float pa[MAX_TEST_SAMPLES];
-static float z[MAX_TEST_SAMPLES];
+static float pa[NUM_TEST_SAMPLES];
+static float z[NUM_TEST_SAMPLES];
 
-void bmp388_measure_noise(int nSamples) {
-	int n;
+void bmp388_measure_noise() {
     float paMean, zMean, zVariance, paVariance;
     paMean = 0.0f;
     zMean = 0.0f;
     paVariance = 0.0f;
     zVariance = 0.0f;
     struct bmp3_data sample;
-    for (n = 0; n < nSamples; n++) {
+    for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
         delayMs(20);
-        bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample, &dev);
-	    pa[n] = (float)sample.pressure;
+        bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample);
+	    pa[n] = sample.pressure;
         z[n] =  bmp388_pa2Cm(pa[n]);
         paMean += pa[n];
         zMean += z[n];
         }
-    paMean /= nSamples;
-    zMean /= nSamples;
-    ESP_LOGD(TAG,"paMean = %fPa  zMean = %fcm", paMean, zMean);
-    for (n = 0; n < nSamples; n++) {
+    paMean /= NUM_TEST_SAMPLES;
+    zMean /= NUM_TEST_SAMPLES;
+    ESP_LOGD(TAG,"pa_mean = %fPa  z_mean = %fcm", paMean, zMean);
+    for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
         paVariance += (pa[n]-paMean)*(pa[n]-paMean);
         zVariance += (z[n]-zMean)*(z[n]-zMean);
        }
-    paVariance /= (nSamples-1);
-    zVariance /= (nSamples-1);
-    ESP_LOGD(TAG,"paVariance %f  zVariance %f cm^2",paVariance,zVariance);    
+    paVariance /= (NUM_TEST_SAMPLES-1);
+    zVariance /= (NUM_TEST_SAMPLES-1);
+    ESP_LOGD(TAG,"pa_variance %fPa^2  z_variance %fcm^2",paVariance,zVariance);    
 	}
 #endif
 
 
-void bmp388_averaged_sample(int nSamples) {
+void bmp388_averaged_sample(int numSamples) {
     struct bmp3_data sample;
     float pa_average = 0.0f;
     float temp_average = 0.0f;
-    for (int n = 0; n < nSamples; n++) {
+    for (int n = 0; n < numSamples; n++) {
         delayMs(20);
-        bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample, &dev);
-	    pa_average += (float)sample.pressure;
-        temp_average += (float)sample.temperature;
+        bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample);
+	    pa_average += sample.pressure;
+        temp_average += sample.temperature;
         }
-    pa_average /= nSamples;
-    temp_average /= nSamples;
+    pa_average /= numSamples;
+    temp_average /= numSamples;
     ZCmAvg_BMP388 =  bmp388_pa2Cm(pa_average);
     CelsiusSample_BMP388 = temp_average;
     }
@@ -325,28 +321,29 @@ void bmp388_averaged_sample(int nSamples) {
 /// Fast Lookup+Interpolation method for converting pressure readings to altitude readings.
 #include "pztbl.txt"
 
-float bmp388_pa2Cm(float paf)  {
+float bmp388_pa2Cm(float fpa)  {
    	int32_t pa,inx,pa1,z1,z2;
-    float zf;
-    pa = (int32_t)paf;
+    float fz;
+    pa = (int32_t)fpa;
 
    	if (pa > PA_INIT) {
-      	zf = (float)(PZTable[0]);
+      	fz = (float)(PZTable[0]);
       	}
    	else {
       	inx = (PA_INIT - pa)>>10;
       	if (inx >= PZLUT_ENTRIES-1) {
-         	zf = (float)(PZTable[PZLUT_ENTRIES-1]);
+         	fz = (float)(PZTable[PZLUT_ENTRIES-1]);
          	}
       	else {
          	pa1 = PA_INIT - (inx<<10);
          	z1 = PZTable[inx];
          	z2 = PZTable[inx+1];
-         	zf = (float)z1 + ((((float)pa1)-paf)*(float)(z2-z1))/1024.0f;
+         	fz = (float)z1 + ((((float)pa1) - fpa)*(float)(z2 - z1))/1024.0f;
          	}
       	}
-   	return zf;
+   	return fz;
    	}
+
 
 int bmp388_config() {
     bmp388_write_register(BMP3_REG_CMD, BMP3_SOFT_RESET);
@@ -356,7 +353,7 @@ int bmp388_config() {
         ESP_LOGE(TAG, "BMP388 chip id [%d] != 0x%X", chipid, BMP388_CHIP_ID);
         return -1;
         }
-    bmp388_read_calib_data(&dev);
+    bmp388_read_calib_data();
     // power on defaults : FIFO is disabled, SPI 4-wire interface, interrupts disabled
     // configure : 8x pressure, 1x temperature oversampling, IIR coeff = 2, 50Hz ODR, normal mode
     // Tconv = 234 + (392 + 8*2000) + (313 + 1*2000) = 18939uS
@@ -366,7 +363,7 @@ int bmp388_config() {
     bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_COEFF_1 << 1 );
     // pressure and temperature measurement enabled, normal mode
     bmp388_write_register(BMP3_REG_PWR_CTRL, 0x3 | (0x3 << 4));
-    //bmp388_measure_noise(32);
+   // bmp388_measure_noise();
     return 0;
     }
 
@@ -374,7 +371,7 @@ int bmp388_config() {
 void bmp388_sample() {
     struct bmp3_data sample;
     //uint32_t marker =  cct_setMarker();
-    bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample, &dev);
+    bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample);
     ZCmSample_BMP388 = bmp388_pa2Cm(sample.pressure);
     CelsiusSample_BMP388 = sample.temperature;
     //uint32_t eus = cct_elapsedUs(marker);
