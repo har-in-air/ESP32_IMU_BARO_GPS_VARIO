@@ -35,7 +35,9 @@ int ms5611_config(void) {
 		return -1;
 		}
 	ms5611_getCalibrationParameters();
-	//ms5611_measure_noise();
+#if MS5611_MEASURE_NOISE	
+	ms5611_measure_noise();
+#endif	
 	return 0;
 	}
 
@@ -67,18 +69,31 @@ int ms5611_sampleStateMachine(void) {
    	}
 
 #if 0
+static float pa_to_zcm(float pa) {
+    return 4430769.396f * (1.0f - pow(pa/101325.0f, 0.190284f));
+    }
 
 static float pa[NUM_TEST_SAMPLES];
-static float z[NUM_TEST_SAMPLES];
+static float zcm[NUM_TEST_SAMPLES];
 
 void ms5611_measure_noise() {
-    float paMean, zMean, zVariance, paVariance;
+    float paMean, zcmMean, zcmVariance, paVariance;
     paMean = 0.0f;
-    zMean = 0.0f;
+    zcmMean = 0.0f;
     paVariance = 0.0f;
-    zVariance = 0.0f;
+    zcmVariance = 0.0f;
+	// get dummy samples for a couple of seconds first
+    ESP_LOGD(TAG,"MS5611 estimate sensor noise");
+	ms5611_triggerTemperatureSample();
+    for (int n = 0; n < 100; n++) {
+		delayMs(MS5611_SAMPLE_PERIOD_MS);
+		D2_ = ms5611_readSample();
+		ms5611_triggerPressureSample();
+		delayMs(MS5611_SAMPLE_PERIOD_MS);
+		D1_ = ms5611_readSample();
+    	ms5611_triggerTemperatureSample();
+		}
     for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
-		ms5611_triggerTemperatureSample();
 		delayMs(MS5611_SAMPLE_PERIOD_MS);
 		D2_ = ms5611_readSample();
 		ms5611_calculateTemperatureC();
@@ -86,20 +101,24 @@ void ms5611_measure_noise() {
 		delayMs(MS5611_SAMPLE_PERIOD_MS);
 		D1_ = ms5611_readSample();
 		pa[n] = ms5611_calculatePressurePa();
-        z[n] =  ms5611_pa2Cm(pa[n]);
+    	ms5611_triggerTemperatureSample();
+        //z[n] =  ms5611_pa2Cm(pa[n]);
+        zcm[n] =  pa_to_zcm(pa[n]);
         paMean += pa[n];
-        zMean += z[n];
+        zcmMean += zcm[n];
         }
     paMean /= NUM_TEST_SAMPLES;
-    zMean /= NUM_TEST_SAMPLES;
-    ESP_LOGD(TAG,"pa_mean %fPa z_mean %fcm",paMean,zMean);
+    zcmMean /= NUM_TEST_SAMPLES;
+    ESP_LOGD(TAG,"pa_mean = %f Pa,  z_mean = %f cm",paMean, zcmMean);
     for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
+        //ESP_LOGD(TAG, "%f %f",pa[n]-paMean,zcm[n]-zcmMean);		
+		printf("%f %f\n",pa[n],zcm[n]);		
         paVariance += (pa[n]-paMean)*(pa[n]-paMean);
-        zVariance += (z[n]-zMean)*(z[n]-zMean);
+        zcmVariance += (zcm[n]-zcmMean)*(zcm[n]-zcmMean);
        }
     paVariance /= (NUM_TEST_SAMPLES-1);
-    zVariance /= (NUM_TEST_SAMPLES-1);
-    ESP_LOGD(TAG,"pa_variance %fPA^2  z_variance %fcm^2",paVariance, zVariance);    
+    zcmVariance /= (NUM_TEST_SAMPLES-1);
+    ESP_LOGD(TAG,"pa_variance %f Pa^2  z_variance %f cm^2",paVariance, zcmVariance);    
 	}
 #endif
 

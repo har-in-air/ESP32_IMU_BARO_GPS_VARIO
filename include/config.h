@@ -18,10 +18,12 @@
 #define pinFlashCS  5
 
 // barometric sensor option : set only one of the following true
-#define USE_MS5611 false
-#define USE_BMP388 true
+#define USE_MS5611 true
+#define USE_BMP388 false
 
-#define NUM_TEST_SAMPLES 32
+#define BMP388_MEASURE_NOISE    false
+#define MS5611_MEASURE_NOISE    false
+#define NUM_TEST_SAMPLES        512
 
 // chip select for MS5611 and BMP388 different for testing purposes
 #define pinMS5611CS     16
@@ -163,17 +165,17 @@
 #define KF_ACCEL_VARIANCE_MAX                150
 
 // altitude noise variance can be measured offline by calculating the 
-// statistical variance in cm^2 of ~ 1 second of altitude samples from 
+// statistical variance in cm^2 of altitude samples from 
 // the baro sensor at rest
 #if USE_MS5611
-#define KF_ZMEAS_VARIANCE_DEFAULT            220
+#define KF_ZMEAS_VARIANCE_DEFAULT            150
 #endif
 #if USE_BMP388
-#define KF_ZMEAS_VARIANCE_DEFAULT            150
+#define KF_ZMEAS_VARIANCE_DEFAULT            400
 #endif
 
 #define KF_ZMEAS_VARIANCE_MIN                80
-#define KF_ZMEAS_VARIANCE_MAX                400
+#define KF_ZMEAS_VARIANCE_MAX                500
 
 
 // If you find that gyro calibration fails when you leave

@@ -1,5 +1,6 @@
 #include "common.h"
 #include "config.h"
+#include <math.h>
 #include "drv/vspi.h"
 #include "drv/cct.h"
 #include "bmp3_defs.h"
@@ -267,36 +268,48 @@ static void bmp388_compensate_data(uint8_t sensor_comp,
         }
     }
 
-#if 0
+#if BMP388_MEASURE_NOISE
+
+static float pa_to_zcm(float pa) {
+    return 4430769.396f * (1.0f - pow(pa/101325.0f, 0.190284f));
+    }
 
 static float pa[NUM_TEST_SAMPLES];
-static float z[NUM_TEST_SAMPLES];
+static float zcm[NUM_TEST_SAMPLES];
 
 void bmp388_measure_noise() {
-    float paMean, zMean, zVariance, paVariance;
+    float paMean, zcmMean, zcmVariance, paVariance;
     paMean = 0.0f;
-    zMean = 0.0f;
+    zcmMean = 0.0f;
     paVariance = 0.0f;
-    zVariance = 0.0f;
+    zcmVariance = 0.0f;
     struct bmp3_data sample;
+    ESP_LOGD(TAG,"BMP388 estimate sensor noise");
+    // get dummy samples for a couple of seconds 
+    for (int n = 0; n < 100; n++) {
+        delayMs(20);
+        bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample);
+        }
     for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
         delayMs(20);
         bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample);
 	    pa[n] = sample.pressure;
-        z[n] =  bmp388_pa2Cm(pa[n]);
+        zcm[n] =  pa_to_zcm(pa[n]);
         paMean += pa[n];
-        zMean += z[n];
+        zcmMean += zcm[n];
         }
     paMean /= NUM_TEST_SAMPLES;
-    zMean /= NUM_TEST_SAMPLES;
-    ESP_LOGD(TAG,"pa_mean = %fPa  z_mean = %fcm", paMean, zMean);
+    zcmMean /= NUM_TEST_SAMPLES;
+    ESP_LOGD(TAG,"pa_mean = %fPa  zcm_mean = %fcm", paMean, zcmMean);
     for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
+//        ESP_LOGD(TAG, "%f %f",pa[n]-paMean,zcm[n]-zcmMean);
+        printf("%f %f\n",pa[n],zcm[n]);
         paVariance += (pa[n]-paMean)*(pa[n]-paMean);
-        zVariance += (z[n]-zMean)*(z[n]-zMean);
+        zcmVariance += (zcm[n]-zcmMean)*(zcm[n]-zcmMean);
        }
     paVariance /= (NUM_TEST_SAMPLES-1);
-    zVariance /= (NUM_TEST_SAMPLES-1);
-    ESP_LOGD(TAG,"pa_variance %fPa^2  z_variance %fcm^2",paVariance,zVariance);    
+    zcmVariance /= (NUM_TEST_SAMPLES-1);
+    ESP_LOGD(TAG,"pa_variance %f Pa^2  zcm_variance = %f cm^2", paVariance, zcmVariance);    
 	}
 #endif
 
@@ -360,10 +373,12 @@ int bmp388_config() {
     // => Fconv_max = 52.8Hz. So configure ODR = 50Hz
     bmp388_write_register(BMP3_REG_OSR, BMP3_OVERSAMPLING_8X | (BMP3_NO_OVERSAMPLING << 3));
     bmp388_write_register(BMP3_REG_ODR, BMP3_ODR_50_HZ);
-    bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_COEFF_1 << 1 );
+    bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_DISABLE << 1 );
     // pressure and temperature measurement enabled, normal mode
     bmp388_write_register(BMP3_REG_PWR_CTRL, 0x3 | (0x3 << 4));
-   // bmp388_measure_noise();
+#if BMP388_MEASURE_NOISE    
+    bmp388_measure_noise();
+#endif    
     return 0;
     }
 

@@ -12,6 +12,7 @@
 #define MS5611_CMD_ADC_READ   	0x00
 #define MS5611_CMD_ADC_4096 	0x08
 
+
 void 	ms5611_triggerPressureSample(void);
 void 	ms5611_triggerTemperatureSample(void);
 uint32_t  	ms5611_readSample(void);
