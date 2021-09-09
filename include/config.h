@@ -168,7 +168,7 @@
 // statistical variance in cm^2 of altitude samples from 
 // the baro sensor at rest
 #if USE_MS5611
-#define KF_ZMEAS_VARIANCE_DEFAULT            150
+#define KF_ZMEAS_VARIANCE_DEFAULT            200
 #endif
 #if USE_BMP388
 #define KF_ZMEAS_VARIANCE_DEFAULT            400

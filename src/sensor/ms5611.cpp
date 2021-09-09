@@ -47,28 +47,28 @@ void ms5611_initializeSampleStateMachine(void) {
    SensorState_ = MS5611_READ_TEMPERATURE;
    }
 
-
 int ms5611_sampleStateMachine(void) {
    	if (SensorState_ == MS5611_READ_TEMPERATURE) {
       	D2_ = ms5611_readSample();
       	ms5611_triggerPressureSample();
       	ms5611_calculateTemperatureC();
-      	PaSample_MS5611 = ms5611_calculatePressurePa();
-	   	ZCmSample_MS5611 = ms5611_pa2Cm(PaSample_MS5611);
 	   	SensorState_ = MS5611_READ_PRESSURE;
-      	return 1;  // new altitude sample is available
+      	return 0;  // no altitude sample available
       	}
    	else
    	if (SensorState_ == MS5611_READ_PRESSURE) {
       	D1_ = ms5611_readSample();
+      	PaSample_MS5611 = ms5611_calculatePressurePa();
+	   	ZCmSample_MS5611 = ms5611_pa2Cm(PaSample_MS5611);
       	ms5611_triggerTemperatureSample();
       	SensorState_ = MS5611_READ_TEMPERATURE;
-      	return 0; // intermediate state, no new result available
+      	return 1; // new altitude sample is available
       	}
    	return 0;    
    	}
 
-#if 0
+
+#if MS5611_MEASURE_NOISE
 static float pa_to_zcm(float pa) {
     return 4430769.396f * (1.0f - pow(pa/101325.0f, 0.190284f));
     }

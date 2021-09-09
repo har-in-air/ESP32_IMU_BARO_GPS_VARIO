@@ -247,7 +247,7 @@ static void vario_taskConfig() {
         lcd_printlnf(true,3, "MS5611 config fail");
         while (1) {delayMs(100);}
         }	
-    ms5611_averagedSample(4);
+    ms5611_averagedSample(50);
     ESP_LOGD(TAG,"MS5611 Altitude %dm Temperature %dC", (int)(ZCmAvg_MS5611/100.0f), (int)CelsiusSample_MS5611);
     float zcm = ZCmAvg_MS5611;
     ms5611_initializeSampleStateMachine();
@@ -258,7 +258,7 @@ static void vario_taskConfig() {
         lcd_printlnf(true,3, "BMP388 config fail");
         while (1) {delayMs(100);}
         }	
-    bmp388_averaged_sample(4);
+    bmp388_averaged_sample(50);
     ESP_LOGD(TAG,"BMP388 Altitude %dm Temperature %dC", (int)(ZCmAvg_BMP388/100.0f), (int)CelsiusSample_BMP388);
     float zcm = ZCmAvg_BMP388;
 #endif
@@ -327,9 +327,7 @@ static void vario_task(void *pvParameter) {
             // one altitude sample is calculated for a pair of pressure & temperature samples
 			if ( zMeasurementAvailable ) { 
                 // need average earth-z acceleration over the 20mS interval between z samples
-                // z sample is from when pressure conversion was triggered, not read (i.e. 10mS ago). 
-                // So we need to average the acceleration samples from the 20mS interval before that
-                float zAccelAverage = ringbuf_averageOldestSamples(10); 
+                float zAccelAverage = ringbuf_averageNewestSamples(10); 
                 kalmanFilter3_update(ZCmSample_MS5611, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
                 kfTimeDeltaUSecs = 0.0f;
                 // LCD display shows damped climbrate
