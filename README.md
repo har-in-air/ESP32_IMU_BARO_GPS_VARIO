@@ -96,12 +96,9 @@ Start-up sequence to flight mode with no user interaction. This is indoors witho
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
 * MS5611 or BMP388 barometric pressure sensor, sampled at 50Hz.
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol at 115200 baud.
-I used a compact [ublox gps module from Banggood](docs/banggood_gpsmodule.jpg). Not a great choice - it was expensive, and 
-it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. 
-And it doesn't save configuration settings to flash, so it needs to be configured on every power-up.
-I found [another gps module on Aliexpress](docs/aliexpress_gpsmodule.jpg) that is cheaper, has a larger patch antenna and flash configuration save. 
-I don't have one myself, I'm assuming the advertising is correct :-D. 
-We're using the highest fix rate possible (10Hz), for future integration into the imu-vario algorithm. 
+I used a compact [ublox gps module from Banggood](docs/banggood_gpsmodule.jpg). Not the best choice - it was expensive, and 
+it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. Also the tiny super-cap 'battery' on-board does not retain settings for more than a minute. I ended up desoldering the on-board super-cap and connecting a CR2032 battery in its place. This retains the settings indefinitely, and I now have fast gps configuration and time-to-fix.
+* We're using the highest fix rate possible (10Hz), for future integration into the imu-vario algorithm. 
 Ublox documentation indicates that this is possible only when you restrict the module to the GPS constellation, rather than GPS+GLONASS etc. 
 So don't waste your time looking for multi-constellation modules.
 * Any commercial or homebrew ESP32 development board with an onboard USB-UART chip (CH340, CP2102 etc).
