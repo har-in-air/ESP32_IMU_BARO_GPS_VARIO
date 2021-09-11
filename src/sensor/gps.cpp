@@ -220,36 +220,36 @@ bool gps_config() {
    bool nmea115200 = false;
    bool ubx115200 = false; 
 
-   ESP_LOGI(TAG, "Testing NMEA 9600");
-   nmea9600 = ubx_detectNMEA(9600);
-   if (nmea9600) {
-      ESP_LOGI(TAG, "Found NMEA packet at 9600 baud");
-      }   
-   else {
-      ESP_LOGI(TAG, "Testing UBX 9600");
-      ubx9600 = ubx_detectUBX(9600);
-      if (ubx9600) {
-         ESP_LOGI(TAG, "Found UBX packet at 9600 baud");
-         }   
-      else {
-         ESP_LOGI(TAG, "Testing UBX 115200");
-         ubx115200 = ubx_detectUBX(115200);
-         if (ubx115200) {
-            ESP_LOGI(TAG, "Found UBX packet at 115200 baud");
-            }
-         else {
-            ESP_LOGI(TAG, "Testing NMEA 115200");
-            nmea115200 = ubx_detectNMEA(115200);
-            if (nmea115200) {
-               ESP_LOGI(TAG, "Found NMEA packet at 115200 baud");
-               }   
-            else{ 
-               ESP_LOGE(TAG, "Could not detect protocol");
-               return false;
-               }
-            }
-         } 
-      }    
+	ESP_LOGI(TAG, "Testing UBX 115200");
+	ubx115200 = ubx_detectUBX(115200);
+	if (ubx115200) {
+		ESP_LOGI(TAG, "Found UBX packet at 115200 baud");
+		}
+	else {
+   		ESP_LOGI(TAG, "Testing NMEA 9600");
+   		nmea9600 = ubx_detectNMEA(9600);
+   		if (nmea9600) {
+      		ESP_LOGI(TAG, "Found NMEA packet at 9600 baud");
+      		}   
+   		else {
+      		ESP_LOGI(TAG, "Testing UBX 9600");
+      		ubx9600 = ubx_detectUBX(9600);
+      		if (ubx9600) {
+         		ESP_LOGI(TAG, "Found UBX packet at 9600 baud");
+         		}   
+         	else {
+            	ESP_LOGI(TAG, "Testing NMEA 115200");
+            	nmea115200 = ubx_detectNMEA(115200);
+            	if (nmea115200) {
+               		ESP_LOGI(TAG, "Found NMEA packet at 115200 baud");
+               		}   
+            	else{ 
+               		ESP_LOGE(TAG, "Could not detect protocol");
+               		return false;
+               		}
+            	}
+         	} 
+      	}    
 
    if (nmea9600 || ubx9600){
       ESP_LOGI(TAG, "configure ubx port 9600->115200");
