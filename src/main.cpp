@@ -328,7 +328,8 @@ static void vario_task(void *pvParameter) {
 			if ( zMeasurementAvailable ) { 
                 // need average earth-z acceleration over the 20mS interval between z samples
                 float zAccelAverage = ringbuf_averageNewestSamples(10); 
-                kalmanFilter3_update(ZCmSample_MS5611, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
+                kalmanFilter3_predict(zAccelAverage, kfTimeDeltaUSecs/1000000.0f);
+                kalmanFilter3_update(ZCmSample_MS5611, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
                 kfTimeDeltaUSecs = 0.0f;
                 // LCD display shows damped climbrate
                 DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
@@ -353,7 +354,8 @@ static void vario_task(void *pvParameter) {
             // need average earth-z acceleration over the 20mS interval between z samples
             // BMP388 is oversampled internally by 8x, so just average over the last 20mS
             float zAccelAverage = ringbuf_averageNewestSamples(10); 
-            kalmanFilter3_update(ZCmSample_BMP388, zAccelAverage, ((float)kfTimeDeltaUSecs)/1000000.0f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
+            kalmanFilter3_predict(zAccelAverage, kfTimeDeltaUSecs/1000000.0f);
+            kalmanFilter3_update(ZCmSample_BMP388, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
             kfTimeDeltaUSecs = 0.0f;
             // LCD display shows damped climbrate
             DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
