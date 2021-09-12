@@ -48,12 +48,12 @@ void kalmanFilter3_configure(float zMeasVariance, float zAccelVariance, float zA
 	z_ = zInitial;
 	v_ = vInitial;
 	aBias_ = aBiasInitial;
-	Pzz_ = 1.0f;
+	Pzz_ = 100.0f;
 	Pzv_ = 0.0f;
 	Pza_ = 0.0f;
 	
 	Pvz_ = 0.0f;
-	Pvv_ = 1.0f;
+	Pvv_ = 100.0f;
 	Pva_ = 0.0f;
 	
 	Paz_ = 0.0f;
@@ -62,27 +62,22 @@ void kalmanFilter3_configure(float zMeasVariance, float zAccelVariance, float zA
 	}
 
 
-// Updates state [Z, V] given a sensor measurement of z, acceleration a, 
-// and the time in seconds dt since the last measurement. 
-// 19uS on Navspark-GL breakoutboard, Sparc core running @81.84MHz	
-void kalmanFilter3_update(float z, float a, float dt, float* pZ, float* pV) {
-
+// predict state [Z, V] and state covariance matrix given z acceleration 
+// input a in cm/s^2,  and elapsed time dt in seconds
+void kalmanFilter3_predict(float a, float dt) {
 	// Predict state
-   float accel = a - aBias_;
+	float accel = a - aBias_;
 	v_ += accel * dt;
 	z_ += v_ * dt;
 
-   // when zAccelVariance is large, filter favours fresh data.
-   // when small, filter favours existing state.
-
-   // Predict State Covariance matrix
+	// Predict State Covariance matrix
 	float t00,t01,t02;
-   float t10,t11,t12;
-   float t20,t21,t22;
+	float t10,t11,t12;
+	float t20,t21,t22;
 	
-   float dt2div2 = dt*dt/2.0f;
-   float dt3div2 = dt2div2*dt;
-   float dt4div4 = dt2div2*dt2div2;
+	float dt2div2 = dt*dt/2.0f;
+	float dt3div2 = dt2div2*dt;
+	float dt4div4 = dt2div2*dt2div2;
 	
 	t00 = Pzz_ + dt*Pvz_ - dt2div2*Paz_;
 	t01 = Pzv_ + dt*Pvv_ - dt2div2*Pav_;
@@ -115,7 +110,11 @@ void kalmanFilter3_update(float z, float a, float dt, float* pZ, float* pV) {
     Pvv_ += dt*dt*zAccelVariance_;
 
     Paa_ += zAccelBiasVariance_;
+	}
 
+
+// Updates state [Z, V] and state covariance matrix P given a sensor z measurement 
+void kalmanFilter3_update(float z, float* pZ, float* pV) {
 	// Error
 	float innov = z - z_; 
 	float sInv = 1.0f / (Pzz_ + zMeasVariance_);  
@@ -146,4 +145,3 @@ void kalmanFilter3_update(float z, float a, float dt, float* pZ, float* pV) {
 	Pzv_ -= kz * Pzv_;
 	Pza_ -= kz * Pza_;
 	}
-
