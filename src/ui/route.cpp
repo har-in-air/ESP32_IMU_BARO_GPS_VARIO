@@ -89,7 +89,7 @@ static void rte_displayRouteSel() {
 	}
 
 
-#define RTE_IDLE_COUNT 330 // ~10 seconds at 30mS debounce interval (if you do nothing)
+#define RTE_IDLE_COUNT 200 // 5 seconds at 25mS debounce interval (if you do nothing)
 
 static bool rte_handleRouteSelEvent() {
    static int countDown = RTE_IDLE_COUNT;

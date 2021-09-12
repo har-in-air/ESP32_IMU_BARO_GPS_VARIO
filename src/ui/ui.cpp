@@ -780,7 +780,7 @@ void ui_displayOptions(void) {
   lcd_send_frame();
   }
 
-#define OPT_IDLE_COUNT 320 // this is ~8 seconds of inactivity with 25mS debounce interval
+#define OPT_IDLE_COUNT 200 // 5 seconds of inactivity with 25mS debounce interval
 
 bool ui_optionsEventHandler(void)  {
 	static int countDown = OPT_IDLE_COUNT;
