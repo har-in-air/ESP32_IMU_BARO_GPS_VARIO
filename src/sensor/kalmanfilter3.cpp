@@ -3,28 +3,60 @@
 #include "config.h"
 #include "kalmanfilter3.h"
 
-// State being tracked
-static float z_;  // position
-static float v_;  // velocity
-static float aBias_;  // acceleration
-
-// 3x3 State Covariance matrix
-static float Pzz_;
-static float Pzv_;
-static float Pza_;
-static float Pvz_;
-static float Pvv_;
-static float Pva_;
-static float Paz_;
-static float Pav_;
-static float Paa_;
-
-static float zAccelBiasVariance_; // assumed fixed.
-static float zAccelVariance_;  // environmental acceleration variance, depends on conditions
-static float zMeasVariance_; //  sensor z measurement noise variance, measure offline, fixed
-
-
 static const char* TAG = "kalmanfilter3";
+
+typedef struct KF3_STATE_ {
+	float z; // altitude
+	float v; // climb/sink rate
+	float b; // acceleration residual bias (post-calibration)
+} KF3_STATE;
+
+static KF3_STATE  State;
+
+
+#if LOG_KF3
+
+#define STABLE_COUNT_THRESHOLD 0
+
+typedef struct KF3_LOG_ {
+	float z; // altitude
+	float v; // climb/sink rate
+	float b; // acceleration residual bias (post-calibration)
+	float pzz; // altitude covariance
+	float pvv; // climb/sink rate covariance
+	float pbb; // acceleration residual bias (post-calibration) covariance
+} KF3_LOG;
+
+static int  StableCounter = 0;
+static bool LogEnabled = true;
+static int  SampleIndex = 0;
+static KF3_LOG Log[NUM_TEST_SAMPLES];
+#endif
+
+
+// 3x3 Process model state Covariance matrix
+// Pzz Pzv Pzb
+// Pvz Pvv Pvb
+// Pbz Pbv Pbb
+// Note: the covariance matrix is symmetric
+
+static float Pzz;
+static float Pzv;
+static float Pzb;
+
+static float Pvz;
+static float Pvv;
+static float Pvb;
+
+static float Pbz;
+static float Pbv;
+static float Pbb;
+
+static float AccelVariance; // environmental acceleration variance, depends on conditions
+static float BiasVariance; // assume a low value for acceleration bias noise variance
+
+// measurement model sensor noise variance, measured offline
+static float ZSensorVariance; //  altitude measurement noise variance
 
 // Tracks the position z and velocity v of an object moving in a straight line,
 // (here assumed to be vertical) that is perturbed by random accelerations.
@@ -32,43 +64,38 @@ static const char* TAG = "kalmanfilter3";
 // variance zVariance.
 // This can be calculated offline for the specific sensor.
 // zInitial can be determined by averaging a few samples of the altitude measurement.
-// vInitial and aBiasInitial can be set as 0.0
-// zAccelVariance can be specified with a large initial value to skew the 
-// filter towards the fresh data.
+// vInitial and BiasInitial can be set as 0.0
 
 
-void kalmanFilter3_configure(float zMeasVariance, float zAccelVariance, float zAccelBiasVariance, float zInitial, float vInitial, float aBiasInitial) {
-	zMeasVariance_ = zMeasVariance;
-	zAccelVariance_ = zAccelVariance;
-    zAccelBiasVariance_ = zAccelBiasVariance;
-#ifdef KF_DEBUG
-	ESP_LOGI(TAG, "zMeasVariance %d\r\nzAccelVariance %d", (int)zMeasVariance, (int)zAccelVariance);
-#endif	
+void kalmanFilter3_configure(float zSensorVariance, float aVariance, float bVariance, float zInitial, float vInitial){
+	ZSensorVariance = zSensorVariance;
+	AccelVariance = aVariance;
+    BiasVariance = bVariance;
 
-	z_ = zInitial;
-	v_ = vInitial;
-	aBias_ = aBiasInitial;
-	Pzz_ = 100.0f;
-	Pzv_ = 0.0f;
-	Pza_ = 0.0f;
+	State.z = zInitial;
+	State.v = vInitial;
+	State.b = 0.0f; // assume zero residual acceleration bias initially
+
+	Pzz = 400.0f;
+	Pzv = 0.0f;
+	Pzb = 0.0f;
 	
-	Pvz_ = 0.0f;
-	Pvv_ = 100.0f;
-	Pva_ = 0.0f;
+	Pvz = Pzv;
+	Pvv = 400.0f;
+	Pvb = 0.0f;
 	
-	Paz_ = 0.0f;
-	Pav_ = 0.0;
-	Paa_ = 100000.0f;
+	Pbz = Pzb;
+	Pbv = Pvb;
+	Pbb = 400.0f;
 	}
 
 
-// predict state [Z, V] and state covariance matrix given z acceleration 
-// input a in cm/s^2,  and elapsed time dt in seconds
-void kalmanFilter3_predict(float a, float dt) {
-	// Predict state
-	float accel = a - aBias_;
-	v_ += accel * dt;
-	z_ += v_ * dt;
+// gravity-compensated earth-z accel in cm/s^2,  and elapsed time dt in seconds
+void kalmanFilter3_predict(float am, float dt) {
+	// Predicted (a priori) state vector estimate x_k- = F * x_k-1+
+	float accel_true = am - State.b; // true acceleration = measured acceleration minus acceleration sensor bias
+	State.z = State.z + (State.v * dt);
+	State.v = State.v + accel_true * dt;
 
 	// Predict State Covariance matrix
 	float t00,t01,t02;
@@ -79,69 +106,90 @@ void kalmanFilter3_predict(float a, float dt) {
 	float dt3div2 = dt2div2*dt;
 	float dt4div4 = dt2div2*dt2div2;
 	
-	t00 = Pzz_ + dt*Pvz_ - dt2div2*Paz_;
-	t01 = Pzv_ + dt*Pvv_ - dt2div2*Pav_;
-	t02 = Pza_ + dt*Pva_ - dt2div2*Paa_;
+	t00 = Pzz + dt*Pvz - dt2div2*Pbz;
+	t01 = Pzv + dt*Pvv - dt2div2*Pbv;
+	t02 = Pzb + dt*Pvb - dt2div2*Pbb;
 
-	t10 = Pvz_ - dt*Paz_;
-	t11 = Pvv_ - dt*Pav_;
-	t12 = Pva_ - dt*Paa_;
+	t10 = Pvz - dt*Pbz;
+	t11 = Pvv - dt*Pbv;
+	t12 = Pvb - dt*Pbb;
 
-	t20 = Paz_;
-	t21 = Pav_;
-	t22 = Paa_;
+	t20 = Pbz;
+	t21 = Pbv;
+	t22 = Pbb;
 	
-	Pzz_ = t00 + dt*t01 - dt2div2*t02;
-	Pzv_ = t01 - dt*t02;
-	Pza_ = t02;
+	Pzz = t00 + dt*t01 - dt2div2*t02;
+	Pzv = t01 - dt*t02;
+	Pzb = t02;
 	
-	Pvz_ = t10 + dt*t11 - dt2div2*t12;
-	Pvv_ = t11 - dt*t12;
-	Pva_ = t12;
+	Pvz = Pzv;
+	Pvv = t11 - dt*t12;
+	Pvb = t12;
 	
-	Paz_ = t20 + dt*t21 - dt2div2*t22;
-	Pav_ = t21 - dt*t22;
-	Paa_ = t22;
+	Pbz = Pzb;
+	Pbv = Pvb;
+	Pbb = t22;
 
-    Pzz_ += dt4div4*zAccelVariance_;
-    Pzv_ += dt3div2*zAccelVariance_;
+    Pzz += dt4div4*AccelVariance;
+    Pzv += dt3div2*AccelVariance;
 
-    Pvz_ += dt3div2*zAccelVariance_;
-    Pvv_ += dt*dt*zAccelVariance_;
+    Pvz += dt3div2*AccelVariance;
+    Pvv += dt*dt*AccelVariance;
 
-    Paa_ += zAccelBiasVariance_;
+    Pbb += BiasVariance;
 	}
 
 
-// Updates state [Z, V] and state covariance matrix P given a sensor z measurement 
-void kalmanFilter3_update(float z, float* pZ, float* pV) {
+// Update state and state covariance matrix P given a sensor z measurement 
+void kalmanFilter3_update(float zm, float* pz, float* pv) {
 	// Error
-	float innov = z - z_; 
-	float sInv = 1.0f / (Pzz_ + zMeasVariance_);  
+	float innov = zm - State.z; 
+	float sInv = 1.0f / (Pzz + ZSensorVariance);  
 
     // Kalman gains
-	float kz = Pzz_ * sInv;  
-	float kv = Pvz_ * sInv;
-	float ka = Paz_ * sInv;
+	float kz = Pzz * sInv;  
+	float kv = Pvz * sInv;
+	float kb = Pbz * sInv;
 
 	// Update state 
-	z_ += kz * innov;
-	v_ += kv * innov;
-	aBias_ += ka * innov;
+	State.z = State.z + kz * innov;
+	State.v = State.v + kv * innov;
+	State.b = State.b + kb * innov;
 	
-	*pZ = z_;
-	*pV = v_;
-
 	// Update state covariance matrix
-	Paz_ -= ka * Pzz_;
-	Pav_ -= ka * Pzv_;
-	Paa_ -= ka * Pza_;
+	Pbz -= kb * Pzz;
+	Pbv -= kb * Pzv;
+	Pbb -= kb * Pzb;
 	
-	Pvz_ -= kv * Pzz_;
-	Pvv_ -= kv * Pzv_;
-	Pva_ -= kv * Pza_;
+	Pvz -= kv * Pzz;
+	Pvv -= kv * Pzv;
+	Pvb -= kv * Pzb;
 	
-	Pzz_ -= kz * Pzz_;
-	Pzv_ -= kz * Pzv_;
-	Pza_ -= kz * Pza_;
+	Pzz -= kz * Pzz;
+	Pzv -= kz * Pzv;
+	Pzb -= kz * Pzb;
+
+	*pz = State.z;
+	*pv = State.v;
+
+#if LOG_KF3
+	StableCounter++;
+	if ((StableCounter > STABLE_COUNT_THRESHOLD) && (LogEnabled == true)) {
+		Log[SampleIndex].z = State.z;
+		Log[SampleIndex].v = State.v;
+		Log[SampleIndex].b = State.b;
+		Log[SampleIndex].pzz = Pzz;
+		Log[SampleIndex].pvv = Pvv;
+		Log[SampleIndex].pbb = Pbb;
+		SampleIndex++;
+		if (SampleIndex >= NUM_TEST_SAMPLES) {
+			LogEnabled = false;
+			printf("KF3 log\n");
+			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
+				printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].v, Log[inx].b, Log[inx].pzz, Log[inx].pvv, Log[inx].pbb);
+				}
+			}
+		}
+#endif
+
 	}

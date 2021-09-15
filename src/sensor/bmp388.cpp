@@ -373,7 +373,8 @@ int bmp388_config() {
     // => Fconv_max = 52.8Hz. So configure ODR = 50Hz
     bmp388_write_register(BMP3_REG_OSR, BMP3_OVERSAMPLING_8X | (BMP3_NO_OVERSAMPLING << 3));
     bmp388_write_register(BMP3_REG_ODR, BMP3_ODR_50_HZ);
-    bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_DISABLE << 1 );
+//    bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_DISABLE << 1 );
+    bmp388_write_register(BMP3_REG_CONFIG, BMP3_IIR_FILTER_COEFF_1 << 1 );
     // pressure and temperature measurement enabled, normal mode
     bmp388_write_register(BMP3_REG_PWR_CTRL, 0x3 | (0x3 << 4));
 #if BMP388_MEASURE_NOISE    

@@ -17,13 +17,29 @@
 #define pinImuCS    17 
 #define pinFlashCS  5
 
-// barometric sensor option : set only one of the following true
+// barometric sensor option
+// set only one of the following true
 #define USE_MS5611 true
 #define USE_BMP388 false
 
+// used for debug logging only
+#define NUM_TEST_SAMPLES        512
+
+// set true for one-time measurement of parameters 
+// set false for actual application use
+#define MEASURE_ACCEL_NOISE     false
 #define BMP388_MEASURE_NOISE    false
 #define MS5611_MEASURE_NOISE    false
-#define NUM_TEST_SAMPLES        512
+
+// use KalmanFilter3 algorithm or KalmanFilter4 algorithm to fuse
+// acceleration and altitude sensor data to estimate altitude and climbrate
+#define USE_KF3 true
+#define USE_KF4 false
+
+// Set true only for debugging the state and covariance trace
+// set false for actual application use
+#define LOG_KF3 true
+#define LOG_KF4 false
 
 // chip select for MS5611 and BMP388 different for testing purposes
 #define pinMS5611CS     16
@@ -253,7 +269,7 @@
 
 // This is set low as the residual acceleration bias after calibration
 // is expected to have little variation/drift
-#define KF_ACCELBIAS_VARIANCE   2.0f
+#define KF_ACCELBIAS_VARIANCE   0.6f
 
 // print debug information to the serial port for different code modules
 

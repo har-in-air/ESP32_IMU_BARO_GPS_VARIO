@@ -1,7 +1,7 @@
 #ifndef RINGBUF_H_
 #define RINGBUF_H_
 
-#define RINGBUF_SIZE    15
+#define RINGBUF_SIZE    20
 
 typedef struct RINGBUF_ {
    int head;
