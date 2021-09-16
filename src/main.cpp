@@ -641,7 +641,7 @@ static void main_task(void* pvParameter) {
         vario_taskConfig();   	
         // vario task on core 1 needs to complete all processing within 2mS IMU data sampling period,
         // given highest priority on core 1
-	    xTaskCreatePinnedToCore(&vario_task, "variotask", 2048, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
+	    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
         IsGpsInitComplete = false;
         // gps task on core 0 given max priority
 	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, configMAX_PRIORITIES-1, NULL, CORE_0);
@@ -656,7 +656,7 @@ static void main_task(void* pvParameter) {
                 pSerialBT->begin("ESP32GpsVario");
     		    IsBluetoothEnabled = true;
                 // bluetooth serial task on core 0 given higher priority than ui task, less than gps task
-    		    xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 2048, NULL, configMAX_PRIORITIES-2, NULL, CORE_0);
+    		    xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 3072, NULL, configMAX_PRIORITIES-2, NULL, CORE_0);
                 }
             else {
                 ESP_LOGE(TAG, "Failure creating BluetoothSerial");

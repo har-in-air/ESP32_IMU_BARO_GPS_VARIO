@@ -91,7 +91,7 @@ void kalmanFilter4_configure(float zSensorVariance, float aSensorVariance, float
 	State.z = zInitial;
 	State.v = vInitial;
     State.a = aInitial;
-	State.b = 0.0f; // assume zero residual acceleration bias initially
+	State.b = -7.0f; // assume zero residual acceleration bias initially
 
 	Pzz = 400.0f;
     Pzv = 0.0f;
@@ -111,7 +111,7 @@ void kalmanFilter4_configure(float zSensorVariance, float aSensorVariance, float
 	Pbz = Pzb;
 	Pbv = Pvb;
 	Pba = Pab;
-	Pbb = 400.0f;
+	Pbb = 50.0f;
 	}
 
 
@@ -138,15 +138,15 @@ void kalmanFilter4_predict(float dt) {
 	
 	float p00 = Pzz + 2.0f*Pzv*dt + Pza*dt2 - Pzb*dt2 + Pvv*dt2div2 - Pvb*dt3 + Paa*dt4div4 - Pab*dt4div2 + Pbb*dt4div4 + Pva*dt3;
 	float p01 = Pzv + Pza*dt - Pzb*dt + Pvv*dt + 3.0f*Pva*dt2div2 - 3.0f*Pvb*dt2div2 + Paa*dt3div2 - Pab*dt3 + Pbb*dt3div2;
-	float p02 = Pzz + Pzv*dt + Pza*dt2div2 - Pzb*dt2div2;
+	float p02 = Pza + Pva*dt + Paa*dt2div2 - Pba*dt2div2;
 	float p03 = Pzb + Pvb*dt + Pab*dt2div2 - Pbb*dt2div2;
 
 	float p11 = Pvv + 2.0f*Pva*dt - 2.0f*Pvb*dt + Paa*dt2 - 2.0f*Pab*dt2 + Pbb*dt2;
-	float p12 = Pzv + Pza*dt - Pzb*dt;
+	float p12 = Pva + Paa*dt - Pba*dt;
 	float p13 = Pvb + Pab*dt - Pbb*dt;
 
-	float p22 = Pzz;
-	float p23 = Pzb;
+	float p22 = Paa;
+	float p23 = Pab;
 	float p33 = Pbb;
 
 	Pzz = p00;
@@ -170,8 +170,8 @@ void kalmanFilter4_predict(float dt) {
 	Pbb = p33; 
 
 	// Add Q_k
-	Paa += AccelVariance;
-	Pbb += BiasVariance;
+	Paa = Paa + AccelVariance;
+	Pbb = Pbb + BiasVariance;
 	}
 
 
@@ -284,9 +284,9 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 		SampleIndex++;
 		if (SampleIndex >= NUM_TEST_SAMPLES) {
 			LogEnabled = false;
-			printf("Process Covariance Trace log\n");
+			printf("Process State (variance) log\n");
 			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].v, Log[inx].a - Log[inx].b, Log[inx].b, Log[inx].pzz, Log[inx].pvv, Log[inx].paa, Log[inx].pbb);
+				printf("z %d (%.1f), v %d (%.1f), a %d (%.1f), b %.1f (%.1f)\n", (int)(Log[inx].z+0.5f), Log[inx].pzz, (int) Log[inx].v, Log[inx].pvv, (int)(Log[inx].a - Log[inx].b), Log[inx].paa, Log[inx].b,Log[inx].pbb);
 				}
 			}
 		}

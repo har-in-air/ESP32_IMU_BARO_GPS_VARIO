@@ -19,8 +19,8 @@
 
 // barometric sensor option
 // set only one of the following true
-#define USE_MS5611 true
-#define USE_BMP388 false
+#define USE_MS5611 false
+#define USE_BMP388 true
 
 // used for debug logging only
 #define NUM_TEST_SAMPLES        512
@@ -33,13 +33,13 @@
 
 // use KalmanFilter3 algorithm or KalmanFilter4 algorithm to fuse
 // acceleration and altitude sensor data to estimate altitude and climbrate
-#define USE_KF3 true
-#define USE_KF4 false
+#define USE_KF3 false
+#define USE_KF4 true
 
-// Set true only for debugging the state and covariance trace
+// Set true only when debugging/tuning the KF filters
 // set false for actual application use
-#define LOG_KF3 true
-#define LOG_KF4 false
+#define LOG_KF3 false
+#define LOG_KF4 true
 
 // chip select for MS5611 and BMP388 different for testing purposes
 #define pinMS5611CS     16
