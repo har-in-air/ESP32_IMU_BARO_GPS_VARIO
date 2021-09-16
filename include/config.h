@@ -193,6 +193,9 @@
 #define KF_ZMEAS_VARIANCE_MIN                80
 #define KF_ZMEAS_VARIANCE_MAX                500
 
+#define KF_AMEAS_VARIANCE_DEFAULT            2
+#define KF_AMEAS_VARIANCE_MIN                1
+#define KF_AMEAS_VARIANCE_MAX                10
 
 // If you find that gyro calibration fails when you leave
 // the unit undisturbed, possibly your unit has an MPU9250 device

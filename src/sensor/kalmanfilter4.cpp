@@ -78,9 +78,11 @@ static float ASensorVariance; //  acceleration measurement noise variance
 // Tracks the position z, and velocity v of an object moving in a straight line,
 // that is perturbed by random accelerations. Assumes we have sensors providing
 // periodic measurements for acceleration a and position z. 
+// ASensorVariance and ZSensorVariance can be calculated offline with the unit at rest.
 // zInitial can be determined by averaging a few samples of the altitude measurement.
-// vInitial can be set to zero.
+// vInitial and aInitial can be set to zero.
 // aVariance should be specified with a large enough value to allow the true state (z, v) to be within the uncertainty estimate
+// it should be set higher for thermic/turbulent conditions
 
 void kalmanFilter4_configure(float zSensorVariance, float aSensorVariance, float aVariance, float bVariance, float zInitial, float vInitial, float aInitial){
 	ZSensorVariance = zSensorVariance;
@@ -91,7 +93,7 @@ void kalmanFilter4_configure(float zSensorVariance, float aSensorVariance, float
 	State.z = zInitial;
 	State.v = vInitial;
     State.a = aInitial;
-	State.b = -7.0f; // assume zero residual acceleration bias initially
+	State.b = 0.0f; // assume residual acceleration bias = 0 initially
 
 	Pzz = 400.0f;
     Pzv = 0.0f;
@@ -111,14 +113,14 @@ void kalmanFilter4_configure(float zSensorVariance, float aSensorVariance, float
 	Pbz = Pzb;
 	Pbv = Pvb;
 	Pba = Pab;
-	Pbb = 50.0f;
+	Pbb = 400.0f;
 	}
 
 
 // Process model state transition matrix F  (4x4)
 //  | 1   dt  dt^2/2 -dt^2/2 |
 //  | 0   1   dt     -dt     |
-//  | 1   0   0       0      |
+//  | 0   0   1       0      |
 //  | 0   0   0       1      |
 //
 void kalmanFilter4_predict(float dt) {

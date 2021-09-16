@@ -61,11 +61,11 @@ static float ZSensorVariance; //  altitude measurement noise variance
 // Tracks the position z and velocity v of an object moving in a straight line,
 // (here assumed to be vertical) that is perturbed by random accelerations.
 // sensor measurement of z is assumed to have constant measurement noise 
-// variance zVariance.
-// This can be calculated offline for the specific sensor.
+// variance zSensorVariance. This can be calculated off-line for the specific sensor.
+// AccelVariance will depend on the conditions (more for highly thermic/turbulent conditions)
+// BiasVariance can be set low as it is not expected to change much
 // zInitial can be determined by averaging a few samples of the altitude measurement.
-// vInitial and BiasInitial can be set as 0.0
-
+// vInitial can be set as 0
 
 void kalmanFilter3_configure(float zSensorVariance, float aVariance, float bVariance, float zInitial, float vInitial){
 	ZSensorVariance = zSensorVariance;
@@ -74,7 +74,7 @@ void kalmanFilter3_configure(float zSensorVariance, float aVariance, float bVari
 
 	State.z = zInitial;
 	State.v = vInitial;
-	State.b = 0.0f; // assume zero residual acceleration bias initially
+	State.b = 0.0f; // let residual acceleration bias = 0 initially
 
 	Pzz = 400.0f;
 	Pzv = 0.0f;
@@ -90,7 +90,7 @@ void kalmanFilter3_configure(float zSensorVariance, float aVariance, float bVari
 	}
 
 
-// gravity-compensated earth-z accel in cm/s^2,  and elapsed time dt in seconds
+// gravity-compensated earth-z accel in cm/s/s,  and elapsed time dt in seconds
 void kalmanFilter3_predict(float am, float dt) {
 	// Predicted (a priori) state vector estimate x_k- = F * x_k-1+
 	float accel_true = am - State.b; // true acceleration = measured acceleration minus acceleration sensor bias
@@ -130,6 +130,7 @@ void kalmanFilter3_predict(float am, float dt) {
 	Pbv = Pvb;
 	Pbb = t22;
 
+	//  add Q_k
     Pzz += dt4div4*AccelVariance;
     Pzv += dt3div2*AccelVariance;
 
@@ -186,7 +187,7 @@ void kalmanFilter3_update(float zm, float* pz, float* pv) {
 			LogEnabled = false;
 			printf("KF3 log\n");
 			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].v, Log[inx].b, Log[inx].pzz, Log[inx].pvv, Log[inx].pbb);
+				printf("z %d (%.1f), v %.1f (%.1f), b %.1f (%.1f)\n", (int)(Log[inx].z+0.5f),Log[inx].pzz, Log[inx].v, Log[inx].pvv, Log[inx].b, Log[inx].pbb);
 				}
 			}
 		}
