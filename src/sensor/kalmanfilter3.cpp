@@ -95,14 +95,14 @@ void kalmanFilter3_predict(float am, float dt) {
 	// Predicted (a priori) state vector estimate x_k- = F * x_k-1+
 	float accel_true = am - State.b; // true acceleration = measured acceleration minus acceleration sensor bias
 	State.z = State.z + (State.v * dt);
-	State.v = State.v + accel_true * dt;
+	State.v = State.v + (accel_true * dt);
 
 	// Predict State Covariance matrix
 	float t00,t01,t02;
 	float t10,t11,t12;
 	float t20,t21,t22;
 	
-	float dt2div2 = dt*dt/2.0f;
+	float dt2div2 = dt*dt*0.5f;
 	float dt3div2 = dt2div2*dt;
 	float dt4div4 = dt2div2*dt2div2;
 	

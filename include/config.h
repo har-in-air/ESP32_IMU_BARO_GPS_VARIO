@@ -31,15 +31,15 @@
 #define BMP388_MEASURE_NOISE    false
 #define MS5611_MEASURE_NOISE    false
 
-// use KalmanFilter3 algorithm or KalmanFilter4 algorithm to fuse
+// use KalmanFilter3 / KalmanFilter4 algorithm to fuse
 // acceleration and altitude sensor data to estimate altitude and climbrate
-#define USE_KF3 false
-#define USE_KF4 true
+#define USE_KF3     true
+#define USE_KF4     false
 
 // Set true only when debugging/tuning the KF filters
 // set false for actual application use
-#define LOG_KF3 false
-#define LOG_KF4 true
+#define LOG_KF3     true
+#define LOG_KF4     true
 
 // chip select for MS5611 and BMP388 different for testing purposes
 #define pinMS5611CS     16
@@ -272,7 +272,7 @@
 
 // This is set low as the residual acceleration bias after calibration
 // is expected to have little variation/drift
-#define KF_ACCELBIAS_VARIANCE   0.6f
+#define KF_ACCELBIAS_VARIANCE   0.005f
 
 // print debug information to the serial port for different code modules
 

@@ -107,7 +107,7 @@ void kalmanFilter4_configure(float zSensorVariance, float aSensorVariance, float
 	
 	Paz = Pza;
 	Pav = Pva;
-	Paa = 400.0f;
+	Paa = 5000.0f;
 	Pab = 0.0f;
 
 	Pbz = Pzb;
@@ -136,16 +136,16 @@ void kalmanFilter4_predict(float dt) {
 	float dt2div2 = dt2*0.5f; // dt^2/2
 	float dt3div2 = dt3*0.5f; // dt^3/2
 	float dt4div2 = dt4*0.5f; // dt^4/2
-	float dt4div4 = dt2div2*dt2div2; // dt^4/4
+	float dt4div4 = dt4*0.25f; // dt^4/4
 	
-	float p00 = Pzz + 2.0f*Pzv*dt + Pza*dt2 - Pzb*dt2 + Pvv*dt2div2 - Pvb*dt3 + Paa*dt4div4 - Pab*dt4div2 + Pbb*dt4div4 + Pva*dt3;
-	float p01 = Pzv + Pza*dt - Pzb*dt + Pvv*dt + 3.0f*Pva*dt2div2 - 3.0f*Pvb*dt2div2 + Paa*dt3div2 - Pab*dt3 + Pbb*dt3div2;
-	float p02 = Pza + Pva*dt + Paa*dt2div2 - Pba*dt2div2;
-	float p03 = Pzb + Pvb*dt + Pab*dt2div2 - Pbb*dt2div2;
+	float p00 = Pzz + 2.0f*Pzv*dt + (Pza - Pzb)*dt2  + Pvv*dt2div2 + (Pva - Pvb)*dt3 + (Paa+Pbb)*dt4div4 - Pab*dt4div2;
+	float p01 = Pzv + dt*(Pza - Pzb + Pvv) + 3.0f*dt2div2*(Pva - Pvb) - Pab*dt3 + (Paa + Pbb)*dt3div2;
+	float p02 = Pza + Pva*dt + (Paa - Pba)*dt2div2;
+	float p03 = Pzb + Pvb*dt + (Pab - Pbb)*dt2div2;
 
-	float p11 = Pvv + 2.0f*Pva*dt - 2.0f*Pvb*dt + Paa*dt2 - 2.0f*Pab*dt2 + Pbb*dt2;
-	float p12 = Pva + Paa*dt - Pba*dt;
-	float p13 = Pvb + Pab*dt - Pbb*dt;
+	float p11 = Pvv + 2.0f*dt*(Pva - Pvb) + dt2*(Paa - 2.0f*Pab + Pbb);
+	float p12 = Pva + dt*(Paa - Pba);
+	float p13 = Pvb + dt*(Pab - Pbb);
 
 	float p22 = Paa;
 	float p23 = Pab;
@@ -204,8 +204,8 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	float s11 = Paa;
 
 	// add R_k
-	s00 += ZSensorVariance;
-	s11 += ASensorVariance;
+	s00 = s00 + ZSensorVariance;
+	s11 = s11 + ASensorVariance;
 
 	// Compute S_k_inv
 	float sdetinv = 1.0f/(s00*s11 - s10*s01);
@@ -214,7 +214,7 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	float sinv10 = sinv01;
 	float sinv11 = sdetinv * s00;
 
-	// Kalman gain K_k
+	// Kalman gain K_k [4x2] matrix
 	// K_k = P_k- * H_t * S_k_inv
 	float k00 = Pzz*sinv00 + Pza*sinv10;  
 	float k01 = Pzz*sinv01 + Pza*sinv11;
@@ -234,10 +234,11 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 
 	// Updated (a posteriori) state covariance estimate P_k+
 	// P_k+ = (I - K_k * H_k)*P_k-
-	float p00 = (1.0f-k00)*Pzz - k01*Paz;
-	float p01 = (1.0f-k00)*Pzv - k01*Pav;
-	float p02 = (1.0f-k00)*Pza - k01*Paa;
-	float p03 = (1.0f-k00)*Pzb - k01*Pab;
+	float tmp = 1.0f - k00;
+	float p00 = tmp*Pzz - k01*Paz;
+	float p01 = tmp*Pzv - k01*Pav;
+	float p02 = tmp*Pza - k01*Paa;
+	float p03 = tmp*Pzb - k01*Pab;
 
 	float p11 = -k10*Pzv + Pvv - k11*Pav;
 	float p12 = -k10*Pza + Pva - k11*Paa;

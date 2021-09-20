@@ -17,16 +17,19 @@
 #include "sensor/madc.h"
 #include "sensor/ringbuf.h"
 #include "sensor/imu.h"
+
 #if USE_MS5611
 #include "sensor/ms5611.h"
 #elif USE_BMP388
 #include "sensor/bmp388.h"
 #endif
+
 #if USE_KF3
 #include "sensor/kalmanfilter3.h"
 #elif USE_KF4
 #include "sensor/kalmanfilter4.h"
 #endif
+
 #include "nv/flashlog.h"
 #include "nv/calib.h"
 #include "nv/options.h"
@@ -274,7 +277,7 @@ static void vario_taskConfig() {
     ESP_LOGD(TAG, "KF3 predict + update %d us", eus);
 #endif
 #elif USE_KF4
-    kalmanFilter4_configure((float)opt.kf.zMeasVariance, (float)KF_AMEAS_VARIANCE_DEFAULT, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, zcm, 0.0f, 0.0f);
+    kalmanFilter4_configure((float)opt.kf.zMeasVariance, (float)50000.0f, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, zcm, 0.0f, 0.0f);
 #if 0
     marker =  cct_setMarker();
     kalmanFilter4_predict(2000.0f/1000000.0f);
