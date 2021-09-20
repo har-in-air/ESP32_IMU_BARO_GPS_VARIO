@@ -214,7 +214,7 @@ static int littlefs_chunked_read(uint8_t* buffer, size_t maxLen) {
 static int datalog_chunked_read(uint8_t* buffer, size_t maxLen, size_t index) {
   int bytesRemaining = (int)(FlashLogFreeAddress - (uint32_t)index);
   if (bytesRemaining) {
-    int numBytes =  bytesRemaining > maxLen ? maxLen : bytesRemaining;  
+    int numBytes =  bytesRemaining > 256 ? 256 : bytesRemaining;  
     spiflash_readBuffer(index, buffer, numBytes);
     return numBytes;
     }
