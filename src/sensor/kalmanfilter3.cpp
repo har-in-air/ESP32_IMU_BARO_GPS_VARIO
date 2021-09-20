@@ -91,53 +91,47 @@ void kalmanFilter3_configure(float zSensorVariance, float aVariance, float bVari
 
 
 // gravity-compensated earth-z accel in cm/s/s,  and elapsed time dt in seconds
-void kalmanFilter3_predict(float am, float dt) {
+void kalmanFilter3_predict(float a, float dt) {
 	// Predicted (a priori) state vector estimate x_k- = F * x_k-1+
-	float accel_true = am - State.b; // true acceleration = measured acceleration minus acceleration sensor bias
+	float accel_true = a - State.b; // true acceleration = acceleration minus acceleration sensor bias
 	State.z = State.z + (State.v * dt);
 	State.v = State.v + (accel_true * dt);
 
-	// Predict State Covariance matrix
-	float t00,t01,t02;
-	float t10,t11,t12;
-	float t20,t21,t22;
-	
-	float dt2div2 = dt*dt*0.5f;
-	float dt3div2 = dt2div2*dt;
+	// Predict (a priori) State Covariance estimate P_k- = (F * P_k-1+ * F_t) + Q
+	float dt2 = dt*dt;
+	float dt3 = dt2*dt;
+	float dt2div2 = dt2*0.5f;
+	float dt3div2 = dt3*0.5f;
 	float dt4div4 = dt2div2*dt2div2;
 	
-	t00 = Pzz + dt*Pvz - dt2div2*Pbz;
-	t01 = Pzv + dt*Pvv - dt2div2*Pbv;
-	t02 = Pzb + dt*Pvb - dt2div2*Pbb;
+	float p00 = Pzz + 2.0f*dt*Pzv + dt2*(Pvv - Pzb) - dt3*Pvb + dt4div4*Pbb;
+    float p01 = Pzv + dt*(Pvv - Pzb) - 3.0f*dt2div2*Pvb + dt3div2*Pbb;
+	float p02 = Pzb + dt*Pvb - dt2div2*Pbb; 
+	
+	float p11 = Pvv - 2.0f*dt*Pvb +dt2*Pbb;
+	float p12 = Pvb - dt*Pbb;
 
-	t10 = Pvz - dt*Pbz;
-	t11 = Pvv - dt*Pbv;
-	t12 = Pvb - dt*Pbb;
-
-	t20 = Pbz;
-	t21 = Pbv;
-	t22 = Pbb;
+	Pzz = p00;
+	Pzv = p01;
+	Pzb = p02;
 	
-	Pzz = t00 + dt*t01 - dt2div2*t02;
-	Pzv = t01 - dt*t02;
-	Pzb = t02;
+	Pvv = p11;
+	Pvb = p12;
 	
-	Pvz = Pzv;
-	Pvv = t11 - dt*t12;
-	Pvb = t12;
-	
-	Pbz = Pzb;
-	Pbv = Pvb;
-	Pbb = t22;
+	//Pbb = Pbb; // no transformation
 
 	//  add Q_k
-    Pzz += dt4div4*AccelVariance;
-    Pzv += dt3div2*AccelVariance;
+    Pzz = Pzz + (dt4div4 * AccelVariance);
+    Pzv = Pzv + (dt3div2 * AccelVariance);
 
-    Pvz += dt3div2*AccelVariance;
-    Pvv += dt*dt*AccelVariance;
+    Pvv = Pvv + (dt2 * AccelVariance);
 
-    Pbb += BiasVariance;
+    Pbb = Pbb + BiasVariance;
+
+	// P is symmetric
+    Pvz = Pzv;
+	Pbz = Pzb;
+	Pbv = Pvb;
 	}
 
 
@@ -152,24 +146,34 @@ void kalmanFilter3_update(float zm, float* pz, float* pv) {
 	float kv = Pvz * sInv;
 	float kb = Pbz * sInv;
 
-	// Update state 
+	// Update (a posteriori) state x_k+ = x_k- + (K_k*innov 
 	State.z = State.z + kz * innov;
 	State.v = State.v + kv * innov;
 	State.b = State.b + kb * innov;
 	
-	// Update state covariance matrix
-	Pbz -= kb * Pzz;
-	Pbv -= kb * Pzv;
-	Pbb -= kb * Pzb;
-	
-	Pvz -= kv * Pzz;
-	Pvv -= kv * Pzv;
-	Pvb -= kv * Pzb;
-	
-	Pzz -= kz * Pzz;
-	Pzv -= kz * Pzv;
-	Pzb -= kz * Pzb;
+	// Update (a posteriori ) state covariance P_k+ = (I - K_k*H_k)*P_k-
+	float p00 = Pzz - kz * Pzz;
+	float p01 = Pzv - kz * Pzv;
+	float p02 = Pzb - kz * Pzb;
+	float p11 = Pvv - kv*Pzv;
+	float p12 = Pvb - kv*Pzb;
+	float p22 = Pbb - kb*Pzb;
 
+	Pzz = p00;
+	Pzv = p01;
+	Pzb = p02;
+
+	Pvv = p11;
+	Pvb = p12;
+
+    Pbb = p22;
+
+	// P is symmetric
+	Pvz = Pzv;
+	Pbz = Pzb;
+	Pbv = Pvb;
+
+	// Return state variables of interest
 	*pz = State.z;
 	*pv = State.v;
 
@@ -186,8 +190,9 @@ void kalmanFilter3_update(float zm, float* pz, float* pv) {
 		if (SampleIndex >= NUM_TEST_SAMPLES) {
 			LogEnabled = false;
 			printf("KF3 log\n");
+			printf("z Pzz v Pvv abias Pbb\n");
 			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("z %d (%.1f), v %.1f (%.1f), b %.1f (%.1f)\n", (int)(Log[inx].z+0.5f),Log[inx].pzz, Log[inx].v, Log[inx].pvv, Log[inx].b, Log[inx].pbb);
+				printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].pzz, Log[inx].v, Log[inx].pvv, Log[inx].b, Log[inx].pbb);
 				}
 			}
 		}

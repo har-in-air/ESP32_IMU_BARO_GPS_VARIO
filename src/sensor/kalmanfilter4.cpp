@@ -287,9 +287,10 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 		SampleIndex++;
 		if (SampleIndex >= NUM_TEST_SAMPLES) {
 			LogEnabled = false;
-			printf("Process State (variance) log\n");
+			printf("KF4 Log\n");
+			printf("z Pzz v Pvv atrue Paa abias Pbb\n");
 			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("z %d (%.1f), v %d (%.1f), a %d (%.1f), b %.1f (%.1f)\n", (int)(Log[inx].z+0.5f), Log[inx].pzz, (int) Log[inx].v, Log[inx].pvv, (int)(Log[inx].a - Log[inx].b), Log[inx].paa, Log[inx].b,Log[inx].pbb);
+				printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].pzz, Log[inx].v, Log[inx].pvv, (Log[inx].a - Log[inx].b), Log[inx].paa, Log[inx].b, Log[inx].pbb);
 				}
 			}
 		}
