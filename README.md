@@ -94,7 +94,7 @@ Start-up sequence to flight mode with no user interaction. This is indoors witho
 
 # Hardware
 * MPU9250 accelerometer+gyroscope+magnetometer sampled at 500Hz.
-* MS5611 or BMP388 barometric pressure sensor, sampled at 50Hz.
+* MS5611 or BMP388 barometric pressure sensor, sampled at 50Hz. After testing both, I would still prefer the MS5611 for smoother vario audio feedback. The BMP388 might be a better option for an altimeter as you could opt for the "ultra-low-noise" oversampling configuration at the cost of low sampling rate. It would be interesting to see how the BMP390 compares against the MS5611.
 * Ublox M8N gps module configured for 10Hz data rate with UBX binary protocol at 115200 baud.
 I used a compact [ublox gps module from Banggood](docs/banggood_gpsmodule.jpg). Not the best choice - it was expensive, and 
 it doesn't get a fix in my apartment, while cheaper modules with a larger patch antenna do get a fix. Also the tiny super-cap 'battery' on-board does not retain settings for more than a minute. I ended up desoldering the on-board super-cap and connecting a CR2032 battery in its place. This retains the settings indefinitely, and I now have fast gps configuration and time-to-fix.
