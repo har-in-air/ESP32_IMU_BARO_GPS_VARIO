@@ -32,7 +32,7 @@ an 8ohm cellphone speaker with sine-wave tones.
 # Changes from release v1.0
 * Build environment changed to Visual Studio Code + PlatformIO plugin
 * Uses arduino framework instead of esp-idf with arduino-esp32 as a component
-* Works with latest arduino-esp32 master on Github (v2.00-rc1 instead of v1.06)
+* Works with latest arduino-esp32 master on Github (v2.00 instead of v1.06)
 * All source code refactored as C++ files (trivial changes)
 * Uses Arduino LittleFS library
 * WiFi configuration webpage server uses asynchronous  Arduino **ESP32AsyncServer** library instead of blocking code.
@@ -40,6 +40,7 @@ an 8ohm cellphone speaker with sine-wave tones.
 appearance of the web page by editing these files, re-building and uploading the LittleFS partition binary image (see below).
 * Bluetooth NMEA sentence transmission now uses the Arduino **BluetoothSerial** library.
 * Support for OTA firmware updates via WiFi.
+* Improved Kalman Filter sensor fusion algorithm
   
 # Build environment
 * Ubuntu 20.04 amdx64
