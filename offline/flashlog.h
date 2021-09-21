@@ -1,7 +1,9 @@
 #ifndef FLASHLOG_H_
 #define FLASHLOG_H_
 
-//#include "spiflash.h"
+//#include "drv/spiflash.h"
+
+#define DATALOG_PERCENT_USED()  ((int)(0.5f + 100.0f*((float)FlashLogFreeAddress)/(float)FLASH_SIZE_BYTES))
 
 #define FLASHLOG_RECORD_MAXBYTES		80
 #define FLASHLOG_MAX_ADDR		      (FLASH_SIZE_BYTES - FLASHLOG_RECORD_MAXBYTES) 
@@ -96,12 +98,11 @@ typedef struct FLASHLOG_GPS_RECORD_ {
 extern FLASHLOG_IBG_RECORD FlashLogIBGRecord;
 extern FLASHLOG_GPS_RECORD FlashLogGPSRecord;
 //extern SemaphoreHandle_t   FlashLogMutex;
-//extern uint32_t            FlashLogFreeAddress;
+extern uint32_t            FlashLogFreeAddress;
 
 int   flashlog_init(void);
 int   flashlog_isEmpty(void);
-void 	flashlog_eraseChip(void);
-void 	flashlog_erase(void);
+void 	flashlog_erase(uint32_t untilAddress);
 int 	flashlog_writeIBGRecord(FLASHLOG_IBG_RECORD* pRecord);
 int 	flashlog_readIBGRecord(uint32_t addr, FLASHLOG_IBG_RECORD* pRecord);
 uint32_t flashlog_getFreeAddress();

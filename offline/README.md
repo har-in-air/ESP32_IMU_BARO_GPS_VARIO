@@ -67,11 +67,11 @@ gcc -o ibglog2quat ibglog2quat.c imu.c -lm
 ```
 ## Offline analysis : Kalman filter sensor fusion to compute altitude and climbrate
 
-`testmar2` is an example of off-line analysis of a high-speed IBG data log. 
+`kf_compare.cpp` is an example of off-line analysis of a downloaded IBG data log. 
 
 ```
-gcc -o testmar2 testmar2.c kalmanfilter3.c imu.c ringbuf.c -lm
-./testmar2 ~/Downloads/datalog-mar2
+g++ -o kf_compare kf_compare.cpp kalmanfilter2.cpp kalmanfilter3.cpp kalmanfilter4.cpp imu.cpp ringbuf.cpp -lm
+./kf_compare ./ms5611_datalog 
 ```
 ## Validation of FormatGEO route files
 

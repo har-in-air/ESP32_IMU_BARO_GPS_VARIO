@@ -386,11 +386,7 @@ int bmp388_config() {
 
 void bmp388_sample() {
     struct bmp3_data sample;
-    //uint32_t marker =  cct_setMarker();
     bmp388_get_sensor_data(BMP3_PRESS_TEMP, &sample);
     ZCmSample_BMP388 = bmp388_pa2Cm(sample.pressure);
     CelsiusSample_BMP388 = sample.temperature;
-    //uint32_t eus = cct_elapsedUs(marker);
-    //ESP_LOGD(TAG, "P = %lf, T = %lf", sample.pressure, sample.temperature);
-    //ESP_LOGD(TAG, "Z = %.0f, %dus", bmp388_pa2Cm((float)sample.pressure), eus);
     }

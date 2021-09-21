@@ -1,7 +1,9 @@
+#include "common.h"
 #include <math.h>
+#include "config.h"
 #include "imu.h"
 
-#define TAG "imu"
+static const char* TAG = "imu";
 
 //#define twoKpDef	(2.0f * 0.5f)	// 2 * proportional gain
 #define twoKpDef  (2.0f * 5.0f) // 2 * proportional gain

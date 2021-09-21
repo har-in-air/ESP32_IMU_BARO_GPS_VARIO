@@ -14,13 +14,6 @@
 #ifndef IMU_H_
 #define IMU_H_
 
-#define RAD2DEG(r)   ((r)*57.29577951f)
-#define DEG2RAD(d)   ((d)*0.017453292f)
-
-#define _180_DIV_PI         57.2957795f
-#define PI_DIV_180          0.017453292f
-
-
 extern float q0, q1, q2, q3;	// quaternion of sensor frame relative to auxiliary frame
 
 
@@ -31,4 +24,5 @@ void imu_madgwickAHRSupdate6DOF(int bUseAccel, float dt, float gx, float gy, flo
 // HN
 void imu_quaternion2YawPitchRoll(float q0, float q1, float q2, float q3, float* pYawDeg, float* pPitchDeg, float* pRollDeg);
 float imu_gravityCompensatedAccel(float ax, float ay, float az, float q0, float q1, float q2, float q3);
+
 #endif

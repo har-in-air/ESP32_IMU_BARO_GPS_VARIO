@@ -15,7 +15,7 @@ typedef struct KF4_STATE_ {
 static KF4_STATE  State;
 
 
-#if LOG_KF4_CONVERGENCE
+#if (LOG_KF4_CONVERGENCE == 1)
 
 #define STABLE_COUNT_THRESHOLD 0
 
@@ -273,7 +273,7 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	*pz = State.z;
 	*pv = State.v;
 
-#if LOG_KF4_CONVERGENCE
+#if (LOG_KF4_CONVERGENCE == 1)
 	StableCounter++;
 	if ((StableCounter > STABLE_COUNT_THRESHOLD) && (LogEnabled == true)) {
 		Log[SampleIndex].z = State.z;
@@ -287,7 +287,7 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 		SampleIndex++;
 		if (SampleIndex >= NUM_TEST_SAMPLES) {
 			LogEnabled = false;
-			printf("KF4 Convergence Log\n");
+			printf("KF4 Log\n");
 			printf("z Pzz v Pvv atrue Paa abias Pbb\n");
 			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
 				printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].pzz, Log[inx].v, Log[inx].pvv, (Log[inx].a - Log[inx].b), Log[inx].paa, Log[inx].b, Log[inx].pbb);

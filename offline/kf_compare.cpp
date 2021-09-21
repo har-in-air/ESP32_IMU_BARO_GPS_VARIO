@@ -2,11 +2,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-
+#include "common.h"
+#include "config.h"
 #include "imu.h"
 #include "flashlog.h"
 #include "ringbuf.h"
+#include "kalmanfilter2.h"
 #include "kalmanfilter3.h"
+#include "kalmanfilter4.h"
+
+
 
 int main(int argc, char* argv[]) {
    if (argc != 2) {
@@ -64,11 +69,35 @@ int main(int argc, char* argv[]) {
                if ((baroSize == sizeof(B_RECORD)) && hdr.baroFlags) {
                   baroAltCm = (float) baro.heightMSLcm;
                   if (kalmanFilterInitialized == 0) {
-                     kalmanFilter3_configure(400.0f, 50000.0f, 1.0f, baroAltCm, 0.0f, 0.0f);
+#if (USE_KF2 == 1)
+                     kalmanFilter2_configure(120.0f, 90000.0f, baroAltCm, 0.0f);
+#elif (USE_KF3 == 1)
+                     kalmanFilter3_configure(120.0f, 90000.0f, 0.005f, baroAltCm, 0.0f);
+#elif (USE_KF4 == 1)
+                     kalmanFilter4_configure(120.0f, 50000.0f, 90000.0f, 0.005f, baroAltCm, 0.0f, 0.0f);
+#endif
                      kalmanFilterInitialized = 1;
                      }
+#if (USE_KF2 == 1)
+                  kalmanFilter2_predict(90000.0f, 0.02f);
+                  kalmanFilter2_update(baroAltCm, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
+
+#elif (USE_KF3 == 1)                     
 				      float zAccelAverage = ringbuf_averageOldestSamples(10); 
-				      kalmanFilter3_update(baroAltCm, zAccelAverage, 0.02f, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
+                  kalmanFilter3_predict(zAccelAverage, 0.02f);
+                  kalmanFilter3_update(baroAltCm, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
+
+#elif (USE_KF4 == 1)
+				      float zAccelAverage = ringbuf_averageNewestSamples(10); 
+                  kalmanFilter4_predict(0.02f);
+                  kalmanFilter4_update(baroAltCm, zAccelAverage, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
+#endif
+
+#if (LOG_INPUT_OUTPUT == 1)
+                  if (kalmanFilterInitialized) {
+                     printf("%.1f %.1f %.1f\r\n", baroAltCm, kfAltitudeCm, kfClimbrateCps);
+                     }
+#endif                    
                   // use damped climbrate for lcd display and for glide ratio computation
                   iirClimbrateCps = iirClimbrateCps*0.9f + 0.1f*kfClimbrateCps; 
                   } 
@@ -86,9 +115,6 @@ int main(int argc, char* argv[]) {
                      }
                   velHorz /= 10.0f; // in cm/s
                   float velkph = (velHorz*3600.0f)/100000.0f;
-                  if (kalmanFilterInitialized) {
-                     printf("%.1fm %.1fbcm/s %.1fgcm/s %.1fkph %.1f:1 %.1fvunc\r\n", baroAltCm/100.0f, iirClimbrateCps, -velDown/10.0f,velkph, velDown > 0.0f ? glideRatio : 0.0f, (float)gps.velAccuracymmps/10.0f);
-                     }
                   } 
                }
             }
@@ -98,7 +124,7 @@ int main(int argc, char* argv[]) {
             }
          }
       else {
-         printf("\r\nDid not read hdr len bytes\r\n");
+        // printf("\r\nDid not read hdr len bytes\r\n");
          break;
          }
       }

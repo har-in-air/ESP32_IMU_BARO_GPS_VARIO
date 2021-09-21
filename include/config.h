@@ -4,6 +4,32 @@
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 
+// select barometric sensor option
+// set onl y one of the following true
+#define USE_MS5611 true
+#define USE_BMP388 false
+
+// used for debug logging only
+#define NUM_TEST_SAMPLES        512
+
+// set true for one-time measurement of parameters 
+// set false for actual application use
+#define MEASURE_ACCEL_NOISE     false
+#define BMP388_MEASURE_NOISE    false
+#define MS5611_MEASURE_NOISE    false
+
+// select KalmanFilter3 / KalmanFilter4 algorithm to fuse
+// acceleration and altitude sensor data to estimate altitude and climbrate
+#define USE_KF3     false
+#define USE_KF4     true
+
+// Set true only when debugging/tuning the KF filters
+// set false for actual application use
+#define LOG_KF3_CONVERGENCE     false
+#define LOG_KF4_CONVERGENCE     false
+
+/////////////////////////////////////////////////////////////////////////////////////
+
 // low speed for configuring the sensors, high speed for readout
 #define VSPI_CLK_CONFIG_FREQHZ  500000
 #define VSPI_CLK_HIGH_FREQHZ    10000000
@@ -17,29 +43,6 @@
 #define pinImuCS    17 
 #define pinFlashCS  5
 
-// barometric sensor option
-// set only one of the following true
-#define USE_MS5611 false
-#define USE_BMP388 true
-
-// used for debug logging only
-#define NUM_TEST_SAMPLES        512
-
-// set true for one-time measurement of parameters 
-// set false for actual application use
-#define MEASURE_ACCEL_NOISE     false
-#define BMP388_MEASURE_NOISE    false
-#define MS5611_MEASURE_NOISE    false
-
-// use KalmanFilter3 / KalmanFilter4 algorithm to fuse
-// acceleration and altitude sensor data to estimate altitude and climbrate
-#define USE_KF3     true
-#define USE_KF4     false
-
-// Set true only when debugging/tuning the KF filters
-// set false for actual application use
-#define LOG_KF3     true
-#define LOG_KF4     true
 
 // chip select for MS5611 and BMP388 different for testing purposes
 #define pinMS5611CS     16
@@ -187,7 +190,7 @@
 #define KF_ZMEAS_VARIANCE_DEFAULT            200
 #endif
 #if USE_BMP388
-#define KF_ZMEAS_VARIANCE_DEFAULT            400
+#define KF_ZMEAS_VARIANCE_DEFAULT            150
 #endif
 
 #define KF_ZMEAS_VARIANCE_MIN                80
