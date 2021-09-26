@@ -247,12 +247,12 @@ You have a choice of fonts for the large digit display fields. Uncomment only on
 * `$XCTRC` sentences additionally include GPS coordinates, GPS altitude, UTC date and time, and battery charge percent. 
 * If you set bluetooth message type to `XCT` in the options screen, and you want **XCTrack** to use GPS data from the gpsvario, ensure both `Use external barometer` and `Use external gps` are enabled in the **XCTrack** preferences page.  
 
-# Algorithm Documentation
-[This document](docs/kalman_filter.pdf) describes the two Kalman Filter options for fusing acceleration and altitude data.
-
+# Offline analysis and algorithm documentation
 Check out the `/offline` directory for some examples of offline analysis of downloaded data logs. 
 
-I have also included Jupyter notebooks for visualization of [KF2 (only pressure sensor data), KF3 and KF4 kalman filter outputs](offline/compare_kf2_kf3_kf4.pdf), and a comparison of [KF3 and KF4 convergence characteristics](offline/kf3_kf4_convergence.pdf).
+[This document](docs/kalman_filter.pdf) describes two Kalman Filter options (KF3 and KF4) for fusing acceleration and altitude data.
+
+I have also included a [Jupyter notebook](offline/compare_kf2_kf3_kf4.ipynb) for visualization of [KF2 (only pressure sensor data), KF3 and KF4 kalman filter outputs and convergence characteristics](offline/compare_kf2_kf3_kf4.pdf).
 
 # Credits
 * Sine-wave generation with ESP32 DAC -  https://github.com/krzychb/dac-cosine
