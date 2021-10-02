@@ -11,7 +11,9 @@
 #include "kalmanfilter3.h"
 #include "kalmanfilter4.h"
 
-
+// First edit config.h to set the desired analysis options
+// g++ -o kf_compare kf_compare.cpp kalmanfilter2.cpp kalmanfilter3.cpp kalmanfilter4.cpp imu.cpp ringbuf.cpp -lm
+// ./kf_compare ./datalog > result.txt
 
 int main(int argc, char* argv[]) {
    if (argc != 2) {

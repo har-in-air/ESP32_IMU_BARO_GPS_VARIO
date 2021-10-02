@@ -9,9 +9,6 @@
 #define USE_MS5611 true
 #define USE_BMP388 false
 
-// used for debug logging only
-#define NUM_TEST_SAMPLES        512
-
 // set true for one-time measurement of parameters 
 // set false for actual application use
 #define MEASURE_ACCEL_NOISE     false
@@ -23,10 +20,7 @@
 #define USE_KF3     false
 #define USE_KF4     true
 
-// Set true only when debugging/tuning the KF filters
-// set false for actual application use
-#define LOG_KF3_CONVERGENCE     false
-#define LOG_KF4_CONVERGENCE     false
+#define KF4_USE_DYNAMIC_ACCEL_BIAS_VARIANCE 1
 
 /////////////////////////////////////////////////////////////////////////////////////
 

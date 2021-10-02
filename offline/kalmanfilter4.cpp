@@ -14,28 +14,6 @@ typedef struct KF4_STATE_ {
 
 static KF4_STATE  State;
 
-
-#if (LOG_KF4_CONVERGENCE == 1)
-
-#define STABLE_COUNT_THRESHOLD 0
-
-typedef struct KF4_LOG_ {
-	float z; // altitude
-	float v; // climb/sink rate
-	float a; // gravity-compensated net earth-z axis acceleration
-	float b; // acceleration residual bias (post-calibration)
-	float pzz; // altitude covariance
-	float pvv; // climb/sink rate covariance
-	float paa; // gravity-compensated net earth-z axis acceleration covariance
-	float pbb; // acceleration residual bias (post-calibration) covariance
-} KF4_LOG;
-
-static int 	StableCounter = 0;
-static bool LogEnabled = true;
-static int  SampleIndex = 0;
-static KF4_LOG Log[NUM_TEST_SAMPLES];
-#endif
-
 // 4x4 process model state covariance estimate P 
 // Note : P is symmetric
 // Pzz Pzv Pza Pzb
@@ -205,7 +183,13 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 
 	// add R_k
 	s00 = s00 + ZSensorVariance;
+#if KF4_USE_DYNAMIC_ACCEL_BIAS_VARIANCE	
+	float accel_ext = (am-State.b)*(am-State.b);
+	s11 = s11 + 4.0f*accel_ext;
+	BiasVariance = 1.0f/(1.0f + accel_ext);	
+#else
 	s11 = s11 + ASensorVariance;
+#endif
 
 	// Compute S_k_inv
 	float sdetinv = 1.0f/(s00*s11 - s10*s01);
@@ -274,25 +258,6 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	*pv = State.v;
 
 #if (LOG_KF4_CONVERGENCE == 1)
-	StableCounter++;
-	if ((StableCounter > STABLE_COUNT_THRESHOLD) && (LogEnabled == true)) {
-		Log[SampleIndex].z = State.z;
-		Log[SampleIndex].v = State.v;
-		Log[SampleIndex].a = State.a;
-		Log[SampleIndex].b = State.b;
-		Log[SampleIndex].pzz = Pzz;
-		Log[SampleIndex].pvv = Pvv;
-		Log[SampleIndex].paa = Paa;
-		Log[SampleIndex].pbb = Pbb;
-		SampleIndex++;
-		if (SampleIndex >= NUM_TEST_SAMPLES) {
-			LogEnabled = false;
-			printf("KF4 Log\n");
-			printf("z Pzz v Pvv atrue Paa abias Pbb\n");
-			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].pzz, Log[inx].v, Log[inx].pvv, (Log[inx].a - Log[inx].b), Log[inx].paa, Log[inx].b, Log[inx].pbb);
-				}
-			}
-		}
+	printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", State.z, Pzz, State.v, Pvv, State.a - State.b, Paa, State.b, Pbb);
 #endif
 	}

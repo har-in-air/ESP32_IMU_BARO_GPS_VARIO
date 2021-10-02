@@ -176,26 +176,4 @@ void kalmanFilter3_update(float zm, float* pz, float* pv) {
 	// Return state variables of interest
 	*pz = State.z;
 	*pv = State.v;
-
-#if LOG_KF3_CONVERGENCE
-	StableCounter++;
-	if ((StableCounter > STABLE_COUNT_THRESHOLD) && (LogEnabled == true)) {
-		Log[SampleIndex].z = State.z;
-		Log[SampleIndex].v = State.v;
-		Log[SampleIndex].b = State.b;
-		Log[SampleIndex].pzz = Pzz;
-		Log[SampleIndex].pvv = Pvv;
-		Log[SampleIndex].pbb = Pbb;
-		SampleIndex++;
-		if (SampleIndex >= NUM_TEST_SAMPLES) {
-			LogEnabled = false;
-			printf("KF3 Convergence Log\n");
-			printf("z Pzz v Pvv abias Pbb\n");
-			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].pzz, Log[inx].v, Log[inx].pvv, Log[inx].b, Log[inx].pbb);
-				}
-			}
-		}
-#endif
-
 	}

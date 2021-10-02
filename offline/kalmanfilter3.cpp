@@ -13,27 +13,6 @@ typedef struct KF3_STATE_ {
 
 static KF3_STATE  State;
 
-
-#if (LOG_KF3_CONVERGENCE == 1)
-
-#define STABLE_COUNT_THRESHOLD 0
-
-typedef struct KF3_LOG_ {
-	float z; // altitude
-	float v; // climb/sink rate
-	float b; // acceleration residual bias (post-calibration)
-	float pzz; // altitude covariance
-	float pvv; // climb/sink rate covariance
-	float pbb; // acceleration residual bias (post-calibration) covariance
-} KF3_LOG;
-
-static int  StableCounter = 0;
-static bool LogEnabled = true;
-static int  SampleIndex = 0;
-static KF3_LOG Log[NUM_TEST_SAMPLES];
-#endif
-
-
 // 3x3 Process model state Covariance matrix
 // Pzz Pzv Pzb
 // Pvz Pvv Pvb
@@ -178,24 +157,7 @@ void kalmanFilter3_update(float zm, float* pz, float* pv) {
 	*pv = State.v;
 
 #if (LOG_KF3_CONVERGENCE == 1)
-	StableCounter++;
-	if ((StableCounter > STABLE_COUNT_THRESHOLD) && (LogEnabled == true)) {
-		Log[SampleIndex].z = State.z;
-		Log[SampleIndex].v = State.v;
-		Log[SampleIndex].b = State.b;
-		Log[SampleIndex].pzz = Pzz;
-		Log[SampleIndex].pvv = Pvv;
-		Log[SampleIndex].pbb = Pbb;
-		SampleIndex++;
-		if (SampleIndex >= NUM_TEST_SAMPLES) {
-			LogEnabled = false;
-			printf("KF3 log\n");
-			printf("z Pzz v Pvv abias Pbb\n");
-			for (int inx = 0; inx < NUM_TEST_SAMPLES; inx++) {
-				printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", Log[inx].z, Log[inx].pzz, Log[inx].v, Log[inx].pvv, Log[inx].b, Log[inx].pbb);
-				}
-			}
-		}
+	printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", State.z, Pzz, State.v, Pvv, State.b, Pbb);
 #endif
 
 	}
