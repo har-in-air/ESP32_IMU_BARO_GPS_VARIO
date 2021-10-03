@@ -252,7 +252,7 @@ Check out the `/offline` directory for some examples of offline analysis of down
 
 [This document](docs/kalman_filter.pdf) describes two Kalman Filter options (KF3 and KF4) for fusing acceleration and altitude data.
 
-I have also included a [Jupyter notebook](offline/compare_kf2_kf3_kf4.ipynb) for visualization of KF2 (only pressure sensor data), KF3 and KF4 kalman filter outputs and convergence characteristics.
+This [Jupyter notebook](offline/kf/compare_kf2_kf3_kf4.ipynb) compares  KF2 (only pressure sensor data), KF3 and KF4 kalman filter outputs and convergence characteristics.
 
 # Credits
 * Sine-wave generation with ESP32 DAC -  https://github.com/krzychb/dac-cosine
