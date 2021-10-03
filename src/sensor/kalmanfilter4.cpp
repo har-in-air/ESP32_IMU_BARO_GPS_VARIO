@@ -14,28 +14,6 @@ typedef struct KF4_STATE_ {
 
 static KF4_STATE  State;
 
-
-#if LOG_KF4_CONVERGENCE
-
-#define STABLE_COUNT_THRESHOLD 0
-
-typedef struct KF4_LOG_ {
-	float z; // altitude
-	float v; // climb/sink rate
-	float a; // gravity-compensated net earth-z axis acceleration
-	float b; // acceleration residual bias (post-calibration)
-	float pzz; // altitude covariance
-	float pvv; // climb/sink rate covariance
-	float paa; // gravity-compensated net earth-z axis acceleration covariance
-	float pbb; // acceleration residual bias (post-calibration) covariance
-} KF4_LOG;
-
-static int 	StableCounter = 0;
-static bool LogEnabled = true;
-static int  SampleIndex = 0;
-static KF4_LOG Log[NUM_TEST_SAMPLES];
-#endif
-
 // 4x4 process model state covariance estimate P 
 // Note : P is symmetric
 // Pzz Pzv Pza Pzb
@@ -278,4 +256,8 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	// return the state variables of interest (z and v)
 	*pz = State.z;
 	*pv = State.v;
+
+#if (LOG_KF4_CONVERGENCE == 1)
+	printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", State.z, Pzz, State.v, Pvv, State.a - State.b, Paa, State.b, Pbb);
+#endif
 	}

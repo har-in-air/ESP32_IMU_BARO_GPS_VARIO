@@ -17,19 +17,12 @@
 #include "sensor/madc.h"
 #include "sensor/ringbuf.h"
 #include "sensor/imu.h"
-
 #if USE_MS5611
 #include "sensor/ms5611.h"
 #elif USE_BMP388
 #include "sensor/bmp388.h"
 #endif
-
-#if USE_KF3
-#include "sensor/kalmanfilter3.h"
-#elif USE_KF4
 #include "sensor/kalmanfilter4.h"
-#endif
-
 #include "nv/flashlog.h"
 #include "nv/calib.h"
 #include "nv/options.h"
@@ -262,30 +255,19 @@ static void vario_taskConfig() {
         lcd_printlnf(true,3, "BMP388 config fail");
         while (1) {delayMs(100);}
         }	
+    {
+    uint32_t marker =  cct_setMarker();
+    bmp388_sample();
+    uint32_t eus = cct_elapsedUs(marker);
+    ESP_LOGD(TAG, "BMP388 sample and pa2z : %d us", eus);
+    }
+    
     bmp388_averaged_sample(20);
     ESP_LOGD(TAG,"BMP388 Altitude %dm Temperature %dC", (int)(ZCmAvg_BMP388/100.0f), (int)CelsiusSample_BMP388);
     float zcm = ZCmAvg_BMP388;
 #endif
 
-#if USE_KF3
-    kalmanFilter3_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, zcm, 0.0f);
-#if 0    
-    uint32_t marker =  cct_setMarker();
-    kalmanFilter3_predict(0.1f, 2000.0f/1000000.0f);
-    kalmanFilter3_update(ZCmAvg_MS5611, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
-    uint32_t eus = cct_elapsedUs(marker);
-    ESP_LOGD(TAG, "KF3 predict + update %d us", eus);
-#endif
-#elif USE_KF4
     kalmanFilter4_configure((float)opt.kf.zMeasVariance, (float)50000.0f, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, zcm, 0.0f, 0.0f);
-#if 0
-    marker =  cct_setMarker();
-    kalmanFilter4_predict(2000.0f/1000000.0f);
-    kalmanFilter4_update(ZCmAvg_MS5611, 0.1f, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
-    eus = cct_elapsedUs(marker);
-    ESP_LOGD(TAG, "KF4 predict + update %d us", eus);
-#endif
-#endif
 
     lcd_clear_frame();
     lcd_printlnf(true,3,"Baro Altitude %dm", (int)(zcm/100.0f));
@@ -294,10 +276,6 @@ static void vario_taskConfig() {
     beeper_config();
     ringbuf_init(); 
     }
-
-#if MEASURE_ACCEL_NOISE                
-    float accel_sample[NUM_TEST_SAMPLES];
-#endif
 
 
 static void vario_task(void *pvParameter) {
@@ -314,11 +292,6 @@ static void vario_task(void *pvParameter) {
     int baroCounter = 0;
     DrdySemaphore = xSemaphoreCreateBinary();
     attachInterrupt(pinDRDYINT, drdyHandler, RISING);
-#if MEASURE_ACCEL_NOISE                
-    int sample_inx = 0;
-    int stable_counter = 0;
-    bool log_accel = true;
-#endif
 
     while (1) {
         xSemaphoreTake(DrdySemaphore, portMAX_DELAY); // wait for data ready interrupt from MPU9250 (500Hz)
@@ -350,7 +323,7 @@ static void vario_task(void *pvParameter) {
         imu_mahonyAHRSupdate9DOF(useAccel, useMag,((float)imuTimeDeltaUSecs)/1000000.0f, DEG2RAD(gxNEDdps), DEG2RAD(gyNEDdps), DEG2RAD(gzNEDdps), axNEDmG, ayNEDmG, azNEDmG, mxNED, myNED, mzNED);
         imu_quaternion2YawPitchRoll(q0,q1,q2,q3, (float*)&YawDeg, (float*)&PitchDeg, (float*)&RollDeg);
         float gravityCompensatedAccel = imu_gravityCompensatedAccel(axNEDmG, ayNEDmG, azNEDmG, q0, q1, q2, q3);
-        ringbuf_addSample(gravityCompensatedAccel); 
+        ringbuf_addSample(gravityCompensatedAccel);
         kfTimeDeltaUSecs += imuTimeDeltaUSecs;
 #if USE_MS5611
         if (baroCounter >= 5) { // 5*2mS = 10mS elapsed, this is the sampling period for MS5611, 
@@ -358,36 +331,10 @@ static void vario_task(void *pvParameter) {
             int zMeasurementAvailable = ms5611_sampleStateMachine(); 
             // one altitude sample is calculated for a pair of pressure & temperature samples
 			if ( zMeasurementAvailable ) { 
-#if USE_KF3          
-                // KF3 uses the acceleration data in the prediction phase
-                float zAccelAverage = ringbuf_averageOldestSamples(10); 
-#elif USE_KF4
                 // KF4 uses the acceleration data in the update phase
                 float zAccelAverage = ringbuf_averageNewestSamples(10); 
-#endif                
-#if MEASURE_ACCEL_NOISE                
-                stable_counter++;
-                // wait for the AHRS to settle down before starting to log acceleration data
-                // UNIT must be at rest !
-                if ((stable_counter > 1000) && (log_accel == true)) {
-                    accel_sample[sample_inx] = zAccelAverage;
-                    sample_inx++;
-                    if (sample_inx >= NUM_TEST_SAMPLES) {
-                        log_accel = false;
-                        printf("Acceleration sensor samples\n");
-                        for (int n = 0; n < NUM_TEST_SAMPLES; n++) {
-                            printf("%f\n", accel_sample[n]);
-                            }
-                        }
-                    }
-#endif          
-#if USE_KF3          
-                kalmanFilter3_predict(zAccelAverage, kfTimeDeltaUSecs/1000000.0f);
-                kalmanFilter3_update(ZCmSample_MS5611, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
-#elif USE_KF4                
                 kalmanFilter4_predict(kfTimeDeltaUSecs/1000000.0f);
                 kalmanFilter4_update(ZCmSample_MS5611, zAccelAverage, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
-#endif                
                 kfTimeDeltaUSecs = 0.0f;
                 // LCD display shows damped climbrate
                 DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
@@ -408,17 +355,10 @@ static void vario_task(void *pvParameter) {
         if (baroCounter >= 10) { // 10*2mS = 20mS elapsed, this is the configured sampling period for BMP388
             baroCounter = 0;     
             bmp388_sample();
-#if USE_KF3            
-            // KF3 uses the acceleration data in the prediction phase
-            float zAccelAverage = ringbuf_averageOldestSamples(10); 
-            kalmanFilter3_predict(zAccelAverage, kfTimeDeltaUSecs/1000000.0f);
-            kalmanFilter3_update(ZCmSample_BMP388, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
-#elif USE_KF4
             // KF4 uses the acceleration data in the update phase
             float zAccelAverage = ringbuf_averageNewestSamples(10); 
             kalmanFilter4_predict(kfTimeDeltaUSecs/1000000.0f);
             kalmanFilter4_update(ZCmSample_BMP388, zAccelAverage, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
-#endif            
             kfTimeDeltaUSecs = 0.0f;
             // LCD display shows damped climbrate
             DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
@@ -491,30 +431,6 @@ static void vario_task(void *pvParameter) {
         }
     vTaskDelete(NULL);
     }
-
-#if 0
-static void littlefs_directory_listing(){
-    ESP_LOGD(TAG,"LittleFS Total : %s", server_ui_size(LITTLEFS.totalBytes()));
-    ESP_LOGD(TAG,"LittleFS Used  : %s", server_ui_size(LITTLEFS.usedBytes()));
-    File root = LITTLEFS.open("/");
-    if(!root){
-        ESP_LOGE(TAG, "- failed to open directory /");
-        return;
-        }
-    if(!root.isDirectory()){
-        ESP_LOGE(TAG, " - not a directory");
-        return;
-        }
-    File file = root.openNextFile();
-    while(file){
-        ESP_LOGD(TAG, "FILE: %s", file.name());
-        file.close();
-        file = root.openNextFile();
-        }
-    root.close();
-    }
-#endif
-
 
 
 static void main_task(void* pvParameter) {

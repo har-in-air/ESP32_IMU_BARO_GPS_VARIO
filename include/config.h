@@ -15,11 +15,6 @@
 #define BMP388_MEASURE_NOISE    false
 #define MS5611_MEASURE_NOISE    false
 
-// select KalmanFilter3 / KalmanFilter4 algorithm to fuse
-// acceleration and altitude sensor data to estimate altitude and climbrate
-#define USE_KF3     false
-#define USE_KF4     true
-
 #define KF4_USE_DYNAMIC_ACCEL_BIAS_VARIANCE 1
 
 /////////////////////////////////////////////////////////////////////////////////////
