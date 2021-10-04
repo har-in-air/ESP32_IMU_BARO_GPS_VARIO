@@ -5,17 +5,16 @@
 #include "driver/gpio.h"
 
 // select barometric sensor option
-// set onl y one of the following true
+// set only one of the following true
 #define USE_MS5611 true
 #define USE_BMP388 false
 
 // set true for one-time measurement of parameters 
 // set false for actual application use
-#define MEASURE_ACCEL_NOISE     false
 #define BMP388_MEASURE_NOISE    false
 #define MS5611_MEASURE_NOISE    false
 
-#define KF4_USE_DYNAMIC_ACCEL_BIAS_VARIANCE 1
+#define KF4_USE_DYNAMIC_ACCEL_BIAS_VARIANCE true
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -146,16 +145,16 @@
 // the vario is quiet
 
 #define VARIO_CLIMB_THRESHOLD_CPS_DEFAULT  	50
-#define VARIO_CLIMB_THRESHOLD_CPS_MIN   	20
+#define VARIO_CLIMB_THRESHOLD_CPS_MIN   	10
 #define VARIO_CLIMB_THRESHOLD_CPS_MAX   	100
 
 #define VARIO_ZERO_THRESHOLD_CPS_DEFAULT  	5
 #define VARIO_ZERO_THRESHOLD_CPS_MIN    	(-20)
-#define VARIO_ZERO_THRESHOLD_CPS_MAX    	20
+#define VARIO_ZERO_THRESHOLD_CPS_MAX    	10
 
 #define VARIO_SINK_THRESHOLD_CPS_DEFAULT  	(-250)
 #define VARIO_SINK_THRESHOLD_CPS_MIN    	(-400)
-#define VARIO_SINK_THRESHOLD_CPS_MAX    	(-100)
+#define VARIO_SINK_THRESHOLD_CPS_MAX    	(-10)
 
 
 // When generating climbtones, the vario allocates most of the speaker 
@@ -185,9 +184,6 @@
 #define KF_ZMEAS_VARIANCE_MIN                80
 #define KF_ZMEAS_VARIANCE_MAX                500
 
-#define KF_AMEAS_VARIANCE_DEFAULT            2
-#define KF_AMEAS_VARIANCE_MIN                1
-#define KF_AMEAS_VARIANCE_MAX                10
 
 // If you find that gyro calibration fails when you leave
 // the unit undisturbed, possibly your unit has an MPU9250 device
@@ -265,6 +261,9 @@
 // This is set low as the residual acceleration bias after calibration
 // is expected to have little variation/drift
 #define KF_ACCELBIAS_VARIANCE   0.005f
+
+// KF4 Acceleration Update variance default
+#define KF_ACCEL_UPDATE_VARIANCE   50.0f
 
 // print debug information to the serial port for different code modules
 

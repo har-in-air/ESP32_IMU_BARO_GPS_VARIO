@@ -42,14 +42,13 @@ static float ZSensorVariance; //  altitude measurement noise variance
 // sensor measurement of z is assumed to have constant measurement noise 
 // variance zSensorVariance. This can be calculated off-line for the specific sensor.
 // AccelVariance will depend on the conditions (more for highly thermic/turbulent conditions)
-// BiasVariance can be set low as it is not expected to change much
 // zInitial can be determined by averaging a few samples of the altitude measurement.
 // vInitial can be set as 0
 
-void kalmanFilter3_configure(float zSensorVariance, float aVariance, float bVariance, float zInitial, float vInitial){
+void kalmanFilter3_configure(float zSensorVariance, float aVariance, float zInitial, float vInitial){
 	ZSensorVariance = zSensorVariance;
 	AccelVariance = aVariance;
-    BiasVariance = bVariance;
+    BiasVariance = KF_ACCELBIAS_VARIANCE;
 
 	State.z = zInitial;
 	State.v = vInitial;
@@ -156,8 +155,7 @@ void kalmanFilter3_update(float zm, float* pz, float* pv) {
 	*pz = State.z;
 	*pv = State.v;
 
-#if (LOG_KF3_CONVERGENCE == 1)
-	printf("%.1f %.1f %.1f %.1f %.1f %.1f\n", State.z, Pzz, State.v, Pvv, State.b, Pbb);
+#if LOG_FILTER
+	printf("%.1f %.1f %.1f %.1f %.1f %.1f %.1f\n", zm, State.z, Pzz, State.v, Pvv, State.b, Pbb);
 #endif
-
 	}

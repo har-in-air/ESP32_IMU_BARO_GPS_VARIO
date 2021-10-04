@@ -3,8 +3,6 @@
 #include <math.h>
 #include "kalmanfilter2.h"
 
-
-
 // State being tracked
 static float z_;  // position
 static float v_;  // velocity
@@ -23,10 +21,10 @@ void kalmanFilter2_configure(float zVariance, float zAccelVariance, float zIniti
 	zVariance_ = zVariance;
 	z_ = zInitial;
 	v_ = vInitial;
-	Pzz_ = 1000.0f;
+	Pzz_ = 400.0f;
 	Pzv_ = 0.0f;
 	Pvz_ = 0.0f;
-	Pvv_ = 1000.0f;
+	Pvv_ = 400.0f;
 	}
 
 
@@ -65,5 +63,9 @@ void kalmanFilter2_update(float z, float* pZ, float* pV){
 	Pzv_ -= Pzv_ * kz;
 	Pvz_ -= Pzz_ * kv;
 	Pzz_ -= Pzz_ * kz;
+
+#if LOG_FILTER
+	printf("%.1f %.1f %.1f %.1f %.1f\n", z, z_, Pzz_, v_, Pvv_);
+#endif	
 	}
 

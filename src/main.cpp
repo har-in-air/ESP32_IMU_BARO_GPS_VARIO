@@ -267,7 +267,7 @@ static void vario_taskConfig() {
     float zcm = ZCmAvg_BMP388;
 #endif
 
-    kalmanFilter4_configure((float)opt.kf.zMeasVariance, (float)50000.0f, 1000.0f*(float)opt.kf.accelVariance, KF_ACCELBIAS_VARIANCE, zcm, 0.0f, 0.0f);
+    kalmanFilter4_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, true, zcm, 0.0f, 0.0f);
 
     lcd_clear_frame();
     lcd_printlnf(true,3,"Baro Altitude %dm", (int)(zcm/100.0f));
