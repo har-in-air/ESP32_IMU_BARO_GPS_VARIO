@@ -14,8 +14,6 @@
 #define BMP388_MEASURE_NOISE    false
 #define MS5611_MEASURE_NOISE    false
 
-#define KF4_USE_DYNAMIC_ACCEL_BIAS_VARIANCE true
-
 /////////////////////////////////////////////////////////////////////////////////////
 
 // low speed for configuring the sensors, high speed for readout
