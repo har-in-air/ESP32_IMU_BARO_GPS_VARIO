@@ -143,16 +143,16 @@
 // the vario is quiet
 
 #define VARIO_CLIMB_THRESHOLD_CPS_DEFAULT  	50
-#define VARIO_CLIMB_THRESHOLD_CPS_MIN   	10
+#define VARIO_CLIMB_THRESHOLD_CPS_MIN   	20
 #define VARIO_CLIMB_THRESHOLD_CPS_MAX   	100
 
 #define VARIO_ZERO_THRESHOLD_CPS_DEFAULT  	5
 #define VARIO_ZERO_THRESHOLD_CPS_MIN    	(-20)
-#define VARIO_ZERO_THRESHOLD_CPS_MAX    	10
+#define VARIO_ZERO_THRESHOLD_CPS_MAX    	20
 
 #define VARIO_SINK_THRESHOLD_CPS_DEFAULT  	(-250)
 #define VARIO_SINK_THRESHOLD_CPS_MIN    	(-400)
-#define VARIO_SINK_THRESHOLD_CPS_MAX    	(-10)
+#define VARIO_SINK_THRESHOLD_CPS_MAX    	(-100)
 
 
 // When generating climbtones, the vario allocates most of the speaker 
