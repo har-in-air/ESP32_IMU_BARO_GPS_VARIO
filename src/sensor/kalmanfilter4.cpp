@@ -190,9 +190,9 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	s00 = s00 + ZSensorVariance;
 	if (UseAdaptiveVariance) {	
 		float accel_ext = (am-State.b)*(am-State.b);
-		// allows filter  to respond quickly to large accelerations while heavily filtering out noise
-		// when there is low acceleration
-		s11 = s11 + 4.0f*accel_ext;
+		// allows filter  to respond quickly to moderate/large accelerations while heavily filtering out noise
+		// when there is low or no acceleration
+		s11 = s11 + accel_ext;
 		// allow system to update estimated bias only when there is low acceleration
 		BiasVariance = 1.0f/(1.0f + accel_ext);	
 		}
