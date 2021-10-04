@@ -267,6 +267,8 @@ static void vario_taskConfig() {
     float zcm = ZCmAvg_BMP388;
 #endif
 
+    // KF4D algorithm to fuse gravity-compensated acceleration and pressure altitude to estimate
+    // altitud and climb/sink rate
     kalmanFilter4_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, true, zcm, 0.0f, 0.0f);
 
     lcd_clear_frame();
