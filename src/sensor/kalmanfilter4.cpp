@@ -194,7 +194,7 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 		// when there is low or no acceleration
 		s11 = s11 + accel_ext;
 		// allow system to update estimated bias only when there is low acceleration
-		BiasVariance = 1.0f/(1.0f + accel_ext);	
+		BiasVariance = 1.0f/(1.0f + 2.0f*accel_ext);	
 		}
 	else {
 		s11 = s11 + AUpdateVariance;
