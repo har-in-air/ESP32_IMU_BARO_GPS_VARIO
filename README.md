@@ -257,6 +257,7 @@ This [Jupyter notebook](offline/kf/compare_kf2_kf3_kf4.ipynb) compares  KF2 (onl
 # Credits
 * Sine-wave generation with ESP32 DAC -  https://github.com/krzychb/dac-cosine
 * MPU9250 initialization sequence modified from https://github.com/bolderflight/MPU9250/blob/master/MPU9250.cpp
+* Mahony AHRS estimation algorithm/code - https://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 * https://github.com/smford/esp32-asyncwebserver-fileupload-example
 * https://randomnerdtutorials.com/esp32-web-server-spiffs-spi-flash-file-system/
 
