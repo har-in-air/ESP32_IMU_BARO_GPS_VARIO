@@ -9,7 +9,6 @@
 #if USE_BMP388
 #include "sensor/bmp388.h"
 #endif
-
 #include "ui/ui.h"
 
 static const char* TAG = "btmsg";
@@ -27,10 +26,13 @@ void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param){
 
 bool btmsg_init(){
 	pSerialBT = new BluetoothSerial;
-	if (pSerialBT == NULL) return false; 
+	if (pSerialBT == NULL) {
+		ESP_LOGE(TAG, "Error creating BluetoothSerial instance");
+		return false; 
+		}
 	pSerialBT->register_callback(callback);
   	if(!pSerialBT->begin("ESP32-BT-Vario")){
-    	ESP_LOGD(TAG, "Error initializing ESP32-BT-Vario");
+    	ESP_LOGE(TAG, "Error initializing ESP32-BT-Vario");
 		return false;
   		}	
 	else{
@@ -46,7 +48,6 @@ void btmsg_tx_message(const char* szmsg) {
 static uint8_t btmsg_nmeaChecksum(const char *szNMEA){
     const char* sz = &szNMEA[1]; // skip leading '$'
     uint8_t cksum = 0;
-
     while ((*sz) != 0 && (*sz != '*')) {
         cksum ^= (uint8_t) *sz;
         sz++;

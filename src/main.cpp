@@ -575,9 +575,6 @@ static void main_task(void* pvParameter) {
                 // bluetooth serial task on core 0 given higher priority than ui task, less than gps task
     		    xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 3072, NULL, configMAX_PRIORITIES-2, NULL, CORE_0);
                 }
-            else {
-                ESP_LOGE(TAG, "Failure initializing ESP32-BT-Vario");
-                }
 	    	}
       }
     while (1) {

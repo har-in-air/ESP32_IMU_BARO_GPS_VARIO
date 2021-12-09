@@ -3,3 +3,8 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+sandbox
+test/.ipynb_checkpoints
+offline/.ipynb_checkpoints
+offline/kf/.ipynb_checkpoints
+
