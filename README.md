@@ -239,7 +239,7 @@ You have a choice of fonts for the large digit display fields. Uncomment only on
 ## Bluetooth NMEA messages
 * To enable Bluetooth transmission of NMEA sentences, set the bluetooth message frequency to a value between `1Hz` and `10Hz` in the options screen. 
 * If you select `0Hz`, bluetooth transmission is disabled.
-* The gpsvario Bluetooth device name is `Esp32GpsVario`. 
+* The gpsvario Bluetooth device name is `ESP32-BT-Vario`. 
 * You can  transmit periodic `$LK8EX1` or `$XCTRC` NMEA sentencess, at rates of 1Hz to 10Hz. 
 * Navigation apps such as **XCTrack** apply heavy damping filters to external data. You will see faster response on the **XCTrack** display if you increase the frequency of NMEA sentences (max 10Hz). 
 * `$LK8EX1` sentences only contain barometric pressure-derived data (pressure, altitude, climbrate) and gpsvario power supply voltage. 
