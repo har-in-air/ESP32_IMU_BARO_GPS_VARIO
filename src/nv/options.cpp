@@ -1,6 +1,6 @@
 #include "common.h"
 #include <FS.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include "config.h"
 #include "options.h"
 #include "ui/ui.h"
@@ -14,8 +14,8 @@ int opt_init(void) {
    opt_setDefaults();
 
    // override defaults with any options found in options.txt
-   ESP_LOGD(TAG,"Opening LITTLEFS options.txt file... ");
-   File fdopt = LITTLEFS.open("/options.txt", FILE_READ);
+   ESP_LOGD(TAG,"Opening LittleFS options.txt file... ");
+   File fdopt = LittleFS.open("/options.txt", FILE_READ);
    if (!fdopt) {
       ESP_LOGD(TAG,"options.txt file not found, saving file with default values");
       opt_save();
@@ -262,8 +262,8 @@ int opt_save() {
     char buf[80];
     ssize_t nwrote;
 
-    LITTLEFS.remove("/options.txt");
-    File fdopt = LITTLEFS.open("/options.txt", FILE_WRITE);
+    LittleFS.remove("/options.txt");
+    File fdopt = LittleFS.open("/options.txt", FILE_WRITE);
     if (!fdopt) {
       ESP_LOGE(TAG, "Error opening options.txt to write");
       return -1;

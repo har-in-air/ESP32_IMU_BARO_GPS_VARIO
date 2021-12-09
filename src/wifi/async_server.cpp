@@ -4,7 +4,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <FS.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include <Update.h>
 #include "drv/wdog.h"
 #include "nv/flashlog.h"
@@ -52,7 +52,7 @@ static String server_directory(bool ishtml = false);
 static void server_not_found(AsyncWebServerRequest *request);
 static bool server_authenticate(AsyncWebServerRequest * request);
 static void server_handle_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-static void server_handle_LITTLEFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+static void server_handle_littleFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 static String server_string_processor(const String& var);
 static void server_configure();
 static void server_handle_OTA_update(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
@@ -139,11 +139,11 @@ String server_ui_size(const size_t bytes) {
 static String server_directory(bool isHtml) {
   String returnText = "";
   ESP_LOGD(TAG,"Listing files stored on LittleFS");
-  File root = LITTLEFS.open("/");
+  File root = LittleFS.open("/");
   File foundfile = root.openNextFile();
   String fileName = foundfile.name();
   if (isHtml) {
-    returnText += "<p align='center'>File storage : <span id='total_littlefs'>" + server_ui_size(LITTLEFS.totalBytes()) + "</span> | Used : <span id='used_littlefs'>" + server_ui_size(LITTLEFS.usedBytes()) + "</span></p>";
+    returnText += "<p align='center'>File storage : <span id='total_littlefs'>" + server_ui_size(LittleFS.totalBytes()) + "</span> | Used : <span id='used_littlefs'>" + server_ui_size(LittleFS.usedBytes()) + "</span></p>";
     returnText += "<table align='center'><tr><th align='left'>Name</th><th align='left'>Size</th><th></th><th></th></tr>";
     }
   while (foundfile) {
@@ -232,7 +232,7 @@ void server_configure() {
     ESP_LOGD(TAG,"Client: %s %s",request->client()->remoteIP().toString().c_str(), request->url().c_str());
     if (server_authenticate(request)) {
       ESP_LOGD(TAG," Auth: Success");
-      request->send(LITTLEFS, "/index.html", String(), false, server_string_processor);
+      request->send(LittleFS, "/index.html", String(), false, server_string_processor);
       }  
     else {
       ESP_LOGD(TAG," Auth: Failed");
@@ -242,7 +242,7 @@ void server_configure() {
 
   // Route to load style.css file
   server->on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(LITTLEFS, "/style.css", "text/css");
+    request->send(LittleFS, "/style.css", "text/css");
   });
 
   server->on("/datalog", HTTP_GET, [](AsyncWebServerRequest * request) {
@@ -283,7 +283,7 @@ void server_configure() {
         const char* fileName = fname.c_str();
         const char *fileAction = request->getParam("action")->value().c_str();
         ESP_LOGD(TAG, "Client : %s %s ?name = %s &action = %s",request->client()->remoteIP().toString().c_str(), request->url().c_str(), fileName, fileAction);
-        if (!LITTLEFS.exists(fileName)) {
+        if (!LittleFS.exists(fileName)) {
           ESP_LOGE(TAG," ERROR: file does not exist");
           request->send(400, "text/plain", "ERROR: file does not exist");
           } 
@@ -291,7 +291,7 @@ void server_configure() {
           ESP_LOGD(TAG," file exists");
           if (strcmp(fileAction, "download") == 0) {
             ESP_LOGD(TAG, " downloaded");
-            LittleFSFile = LITTLEFS.open(fileName, "r");
+            LittleFSFile = LittleFS.open(fileName, "r");
             int sizeBytes = LittleFSFile.size();
             AsyncWebServerResponse *response = request->beginResponse("application/octet-stream", sizeBytes, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
               feed_watchdog();
@@ -305,7 +305,7 @@ void server_configure() {
             } 
           else if (strcmp(fileAction, "delete") == 0) {
             ESP_LOGD(TAG, " deleted");
-            LITTLEFS.remove(fileName);
+            LittleFS.remove(fileName);
             request->send(200, "text/plain", "Deleted File: " + String(fileName));
             } 
           else {
@@ -351,20 +351,20 @@ static void server_handle_upload(AsyncWebServerRequest *request, String filename
     }
   else {
     // non .bin files are uploaded to the LITTLEFS partition
-    size_t freeBytes = LITTLEFS.totalBytes() - LITTLEFS.usedBytes();
+    size_t freeBytes = LittleFS.totalBytes() - LittleFS.usedBytes();
     if (len < freeBytes) {
-      server_handle_LITTLEFS_upload(request, filename, index, data, len, final);
+      server_handle_littleFS_upload(request, filename, index, data, len, final);
       }
     else {
-      ESP_LOGD(TAG, "Cannot upload file size %d bytes, as LITTLEFS free space = %d bytes", len, freeBytes);
-      request->send(404, "text/plain", "Not enough free space in LITTLEFS partition");
+      ESP_LOGD(TAG, "Cannot upload file size %d bytes, as LittleFS free space = %d bytes", len, freeBytes);
+      request->send(404, "text/plain", "Not enough free space in LittleFS partition");
       }
     }
   }
 
 
 // handles non .bin file uploads to the LITTLEFS directory
-static void server_handle_LITTLEFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+static void server_handle_littleFS_upload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   // make sure authenticated before allowing upload
   if (server_authenticate(request)) {
     ESP_LOGD(TAG,"Client: %s %s",request->client()->remoteIP().toString().c_str(), request->url().c_str());
@@ -372,11 +372,11 @@ static void server_handle_LITTLEFS_upload(AsyncWebServerRequest *request, String
     if (index == 0) {
       ESP_LOGD(TAG,"Upload Start : %s", filename.c_str());
       filename = "/" + filename;
-      if (LITTLEFS.exists(filename)) {
-        bool res = LITTLEFS.remove(filename);
+      if (LittleFS.exists(filename)) {
+        bool res = LittleFS.remove(filename);
         ESP_LOGD(TAG, "Delete file %s : %s", filename, res == false ? "Error" : "OK");
         }
-      LittleFSFile = LITTLEFS.open(filename, FILE_WRITE);
+      LittleFSFile = LittleFS.open(filename, FILE_WRITE);
       }
 
     if (len) {

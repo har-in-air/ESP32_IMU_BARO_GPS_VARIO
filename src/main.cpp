@@ -1,6 +1,6 @@
 #include "common.h"
 #include <FS.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include <WiFi.h>              
 #include "common.h"
 #include "config.h"
@@ -442,10 +442,10 @@ static void main_task(void* pvParameter) {
     ESP_LOGD(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
     ESP_LOGD(TAG, "Setup and loop running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
     
-    ESP_LOGD(TAG, "Mounting LITTLEFS ...");
+    ESP_LOGD(TAG, "Mounting LittleFS ...");
     // do NOT format, partition is built and flashed using PlatformIO Build FileSystem Image + Upload FileSystem Image    
-    if (!LITTLEFS.begin(false)) { 
-	ESP_LOGE(TAG, "Cannot mount LITTLEFS, Rebooting");
+    if (!LittleFS.begin(false)) { 
+	ESP_LOGE(TAG, "Cannot mount LittleFS, Rebooting");
 	delay(1000);
 	ESP.restart();
 	}    

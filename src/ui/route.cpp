@@ -1,6 +1,6 @@
 #include "common.h"
 #include <FS.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include "config.h"
 #include "drv/btn.h"
 #include "nv/options.h"
@@ -29,9 +29,9 @@ static bool rte_loadRoute(char* szFileName);
 
 bool rte_selectRoute(){
 	ESP_LOGD(TAG, "select route");
-	File root = LITTLEFS.open("/");
+	File root = LittleFS.open("/");
 	if(!root){
-		ESP_LOGE(TAG, "− failed to open LITTLES directory /");
+		ESP_LOGE(TAG, "− failed to open LittleFS directory /");
 		return false;
 		}
 	if(!root.isDirectory()){
@@ -137,7 +137,7 @@ static bool rte_loadRoute(char* szFileName) {
 
    pRoute->numWpts = 0;
    pRoute->nextWptInx = 0;
-   File flrte = LITTLEFS.open(szFileName, FILE_READ);
+   File flrte = LittleFS.open(szFileName, FILE_READ);
    if (!flrte){
       ESP_LOGE(TAG, "error opening file %s", szFileName);
       return false;
