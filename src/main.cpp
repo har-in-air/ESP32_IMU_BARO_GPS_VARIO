@@ -2,7 +2,6 @@
 #include <FS.h>
 #include <LITTLEFS.h>
 #include <WiFi.h>              
-#include <BluetoothSerial.h>
 #include "common.h"
 #include "config.h"
 #include "drv/cct.h"
@@ -35,12 +34,9 @@
 
 static const char* TAG = "main";
 
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled!
-#endif
-
 volatile int LedState = 0;
 volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
+volatile int AudioCps;
 volatile float YawDeg, PitchDeg, RollDeg;
 volatile SemaphoreHandle_t DrdySemaphore;
 volatile bool DrdyFlag = false;
@@ -48,7 +44,6 @@ volatile bool DrdyFlag = false;
 int BacklitCounter;
 bool IsGpsInitComplete = false;
 bool IsServer = false; 
-BluetoothSerial* pSerialBT = NULL;
 
 static void pinConfig();
 static void vario_taskConfig();
@@ -102,13 +97,14 @@ static void btserial_task(void *pvParameter) {
 
     while (1) {
 		if (opt.misc.btMsgType == BT_MSG_LK8EX1) {
-			btmsg_genLK8EX1(szmsg);
+            int32_t altM = KFAltitudeCm > 0.0f ? (int)((KFAltitudeCm + 50.0f)/100.0f) : (int)((KFAltitudeCm - 50.0f)/100.0f);
+			btmsg_genLK8EX1(szmsg, altM, AudioCps, SupplyVoltageV);
 			}
 		else
 		if (opt.misc.btMsgType == BT_MSG_XCTRC) {
 			btmsg_genXCTRC(szmsg);
 			}
-        pSerialBT->print(szmsg);
+        btmsg_tx_message(szmsg);
 		delayMs(1000/opt.misc.btMsgFreqHz);
 		}
     vTaskDelete(NULL);
@@ -239,6 +235,8 @@ static void vario_taskConfig() {
  	    lcd_printlnf(true,3,"Gyro calib fail");
         delayMs(1000);
         }
+   // mpu9250_dump_noise_samples();
+
 #if USE_MS5611
     if (ms5611_config() < 0) {
         ESP_LOGE(TAG, "error MS5611 config");
@@ -340,9 +338,9 @@ static void vario_task(void *pvParameter) {
                 kfTimeDeltaUSecs = 0.0f;
                 // LCD display shows damped climbrate
                 DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
-                int32_t audioCps = INTEGER_ROUNDUP(KFClimbrateCps);
+                AudioCps = INTEGER_ROUNDUP(KFClimbrateCps);
                 if (IsSpeakerEnabled) {
-                    beeper_beep(audioCps);                
+                    beeper_beep(AudioCps);                
                     }
 			    if ((opt.misc.logType == LOGTYPE_IBG) && FlashLogMutex) {
 			        if ( xSemaphoreTake( FlashLogMutex, portMAX_DELAY )) {
@@ -466,10 +464,10 @@ static void main_task(void* pvParameter) {
     LCD_BKLT_ON();
     BacklitCounter = opt.misc.backlitSecs*40;
     adc_init();
-    uint32_t supplyVoltagemV = adc_supplyVoltageMV();
-    ESP_LOGD(TAG, "Power supply = %.1fV", (float) supplyVoltagemV/1000.0f);
+    SupplyVoltageV = adc_battery_voltage();
+    ESP_LOGD(TAG, "Power = %.1fV", SupplyVoltageV);
     lcd_printlnf(false,0,"%s %s", __DATE__, __TIME__);
-    lcd_printlnf(true,1,"Power supply : %.1fV", (float) supplyVoltagemV/1000.0f);
+    lcd_printlnf(true,1,"Power : %.1fV", SupplyVoltageV);
 
     // VSPI bus used for MPU9250, MS5611 and 128Mbit spi flash
     // start with low clock frequency for sensor configuration
@@ -572,15 +570,13 @@ static void main_task(void* pvParameter) {
         // ui_task on core 0 given lower priority than gps_task
 	    xTaskCreatePinnedToCore(&ui_task, "uitask", 4096, NULL, configMAX_PRIORITIES-3, NULL, CORE_0);
 	    if (opt.misc.btMsgFreqHz != 0) {
-            pSerialBT = new BluetoothSerial;
-            if (pSerialBT) {
-                pSerialBT->begin("ESP32GpsVario");
+            if (btmsg_init() == true) {
     		    IsBluetoothEnabled = true;
                 // bluetooth serial task on core 0 given higher priority than ui task, less than gps task
     		    xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 3072, NULL, configMAX_PRIORITIES-2, NULL, CORE_0);
                 }
             else {
-                ESP_LOGE(TAG, "Failure creating BluetoothSerial");
+                ESP_LOGE(TAG, "Failure initializing ESP32-BT-Vario");
                 }
 	    	}
       }

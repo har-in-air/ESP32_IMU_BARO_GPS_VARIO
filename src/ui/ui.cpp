@@ -27,7 +27,7 @@ bool IsGpsHeading = true;
 bool EndGpsTrack = false;
 bool IsBluetoothEnabled = false;
 
-int SupplyVoltageMV = 0;
+float SupplyVoltageV = 0.0f;
 int32_t GpsCourseHeadingDeg;
 int32_t CompassHeadingDeg;
 
@@ -40,7 +40,7 @@ static int ScreenParOffset = 0;
 static int ParDisplaySel = 0;
 static int ParSel = 0;
 
-static void ui_printSupplyVoltage(int page, int col, int bV);
+static void ui_printSupplyVoltage(int page, int col, float bV);
 static void ui_printBatteryStatus(int page, int col, int bV);
 static void ui_printSpkrStatus(int page, int col, bool bAudioEn);
 static void ui_printBluetoothStatus(int page, int col, bool bBluetoothEn);
@@ -433,9 +433,9 @@ static void ui_printBatteryStatus(int page, int col, int bV) {
 	}
 
 
-static void ui_printSupplyVoltage(int page, int col, int bV) {
+static void ui_printSupplyVoltage(int page, int col, float bV) {
 	char  szBuf[6];
-    sprintf(szBuf,"%d.%dv", bV/10, bV%10);
+    sprintf(szBuf,"%.1fv", bV);
 	lcd_print_sz(page,col,szBuf);
 	}
 
@@ -527,8 +527,8 @@ void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* pTrk) {
       lcd_print_sz(1,74, IsGpsTrackActive ? "G" : "g");
       }
    lcd_printf(false,6,104,"%3d*", dop);
-   SupplyVoltageMV = adc_supplyVoltageMV();
-   ui_printSupplyVoltage(7, 104, (SupplyVoltageMV+50)/100);
+   SupplyVoltageV = adc_battery_voltage();
+   ui_printSupplyVoltage(7, 104, SupplyVoltageV);
    ui_printSpkrStatus(1,56, IsSpeakerEnabled);
    ui_printBluetoothStatus(1,65, IsBluetoothEnabled);
    ui_printAltitude(0,0,altm);

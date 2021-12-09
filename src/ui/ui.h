@@ -86,7 +86,7 @@ extern bool IsFlashDisplayRequired;
 extern bool IsGpsHeading;
 extern bool EndGpsTrack;
 
-extern int  SupplyVoltageMV;
+extern float  SupplyVoltageV;
 extern int32_t GpsCourseHeadingDeg;
 extern int32_t CompassHeadingDeg;
 

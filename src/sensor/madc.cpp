@@ -1,77 +1,36 @@
 #include "common.h"
-#include <driver/gpio.h>
-#include <driver/adc.h>
-#include <esp_adc_cal.h>
 #include "config.h"
 #include "madc.h"
 
 static const char* TAG = "madc";
 
-#define DEFAULT_VREF    1100       // Use adc2_vref_to_gpio() to obtain a better estimate
-#define NO_OF_SAMPLES   4          // averaging 
+#define NUM_ADC_SAMPLES   4          // averaging 
 
-static esp_adc_cal_characteristics_t *adc_chars;
-static adc_unit_t unit = ADC_UNIT_1;
-static adc_channel_t channel = ADC_CHANNEL_7;     //GPIO35 ( ADC1 )
-static adc_atten_t atten = ADC_ATTEN_DB_0; // external resistor divider used to bring sampled voltage within range
-
-static void check_efuse();
-static void print_char_val_type(esp_adc_cal_value_t val_type);
-
-static void check_efuse(){
-    //Check TP is burned into eFuse
-    if (esp_adc_cal_check_efuse(ESP_ADC_CAL_VAL_EFUSE_TP) == ESP_OK) {
-        ESP_LOGD(TAG,"eFuse Two Point: Supported\n");
-        } 
-    else {
-        ESP_LOGD(TAG,"eFuse Two Point: NOT supported\n");
-        }
-
-    //Check Vref is burned into eFuse
-    if (esp_adc_cal_check_efuse(ESP_ADC_CAL_VAL_EFUSE_VREF) == ESP_OK) {
-        ESP_LOGD(TAG,"eFuse Vref: Supported\n");
-        } 
-    else {
-        ESP_LOGD(TAG,"eFuse Vref: NOT supported\n");
-        }
+void adc_init() {
+    analogReadResolution(10);
+    analogSetAttenuation(ADC_0db); // adc range 0 to 0.8V, use external resistor drop
+    adcAttachPin(pinADC);
     }
 
-static void print_char_val_type(esp_adc_cal_value_t val_type){
-    if (val_type == ESP_ADC_CAL_VAL_EFUSE_TP) {
-        ESP_LOGD(TAG,"Characterized using Two Point Value\n");
-        } 
-    else if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
-        ESP_LOGD(TAG,"Characterized using eFuse Vref\n");
-        } 
-    else {
-        ESP_LOGD(TAG,"Characterized using Default Vref\n");
+int adc_sample_average() {
+    int sample = 0;
+    for (int inx = 0; inx < NUM_ADC_SAMPLES; inx++) {
+        sample += analogRead(pinADC); 
         }
+    sample /= NUM_ADC_SAMPLES;  
+    return sample;
     }
 
+// supply-10K-2K-ground resistor divider
+// two point calibration
+#define V1 3.247f
+#define V2 5.17f
+#define ADC1 491.0f
+#define ADC2 775.0f
 
-void adc_init(){
-    //Check if Two Point or Vref are burned into eFuse
-    check_efuse();
-
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten((adc1_channel_t)channel, atten);
-
-    //Characterize ADC
-    adc_chars = (esp_adc_cal_characteristics_t *) calloc(1, sizeof(esp_adc_cal_characteristics_t));
-    esp_adc_cal_value_t val_type = esp_adc_cal_characterize(unit, atten, ADC_WIDTH_BIT_12, DEFAULT_VREF, adc_chars);
-    print_char_val_type(val_type);
-    }
-    
-
-uint32_t adc_sampleMV() {
-    uint32_t adc_reading = 0;
-    for (int i = 0; i < NO_OF_SAMPLES; i++) {
-        adc_reading += adc1_get_raw((adc1_channel_t)channel);
-        }
-    adc_reading /= NO_OF_SAMPLES;
-    uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
-   // ESP_LOGD(TAG,"Raw: %d\tVoltage: %dmV\n", adc_reading, voltage);
+float adc_battery_voltage() {
+    int sample = adc_sample_average();
+    float slope = (V2 - V1)/(ADC2 - ADC1);
+    float voltage = slope*(sample - ADC1) + V1;
     return voltage;
     }
-
-

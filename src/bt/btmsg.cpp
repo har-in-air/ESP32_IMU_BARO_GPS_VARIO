@@ -1,4 +1,5 @@
 #include "common.h"
+#include <BluetoothSerial.h>
 #include "config.h"
 #include "btmsg.h"
 #include "sensor/gps.h"
@@ -12,6 +13,35 @@
 #include "ui/ui.h"
 
 static const char* TAG = "btmsg";
+
+BluetoothSerial* pSerialBT = NULL;
+
+void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param){
+	if(event == ESP_SPP_SRV_OPEN_EVT){
+		ESP_LOGD(TAG, "BT client Connected");
+		}
+	if(event == ESP_SPP_CLOSE_EVT ){
+		ESP_LOGD(TAG, "BT client disconnected");
+		}
+	}
+
+bool btmsg_init(){
+	pSerialBT = new BluetoothSerial;
+	if (pSerialBT == NULL) return false; 
+	pSerialBT->register_callback(callback);
+  	if(!pSerialBT->begin("ESP32-BT-Vario")){
+    	ESP_LOGD(TAG, "Error initializing ESP32-BT-Vario");
+		return false;
+  		}	
+	else{
+    	ESP_LOGD(TAG, "ESP32-BT-Vario initialized");
+		return true;
+  		}
+	}
+
+void btmsg_tx_message(const char* szmsg) {
+	pSerialBT->print(szmsg);
+	}
 
 static uint8_t btmsg_nmeaChecksum(const char *szNMEA){
     const char* sz = &szNMEA[1]; // skip leading '$'
@@ -65,13 +95,8 @@ Field 4, battery voltage or charge percentage
 	14% = 1014 .  Do not send float values for percentages.
 	Percentage should be 0 to 100, with no decimals, added by 1000!
 */
-void btmsg_genLK8EX1(char* szmsg) {
-#if USE_MS5611
-	sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample_MS5611+0.5f), (int32_t)KFAltitudeCm, (int32_t)KFClimbrateCps, CelsiusSample_MS5611,((float)SupplyVoltageMV)/1000.0f);
-#endif
-#if USE_BMP388
-	sprintf(szmsg, "$LK8EX1,%d,%d,%d,%d,%.1f*", (uint32_t)(PaSample_BMP388+0.5f), (int32_t)KFAltitudeCm, (int32_t)KFClimbrateCps, CelsiusSample_BMP388,((float)SupplyVoltageMV)/1000.0f);
-#endif
+void btmsg_genLK8EX1(char* szmsg, int32_t altm, int32_t cps, float batVoltage) {
+	sprintf(szmsg, "$LK8EX1,999999,%d,%d,99,%.1f*", altm, cps, batVoltage);
 	uint8_t cksum = btmsg_nmeaChecksum(szmsg);
 	char szcksum[5];
 	sprintf(szcksum,"%02X\r\n", cksum);
@@ -86,7 +111,7 @@ $XCTRC,year,month,day,hour,minute,second,centisecond,latitude,longitude,altitude
      course,climbrate,res,res,res,rawpressure,batteryindication*checksum
 */
 void btmsg_genXCTRC(char* szmsg) {
-	int32_t batteryPercent = (SupplyVoltageMV*100)/5000; // not really battery voltage, power comes from 5V power bank
+	int32_t batteryPercent = (int32_t)((SupplyVoltageV*100.0f)/5.0f); // not really battery voltage, power comes from 5V power bank
 	CLAMP(batteryPercent, 0, 100); // some power banks supply more than 5V
 	float latDeg = FLOAT_DEG(NavPvt.nav.latDeg7);
 	float lonDeg = FLOAT_DEG(NavPvt.nav.lonDeg7);

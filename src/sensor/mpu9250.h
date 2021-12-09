@@ -79,6 +79,7 @@ int mpu9250_disableDataReadyInterrupt();
 int mpu9250_calibrateGyro();
 int mpu9250_calibrateAccel();
 int mpu9250_calibrateMag();
+int mpu9250_dump_noise_samples();
 
 int mpu9250_getGyroAccelMagData(float* pgx, float* pgy, float* pgz, float* pax, float* pay, float* paz, float* pmx, float* pmy, float* pmz);
 void mpu9250_initCalibrationParams(void);

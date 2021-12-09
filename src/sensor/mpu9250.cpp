@@ -513,6 +513,41 @@ int mpu9250_calibrateGyro(void) {
 	}
 
 
+#if 0
+#define GYRO_NUM_NOISE_SAMPLES			512
+
+static int16_t GyroNoise[GYRO_NUM_NOISE_SAMPLES][3];
+
+int mpu9250_dump_noise_samples(void) {
+	int16_t gx,gy,gz;
+   ESP_LOGI(TAG, "Dumping gyro noise samples");
+   // set bandwidth for normal use
+   if(mpu9250_writeRegister(CONFIG,GYRO_DLPF_184) < 0){
+      ESP_LOGE(TAG,"gyro noise : error setting bandwidth");
+      return -3;
+      }
+
+   for (int inx = 0; inx < GYRO_NUM_NOISE_SAMPLES; inx++){
+      taskYIELD();
+      cct_delayUs(2000); 
+      if (mpu9250_getVector(GYRO_OUT,false, &gx, &gy, &gz) < 0) {
+         ESP_LOGE(TAG, "gyro dump noise : error reading data");
+         return -2;
+         }
+      GyroNoise[inx][0] = gx;
+      GyroNoise[inx][1] = gy;
+      GyroNoise[inx][2] = gz;
+      }
+
+   for (int inx = 0; inx < GYRO_NUM_NOISE_SAMPLES; inx++){
+	   printf("%d %d %d\n",GyroNoise[inx][0],GyroNoise[inx][1],GyroNoise[inx][2]);
+		}
+   printf("done\n");
+	return 0;
+	}
+#endif
+
+
 #define MAG_NUM_CALIB_SAMPLES			4000
 	
 int mpu9250_calibrateMag(void) {
