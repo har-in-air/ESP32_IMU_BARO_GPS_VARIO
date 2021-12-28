@@ -57,8 +57,8 @@ void vaudio_config() {
 
 static void vaudio_reset(int32_t cps) {
 	CurrentCps = cps;
+	Tick = 0;
 	if (CurrentCps <= SINK_CPS) {
-		Tick = 0;
 		if (CurrentCps <= -VARIO_MAX_CPS) {
 			// off-scale sink warbling tone
 			BeepPeriodTicks = 8;
@@ -78,7 +78,6 @@ static void vaudio_reset(int32_t cps) {
         }
     else {
 		if (CurrentCps >= CLIMB_CPS) {
-			Tick = 0;
 			if (CurrentCps >= VARIO_MAX_CPS) {
 				// off-scale climb warbling tone
 				BeepPeriodTicks = 8;
@@ -106,7 +105,6 @@ static void vaudio_reset(int32_t cps) {
 		else 
 		if (CurrentCps >= ZERO_CPS) {
 			// "zeros" band, beep is a short pulse and long interval
-			Tick = 0;
 			BeepPeriodTicks = 30;
 			BeepEndTick = 2;
 			CurrentFreqHz = VARIO_SPKR_MIN_FREQHZ + ((CurrentCps - ZERO_CPS)*(VARIO_CROSSOVER_FREQHZ - VARIO_SPKR_MIN_FREQHZ))/(CROSSOVER_CPS - ZERO_CPS);
@@ -115,7 +113,6 @@ static void vaudio_reset(int32_t cps) {
 			}            
 		else {
 			// between sink and zero threshold, be quiet
-			Tick = 0;
 			BeepPeriodTicks = 0;
 			BeepEndTick  = 0;
 			CurrentFreqHz = 0;
