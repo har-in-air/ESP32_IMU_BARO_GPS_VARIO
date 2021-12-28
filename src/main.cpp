@@ -28,7 +28,7 @@
 #include "bt/btmsg.h"
 #include "wifi/async_server.h"
 #include "ui/lcd7565.h"
-#include "ui/beeper.h"
+#include "ui/vario_audio.h"
 #include "ui/ui.h"
 #include "ui/route.h"
 
@@ -273,7 +273,7 @@ static void vario_taskConfig() {
     lcd_printlnf(true,3,"Baro Altitude %dm", (int)(zcm/100.0f));
     // switch to high clock frequency for sensor readout & flash writes
     vspi_setClockFreq(VSPI_CLK_HIGH_FREQHZ); 
-    beeper_config();
+    vaudio_config();
     ringbuf_init(); 
     }
 
@@ -340,7 +340,7 @@ static void vario_task(void *pvParameter) {
                 DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
                 AudioCps = INTEGER_ROUNDUP(KFClimbrateCps);
                 if (IsSpeakerEnabled) {
-                    beeper_beep(AudioCps);                
+                    vaudio_tick_handler(AudioCps);                
                     }
 			    if ((opt.misc.logType == LOGTYPE_IBG) && FlashLogMutex) {
 			        if ( xSemaphoreTake( FlashLogMutex, portMAX_DELAY )) {

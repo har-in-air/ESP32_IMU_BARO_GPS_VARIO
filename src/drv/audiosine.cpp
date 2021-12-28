@@ -116,7 +116,7 @@ void audio_config(int pnDacChan) {
 	}
 	
 	
-void audio_setFrequency(int freqHz) {
+void audio_set_frequency(int freqHz) {
 	if (freqHz > 0) {
       AUDIO_AMP_ENABLE();
       dac_output_enable(DAC_CHANNEL_1);
@@ -130,9 +130,9 @@ void audio_setFrequency(int freqHz) {
 	}	
 	
 
-void audio_generateTone(int freqHz, int milliseconds) {
-	audio_setFrequency(freqHz);
+void audio_generate_tone(int freqHz, int milliseconds) {
+	audio_set_frequency(freqHz);
 	delayMs(milliseconds);
-	audio_setFrequency(0);
+	audio_set_frequency(0);
 	}
 	

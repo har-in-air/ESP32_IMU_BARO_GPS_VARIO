@@ -484,9 +484,9 @@ static void ui_printRouteSegment(int page, int col, int start, int end) {
 static void ui_alarmWaypointReached() {
    IsFlashDisplayRequired = true;
    for (int cnt = 0; cnt < 3; cnt++) {
-	   audio_setFrequency(2000);
+	   audio_set_frequency(2000);
 	   delayMs(100);
-	   audio_setFrequency(0);
+	   audio_set_frequency(0);
 	   delayMs(100);
       }
    }
