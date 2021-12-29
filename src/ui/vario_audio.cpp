@@ -15,7 +15,7 @@ typedef struct BEEP_ {
     int endTick; // on-time
 } BEEP;
 
-static BEEP BeepTbl[10] = {
+static const BEEP BeepTbl[10] = {
     {16,10}, // 0m/s - 1m/s
     {14,9},  // 1m/s - 2m/s
     {12,8},
@@ -42,9 +42,9 @@ static int CurrentFreqHz;
 
 // for offscale climbrates above +10m/s generate continuous warbling tone
 // this table contains the frequencies to use at each tick
-static int OffScaleHiTone[8]  = {400,800,1200,1600,2000,1600,1200,800};
+static const int OffScaleHiTone[8]  = {400,800,1200,1600,2000,1600,1200,800};
 // for offscale sinkrates below -10m/s generate continuous descending tone
-static int OffScaleLoTone[8]  = {4000,3500,3000,2500,2000,1500,1000,500};
+static const int OffScaleLoTone[8]  = {4000,3500,3000,2500,2000,1500,1000,500};
 
 void vaudio_config() {
 	Tick = 0;
