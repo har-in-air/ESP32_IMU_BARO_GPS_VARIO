@@ -21,10 +21,10 @@ void kalmanFilter2_configure(float zVariance, float zAccelVariance, float zIniti
 	zVariance_ = zVariance;
 	z_ = zInitial;
 	v_ = vInitial;
-	Pzz_ = 400.0f;
+	Pzz_ = 1500.0f;
 	Pzv_ = 0.0f;
 	Pvz_ = 0.0f;
-	Pvv_ = 400.0f;
+	Pvv_ = 1500.0f;
 	}
 
 

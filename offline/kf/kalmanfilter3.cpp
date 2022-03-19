@@ -54,17 +54,17 @@ void kalmanFilter3_configure(float zSensorVariance, float aVariance, float zInit
 	State.v = vInitial;
 	State.b = 0.0f; // let residual acceleration bias = 0 initially
 
-	Pzz = 400.0f;
+	Pzz = 1500.0f;
 	Pzv = 0.0f;
 	Pzb = 0.0f;
 	
 	Pvz = Pzv;
-	Pvv = 400.0f;
+	Pvv = 1500.0f;
 	Pvb = 0.0f;
 	
 	Pbz = Pzb;
 	Pbv = Pvb;
-	Pbb = 400.0f;
+	Pbb = 1500.0f;
 	}
 
 
