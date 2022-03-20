@@ -248,11 +248,11 @@ You have a choice of fonts for the large digit display fields. Uncomment only on
 * If you set bluetooth message type to `XCT` in the options screen, and you want **XCTrack** to use GPS data from the gpsvario, ensure both `Use external barometer` and `Use external gps` are enabled in the **XCTrack** preferences page.  
 
 # Offline analysis and algorithm documentation
-Check out the `/offline` directory for some examples of offline analysis of downloaded data logs. 
+The `/offline` directory has examples of offline analysis of captured and downloaded sensor data logs. 
 
-[This document](docs/kalman_filter.pdf) describes two Kalman Filter options (KF3 and KF4) for fusing acceleration and altitude data.
+[This Jupyter notebook compares Kalman filter algorithms as well as actual performance results on captured sensor data logs.](offline/kf/compare_kf2_kf3_kf4.ipynb) 
 
-This [Jupyter notebook](offline/kf/compare_kf2_kf3_kf4.ipynb) compares  KF2 (only pressure sensor data), KF3 and KF4 kalman filter outputs and convergence characteristics.
+The algorithm implemented in this code is KF4d.
 
 # Credits
 * Sine-wave generation with ESP32 DAC -  https://github.com/krzychb/dac-cosine
