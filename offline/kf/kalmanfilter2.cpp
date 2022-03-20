@@ -23,7 +23,7 @@ void kalmanFilter2_configure(float zVariance, float zAccelVariance, float zIniti
 	v_ = vInitial;
 	Pzz_ = 1500.0f;
 	Pzv_ = 0.0f;
-	Pvz_ = 0.0f;
+	Pvz_ = Pzv_;
 	Pvv_ = 1500.0f;
 	}
 
@@ -40,7 +40,7 @@ void kalmanFilter2_predict(float zAccelVariance, float dt) {
 	// predict state covariance. The last term mixes in acceleration noise.
 	Pzz_ += dt*Pzv_ + dt*Pvz_ + dt*dt*Pvv_ + zAccelVariance_*dt*dt*dt*dt/4.0f;
 	Pzv_ +=                        dt*Pvv_ + zAccelVariance_*dt*dt*dt/2.0f;
-	Pvz_ +=                        dt*Pvv_ + zAccelVariance_*dt*dt*dt/2.0f;
+	Pvz_ = Pzv_;
 	Pvv_ +=                                + zAccelVariance_*dt*dt;
     }
 
@@ -61,7 +61,7 @@ void kalmanFilter2_update(float z, float* pZ, float* pV){
 	// Update state covariance.
 	Pvv_ -= Pzv_ * kv;
 	Pzv_ -= Pzv_ * kz;
-	Pvz_ -= Pzz_ * kv;
+	Pvz_  = Pzv_;
 	Pzz_ -= Pzz_ * kz;
 
 #if LOG_FILTER
