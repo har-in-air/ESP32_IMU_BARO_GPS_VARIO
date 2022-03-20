@@ -184,6 +184,12 @@
 #define KF_ZMEAS_VARIANCE_MIN                80
 #define KF_ZMEAS_VARIANCE_MAX                500
 
+// injects additional uncertainty depending on magnitude of acceleration
+// helps respond quickly to large accelerations while heavily filtering
+// in low o no acceleration situations.  Range : 0.0 (no adaptation)
+// to 1.0 (max adaptive factor)
+#define KF_ADAPTIVE_ACCEL_FACTOR			0.5f
+
 
 // If you find that gyro calibration fails when you leave
 // the unit undisturbed, possibly your unit has an MPU9250 device
