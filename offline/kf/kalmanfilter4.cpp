@@ -1,5 +1,5 @@
-#include "common.h"
 #include <math.h>
+#include <stdio.h>
 #include "config.h"
 #include "kalmanfilter4.h"
 
@@ -47,31 +47,30 @@ static float Pbb;
 // | 0  0  a_var 0     |
 // | 0  0  0     b_var |
 static float AccelVariance; // environmental acceleration variance, depends on conditions
-static float BiasVariance; // assume a low value for acceleration bias noise variance
+
+// acceleration bias noise variance
+static float ABiasVariance; 
 
 // measurement model sensor noise variance, measured offline
-static float ZSensorVariance; //  altitude measurement noise variance
-static float AUpdateVariance; //  acceleration update noise variance
+static float ZMeasVariance; //  altitude measurement noise variance
+static float AMeasVariance; //  acceleration measurement noise variance
 
-// dynamically update the additive uncertainty (noise) added in the update
-// phase to the Pvv and Pbb elements of the state covariance matrix
-static bool UseAdaptiveVariance = false;
+
 
 // Tracks the position z, and velocity v of an object moving in a straight line,
 // that is perturbed by random accelerations. Assumes we have sensors providing
 // periodic measurements for acceleration a and position z. 
-// zSensorVariance can be calculated offline with the unit at rest.
-// zInitial can be determined by averaging a few samples of the altitude measurement.
-// vInitial and aInitial can be set to zero.
 // aVariance should be specified with a large enough value to allow the true state (z, v) to be within the uncertainty estimate.
 // It should be set higher for more thermic/turbulent conditions
+// kAdapt injects more uncertainty in high acceleration situations to allow the filter to respond quicker.
+// zInitial can be determined by averaging a few samples of the altitude measurement.
+// vInitial and aInitial can be set to zero.
 
-void kalmanFilter4_configure(float zSensorVariance, float aVariance, bool bAdaptUpdateVariance, float zInitial, float vInitial, float aInitial){
-	ZSensorVariance = zSensorVariance;
-	AUpdateVariance = KF_ACCEL_UPDATE_VARIANCE*1000.0f;
+void kalmanFilter4_configure(float aVariance, float zInitial, float vInitial, float aInitial){
+	ZMeasVariance = KF_Z_MEAS_VARIANCE;
+	AMeasVariance = KF_A_MEAS_VARIANCE_4;
+    ABiasVariance = KF_ACCELBIAS_VARIANCE;
 	AccelVariance = aVariance;
-    BiasVariance = KF_ACCELBIAS_VARIANCE;
-	UseAdaptiveVariance = bAdaptUpdateVariance;
 
 	State.z = zInitial;
 	State.v = vInitial;
@@ -90,7 +89,7 @@ void kalmanFilter4_configure(float zSensorVariance, float aVariance, bool bAdapt
 	
 	Paz = Pza;
 	Pav = Pva;
-	Paa = 50000.0f;
+	Paa = 100000.0f;
 	Pab = 0.0f;
 
 	Pbz = Pzb;
@@ -156,7 +155,7 @@ void kalmanFilter4_predict(float dt) {
 
 	// Add Q_k
 	Paa = Paa + AccelVariance;
-	Pbb = Pbb + BiasVariance;
+	Pbb = Pbb + ABiasVariance;
 	}
 
 
@@ -187,19 +186,8 @@ void kalmanFilter4_update(float zm, float am, float* pz, float* pv) {
 	float s11 = Paa;
 
 	// add R_k
-	s00 = s00 + ZSensorVariance;
-	if (UseAdaptiveVariance) {	
-		float accel_ext = (am-State.b)*(am-State.b);
-		// inject additional uncertainty depending on the magnitude of the external acceleration.
-		// allows filter  to respond quickly to moderate/large accelerations while heavily filtering out noise
-		// when there is low or no acceleration
-		s11 = s11 + KF_ADAPTIVE_ACCEL_FACTOR*accel_ext;
-		// allow system to update estimated bias only when there is low acceleration
-		BiasVariance = 1.0f/(1.0f + 2.0f*accel_ext);	
-		}
-	else {
-		s11 = s11 + AUpdateVariance;
-		}
+	s00 += ZMeasVariance;
+	s11 += AMeasVariance;
 
 	// Compute S_k_inv
 	float sdetinv = 1.0f/(s00*s11 - s10*s01);

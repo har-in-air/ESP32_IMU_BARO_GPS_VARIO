@@ -730,51 +730,48 @@ void ui_displayOptions(void) {
      lcd_printf(false, row, 7, "Accel variance   %3d", opt.kf.accelVariance); row++;
      }
   if (ScreenParOffset < 7) {
-     lcd_printf(false, row, 7, "Zmeas variance   %3d", opt.kf.zMeasVariance); row++;
-     }
-  if (ScreenParOffset < 8) {
      lcd_printf(false, row, 7, "UTC offset      %4d",  opt.misc.utcOffsetMins); row++;
      }
-  if (ScreenParOffset < 9) {
+  if (ScreenParOffset < 8) {
      lcd_printf(false, row, 7, "Backlight secs    %2d",  opt.misc.backlitSecs); row++;
      }
-  if (ScreenParOffset < 10) {
+  if (ScreenParOffset < 9) {
      lcd_printf(false, row, 7, "Track Threshold  %3d",  opt.misc.trackStartThresholdm); row++;
      }
-  if (ScreenParOffset < 11) {
+  if (ScreenParOffset < 10) {
      lcd_printf(false, row, 7, "Track Interval    %2d",  opt.misc.trackIntervalSecs); row++;
      }
-  if (ScreenParOffset < 12) {
+  if (ScreenParOffset < 11) {
      lcd_printf(false, row, 7, "GlideRatio IIR    %2d",  opt.misc.glideRatioIIR); row++;
      }
-  if (ScreenParOffset < 13) {
+  if (ScreenParOffset < 12) {
      lcd_printf(false, row, 7, "GPS Stable DOP    %2d",  opt.misc.gpsStableDOP); row++;
      }
-  if (ScreenParOffset < 14) {
+  if (ScreenParOffset < 13) {
      lcd_printf(false, row, 7, "Gyro Offset Max  %3d",  opt.misc.gyroOffsetLimit1000DPS); row++;
      }
-  if (ScreenParOffset < 15) {
+  if (ScreenParOffset < 14) {
      lcd_printf(false, row, 7, "Mag Declination  %3d",  opt.misc.magDeclinationdeg); row++;
      }
-  if (ScreenParOffset < 16) {
+  if (ScreenParOffset < 15) {
      lcd_printf(false, row, 7, "Speaker Volume     %1d",  opt.misc.speakerVolume); row++;
      }
-  if (ScreenParOffset < 17) {
+  if (ScreenParOffset < 16) {
      lcd_printf(false, row, 7, "Log Type        %s",  szLogType[opt.misc.logType]); row++;
      }
-  if (ScreenParOffset < 18) {
+  if (ScreenParOffset < 17) {
      lcd_printf(false, row, 7, "Waypt Radius   %5d",  opt.misc.waypointRadiusm); row++;
      }
-  if (ScreenParOffset < 19) {
+  if (ScreenParOffset < 18) {
      lcd_printf(false, row, 7, "Alt display     %s",  szAltDisplayType[opt.misc.altitudeDisplay]); row++;
      }
-  if (ScreenParOffset < 20) {
+  if (ScreenParOffset < 19) {
      lcd_printf(false, row, 7, "BtMsg Type       %s",  szBtMsgType[opt.misc.btMsgType]); row++;
      }
-  if (ScreenParOffset < 21) {
+  if (ScreenParOffset < 20) {
      lcd_printf(false, row, 7, "BtMsg Freq        %2d",  opt.misc.btMsgFreqHz); row++;
      }
-  if (ScreenParOffset < 22) {
+  if (ScreenParOffset < 21) {
      lcd_printf(false, row, 7, "LCD Contrast      %2d",  opt.misc.lcdContrast); row++;
      }
   lcd_send_frame();
@@ -827,9 +824,6 @@ bool ui_optionsEventHandler(void)  {
 				break;
 
 				case SEL_ACCEL_VAR : if (opt.kf.accelVariance >= KF_ACCEL_VARIANCE_MIN+5) opt.kf.accelVariance -= 5;
-				break;
-
-				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance >= KF_ZMEAS_VARIANCE_MIN+5) opt.kf.zMeasVariance -= 5;
 				break;
 
 				case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins >= UTC_OFFSET_MINS_MIN+15) opt.misc.utcOffsetMins -= 15;
@@ -916,9 +910,6 @@ bool ui_optionsEventHandler(void)  {
 				break;
 
 				case SEL_ACCEL_VAR : if (opt.kf.accelVariance <= KF_ACCEL_VARIANCE_MAX-5) opt.kf.accelVariance += 5;
-				break;
-
-				case SEL_ZMEAS_VAR : if (opt.kf.zMeasVariance <= KF_ZMEAS_VARIANCE_MAX-5) opt.kf.zMeasVariance += 5;
 				break;
 
 				case SEL_UTC_OFFSET : if (opt.misc.utcOffsetMins <= UTC_OFFSET_MINS_MAX-15) opt.misc.utcOffsetMins += 15;

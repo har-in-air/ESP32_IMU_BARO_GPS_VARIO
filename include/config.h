@@ -167,28 +167,11 @@
 
 // Kalman filter configuration
 // actual variance value used is accel_variance*1000
-#define KF_ACCEL_VARIANCE_DEFAULT            120
+#define KF_ACCEL_VARIANCE_DEFAULT            100
 #define KF_ACCEL_VARIANCE_MIN                50
 #define KF_ACCEL_VARIANCE_MAX                150
 
-// altitude noise variance can be measured offline by calculating the 
-// statistical variance in cm^2 of altitude samples from 
-// the baro sensor at rest
-#if USE_MS5611
-#define KF_ZMEAS_VARIANCE_DEFAULT            200
-#endif
-#if USE_BMP388
-#define KF_ZMEAS_VARIANCE_DEFAULT            150
-#endif
 
-#define KF_ZMEAS_VARIANCE_MIN                80
-#define KF_ZMEAS_VARIANCE_MAX                500
-
-// injects additional uncertainty depending on magnitude of acceleration
-// helps respond quickly to large accelerations while heavily filtering
-// in low o no acceleration situations.  Range : 0.0 (no adaptation)
-// to 1.0 (max adaptive factor)
-#define KF_ADAPTIVE_ACCEL_FACTOR			0.5f
 
 
 // If you find that gyro calibration fails when you leave
@@ -264,12 +247,27 @@
 // VARIO_INTERRUPT_BEEPS is enabled
 #define VARIO_DISCRIMINATION_THRESHOLD_CPS    25
 
+// altitude noise variance can be measured offline by calculating the 
+// statistical variance in cm^2 of altitude samples from 
+// the baro sensor at rest
+#if USE_MS5611
+#define KF_Z_MEAS_VARIANCE            200
+#endif
+#if USE_BMP388
+#define KF_Z_MEAS_VARIANCE            150
+#endif
+
+// KF4 Acceleration Measurement Noise variance
+#define KF_A_MEAS_VARIANCE   		50.0f
+
 // This is set low as the residual acceleration bias after calibration
 // is expected to have little variation/drift
 #define KF_ACCELBIAS_VARIANCE   0.005f
 
-// KF4 Acceleration Update variance default
-#define KF_ACCEL_UPDATE_VARIANCE   50.0f
+// injects additional uncertainty depending on magnitude of acceleration
+// helps respond quickly to large accelerations while heavily filtering
+// in low acceleration situations.  Range : 0.5 - 1.5
+#define KF_ADAPT			1.0f
 
 // print debug information to the serial port for different code modules
 

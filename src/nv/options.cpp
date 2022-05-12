@@ -89,11 +89,6 @@ int opt_init(void) {
          CLAMP(opt.kf.accelVariance,KF_ACCEL_VARIANCE_MIN, KF_ACCEL_VARIANCE_MAX);
          }
       else
-      if (!strcmp(pkeys[key].szName, "zMeasVariance")) {
-         opt.kf.zMeasVariance = atoi(pkeys[key].szValue);
-         CLAMP(opt.kf.zMeasVariance, KF_ZMEAS_VARIANCE_MIN, KF_ZMEAS_VARIANCE_MAX);
-         }
-      else
       if (!strcmp(pkeys[key].szName, "utcOffsetMins")) {
          opt.misc.utcOffsetMins = atoi(pkeys[key].szValue);
          CLAMP(opt.misc.utcOffsetMins, UTC_OFFSET_MINS_MIN, UTC_OFFSET_MINS_MAX);
@@ -202,7 +197,6 @@ int opt_init(void) {
       ESP_LOGD(TAG,"varioDisplayIIR = %d", opt.vario.varioDisplayIIR);
       ESP_LOGD(TAG,"KALMAN FILTER CONFIGURATION");
       ESP_LOGD(TAG,"accelVariance = %d", opt.kf.accelVariance);
-      ESP_LOGD(TAG,"zMeasVariance = %d", opt.kf.zMeasVariance);
       ESP_LOGD(TAG,"MISCELLANEOUS CONFIGURATION");
       ESP_LOGD(TAG,"backlitSecs = %d", opt.misc.backlitSecs);
       ESP_LOGD(TAG,"gyroOffsetLimit1000DPS = %d", opt.misc.gyroOffsetLimit1000DPS);
@@ -236,7 +230,6 @@ void opt_setDefaults() {
 	opt.vario.varioDisplayIIR = VARIO_DISPLAY_IIR_DEFAULT;
 	
 	opt.kf.accelVariance = KF_ACCEL_VARIANCE_DEFAULT;
-	opt.kf.zMeasVariance = KF_ZMEAS_VARIANCE_DEFAULT;
 
 	opt.misc.utcOffsetMins = UTC_OFFSET_MINS_DEFAULT;
 	opt.misc.backlitSecs = BACKLIT_SECS_DEFAULT;
@@ -307,83 +300,78 @@ int opt_save() {
     nwrote = fdopt.print(buf);
     if (nwrote != strlen(buf)) return -9;
 
-    sprintf(buf,"zMeasVariance [%d,%d] %d\r\n\r\n",
-         KF_ZMEAS_VARIANCE_MIN,KF_ZMEAS_VARIANCE_MAX, opt.kf.zMeasVariance);
-    nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -10;
-
     sprintf(buf,"# Miscellaneous\r\n");
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -11;
+    if (nwrote != strlen(buf)) return -10;
 
     sprintf(buf,"backlitSecs [%d,%d] %d\r\n",
          BACKLIT_SECS_MIN, BACKLIT_SECS_MAX, opt.misc.backlitSecs);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -12;
+    if (nwrote != strlen(buf)) return -11;
 
     sprintf(buf,"utcOffsetMins [%d,%d] %d\r\n",
          UTC_OFFSET_MINS_MIN, UTC_OFFSET_MINS_MAX, opt.misc.utcOffsetMins);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -13;
+    if (nwrote != strlen(buf)) return -12;
 
     sprintf(buf,"gyroOffsetLimit1000DPS [%d,%d] %d\r\n",
          GYRO_OFFSET_LIMIT_1000DPS_MIN,GYRO_OFFSET_LIMIT_1000DPS_MAX, opt.misc.gyroOffsetLimit1000DPS);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -14;
+    if (nwrote != strlen(buf)) return -13;
 
     sprintf(buf,"trackIntervalSecs [%d,%d] %d\r\n",
          TRACK_INTERVAL_SECS_MIN, TRACK_INTERVAL_SECS_MAX, opt.misc.trackIntervalSecs);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -15;
+    if (nwrote != strlen(buf)) return -14;
 
     sprintf(buf,"gpsStableDOP [%d,%d] %d\r\n",
          GPS_STABLE_DOP_MIN, GPS_STABLE_DOP_MAX, opt.misc.gpsStableDOP);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -16;
+    if (nwrote != strlen(buf)) return -15;
 
     sprintf(buf,"glideRatioIIR [%d,%d] %d\r\n",
          GLIDE_RATIO_IIR_MIN, GLIDE_RATIO_IIR_MAX, opt.misc.glideRatioIIR);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -17;
+    if (nwrote != strlen(buf)) return -16;
 
     sprintf(buf,"trackStartThresholdm [%d,%d] %d\r\n",
          TRACK_START_THRESHOLD_M_MIN,TRACK_START_THRESHOLD_M_MAX, opt.misc.trackStartThresholdm);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -18;
+    if (nwrote != strlen(buf)) return -17;
 
     sprintf(buf,"magDeclinationdeg [%d,%d] %d\r\n",
           MAG_DECLINATION_DEG_MIN, MAG_DECLINATION_DEG_MAX, opt.misc.magDeclinationdeg);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -19;
+    if (nwrote != strlen(buf)) return -18;
 
     sprintf(buf,"speakerVolume [%d,%d] %d\r\n",
           SPEAKER_VOLUME_MIN, SPEAKER_VOLUME_MAX, opt.misc.speakerVolume);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -20;
+    if (nwrote != strlen(buf)) return -19;
 
     sprintf(buf,"logType [NONE,GPS,IBG] %s\r\n", szLogType[opt.misc.logType]);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -21;
+    if (nwrote != strlen(buf)) return -20;
 
     sprintf(buf,"waypointRadiusm [%d,%d] %d\r\n",WAYPOINT_RADIUS_M_MIN, WAYPOINT_RADIUS_M_MAX, opt.misc.waypointRadiusm);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -22;
+    if (nwrote != strlen(buf)) return -21;
 
     sprintf(buf,"altitudeDisplay [GPS,BARO] %s\r\n", szAltDisplayType[opt.misc.altitudeDisplay]);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -23;
+    if (nwrote != strlen(buf)) return -22;
 
     sprintf(buf,"btMsgType [LK8,XCT] %s\r\n", szBtMsgType[opt.misc.btMsgType]);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -24;
+    if (nwrote != strlen(buf)) return -23;
 
     sprintf(buf,"btMsgFreqHz [%d,%d] %d\r\n", BT_MSG_FREQ_HZ_MIN, BT_MSG_FREQ_HZ_MAX, opt.misc.btMsgFreqHz);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -25;
+    if (nwrote != strlen(buf)) return -24;
 
     sprintf(buf,"lcdContrast [%d,%d] %d\r\n", LCD_CONTRAST_MIN, LCD_CONTRAST_MAX, opt.misc.lcdContrast);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -26;
+    if (nwrote != strlen(buf)) return -25;
     fdopt.close();
 
 #ifdef OPT_DEBUG
@@ -396,7 +384,6 @@ int opt_save() {
       ESP_LOGD(TAG,"varioDisplayIIR = %d", opt.vario.varioDisplayIIR);
       ESP_LOGD(TAG,"KALMAN FILTER CONFIGURATION");
       ESP_LOGD(TAG,"accelVariance = %d", opt.kf.accelVariance);
-      ESP_LOGD(TAG,"zMeasVariance = %d", opt.kf.zMeasVariance);
       ESP_LOGD(TAG,"MISCELLANEOUS CONFIGURATION");
       ESP_LOGD(TAG,"backlitSecs = %d", opt.misc.backlitSecs);
       ESP_LOGD(TAG,"gyroOffsetLimit1000DPS = %d", opt.misc.gyroOffsetLimit1000DPS);

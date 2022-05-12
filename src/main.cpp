@@ -21,7 +21,7 @@
 #elif USE_BMP388
 #include "sensor/bmp388.h"
 #endif
-#include "sensor/kalmanfilter4.h"
+#include "sensor/kalmanfilter4d.h"
 #include "nv/flashlog.h"
 #include "nv/calib.h"
 #include "nv/options.h"
@@ -267,7 +267,7 @@ static void vario_taskConfig() {
 
     // KF4D algorithm to fuse gravity-compensated acceleration and pressure altitude to estimate
     // altitude and climb/sink rate
-    kalmanFilter4_configure((float)opt.kf.zMeasVariance, 1000.0f*(float)opt.kf.accelVariance, true, zcm, 0.0f, 0.0f);
+    kalmanFilter4d_configure(1000.0f*(float)opt.kf.accelVariance, KF_ADAPT, zcm, 0.0f, 0.0f);
 
     lcd_clear_frame();
     lcd_printlnf(true,3,"Baro Altitude %dm", (int)(zcm/100.0f));
@@ -333,8 +333,8 @@ static void vario_task(void *pvParameter) {
 			if ( zMeasurementAvailable ) { 
                 // KF4 uses the acceleration data in the update phase
                 float zAccelAverage = ringbuf_averageNewestSamples(10); 
-                kalmanFilter4_predict(kfTimeDeltaUSecs/1000000.0f);
-                kalmanFilter4_update(ZCmSample_MS5611, zAccelAverage, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
+                kalmanFilter4d_predict(kfTimeDeltaUSecs/1000000.0f);
+                kalmanFilter4d_update(ZCmSample_MS5611, zAccelAverage, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
                 kfTimeDeltaUSecs = 0.0f;
                 // LCD display shows damped climbrate
                 DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 

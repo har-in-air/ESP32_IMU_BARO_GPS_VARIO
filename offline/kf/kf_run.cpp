@@ -11,6 +11,7 @@
 #include "kalmanfilter2.h"
 #include "kalmanfilter3.h"
 #include "kalmanfilter4.h"
+#include "kalmanfilter4d.h"
 
 
 #define KF2    0
@@ -107,7 +108,7 @@ int main(int argc, char* argv[]) {
                      case 0 : // KF2
                      default:
                      if (kalmanFilterInitialized == 0) {
-                        kalmanFilter2_configure(KF_ZMEAS_VARIANCE, KF_ACCEL_VARIANCE*1000.0f, baroAltCm, 0.0f);
+                        kalmanFilter2_configure(KF_Z_MEAS_VARIANCE, ((float)KF_ACCEL_VARIANCE)*1000.0f, baroAltCm, 0.0f);
                         kalmanFilterInitialized = 1;
                         }
                      kalmanFilter2_predict(KF_ACCEL_VARIANCE*1000.0f, KF_SAMPLE_PERIOD_SECS);
@@ -116,35 +117,35 @@ int main(int argc, char* argv[]) {
 
                      case 1 : // KF3
                      if (kalmanFilterInitialized == 0) {
-                        kalmanFilter3_configure(KF_ZMEAS_VARIANCE, KF_ACCEL_VARIANCE*1000.0f, baroAltCm, 0.0f);
+                        kalmanFilter3_configure(KF_Z_MEAS_VARIANCE, ((float)KF_ACCEL_VARIANCE)*1000.0f, baroAltCm, 0.0f);
                         kalmanFilterInitialized = 1;
                         }
                      // acceleration data used in the predict phase
-		      		   zAccelAverage = ringbuf_averageOldestSamples(10); 
+		      		 zAccelAverage = ringbuf_averageOldestSamples(10); 
                      kalmanFilter3_predict(zAccelAverage, KF_SAMPLE_PERIOD_SECS);
                      kalmanFilter3_update(baroAltCm, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
                      break;
 
                      case 2 ://  KF4
                      if (kalmanFilterInitialized == 0) {
-                        kalmanFilter4_configure(KF_ZMEAS_VARIANCE, KF_ACCEL_VARIANCE*1000.0f, false, baroAltCm, 0.0f, 0.0f);
+                        kalmanFilter4_configure(((float)KF_ACCEL_VARIANCE)*1000.0f, baroAltCm, 0.0f, 0.0f);
                         kalmanFilterInitialized = 1;
                         }
                      // acceleration data used in the update phase
-		      		   zAccelAverage = ringbuf_averageNewestSamples(10); 
+		      		 zAccelAverage = ringbuf_averageNewestSamples(10); 
                      kalmanFilter4_predict(KF_SAMPLE_PERIOD_SECS);
                      kalmanFilter4_update(baroAltCm, zAccelAverage, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
                      break;
 
                      case 3 : // KF4D
                      if (kalmanFilterInitialized == 0) {
-                        kalmanFilter4_configure(KF_ZMEAS_VARIANCE, KF_ACCEL_VARIANCE*1000.0f, true, baroAltCm, 0.0f, 0.0f);
+                        kalmanFilter4d_configure(((float)KF_ACCEL_VARIANCE)*1000.0f, ((float)KF_ADAPT_DEFAULT)/100.0f, baroAltCm, 0.0f, 0.0f);
                         kalmanFilterInitialized = 1;
                         }
                      // acceleration data used in the update phase
-		      		   zAccelAverage = ringbuf_averageNewestSamples(10); 
-                     kalmanFilter4_predict(KF_SAMPLE_PERIOD_SECS);
-                     kalmanFilter4_update(baroAltCm, zAccelAverage, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
+		      		 zAccelAverage = ringbuf_averageNewestSamples(10); 
+                     kalmanFilter4d_predict(KF_SAMPLE_PERIOD_SECS);
+                     kalmanFilter4d_update(baroAltCm, zAccelAverage, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
                      break;
                      }
                   // use damped climbrate for lcd display and for glide ratio computation

@@ -12,7 +12,6 @@ typedef struct VARIO_PARAMS_ {
 
 typedef struct KALMAN_FILTER_PARAMS_ {
 	int16_t  accelVariance; // environmental acceleration disturbance variance, divided by 1000
-	int16_t  zMeasVariance; // z measurement noise variance
 } KALMAN_FILTER_PARAMS;
 
 typedef struct MISC_PARAMS_ {
@@ -42,7 +41,7 @@ typedef struct OPTIONS_ {
 
 extern OPTIONS opt;
 
-#define NUM_OPTIONS 22
+#define NUM_OPTIONS 21
 
 int opt_init(void);
 int opt_save(void);

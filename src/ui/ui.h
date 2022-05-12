@@ -30,22 +30,21 @@
 #define SEL_CROSSOVER_THRESHOLD     3
 #define SEL_VARIO_DISPLAY_IIR       4
 #define SEL_ACCEL_VAR               5
-#define SEL_ZMEAS_VAR               6
-#define SEL_UTC_OFFSET              7
-#define SEL_BKLIGHT_SECS            8
-#define SEL_TRACK_THRESHOLD         9
-#define SEL_TRACK_INTERVAL          10
-#define SEL_GLIDE_IIR               11
-#define SEL_GPS_STABLE_DOP          12
-#define SEL_GYRO_OFFSET_MAX         13
-#define SEL_MAG_DECLINATION         14
-#define SEL_SPKR_VOL                15
-#define SEL_LOG_TYPE                16
-#define SEL_WPT_RADIUS              17
-#define SEL_ALTITUDE_DISPLAY        18
-#define SEL_BTMSG_TYPE				19
-#define SEL_BTMSG_FREQ				20
-#define SEL_LCD_CONTRAST			21
+#define SEL_UTC_OFFSET              6
+#define SEL_BKLIGHT_SECS            7
+#define SEL_TRACK_THRESHOLD         8
+#define SEL_TRACK_INTERVAL          9
+#define SEL_GLIDE_IIR               10
+#define SEL_GPS_STABLE_DOP          11
+#define SEL_GYRO_OFFSET_MAX         12
+#define SEL_MAG_DECLINATION         13
+#define SEL_SPKR_VOL                14
+#define SEL_LOG_TYPE                15
+#define SEL_WPT_RADIUS              16
+#define SEL_ALTITUDE_DISPLAY        17
+#define SEL_BTMSG_TYPE				18
+#define SEL_BTMSG_FREQ				19
+#define SEL_LCD_CONTRAST			20
 
 
 typedef struct TRACK_ {
