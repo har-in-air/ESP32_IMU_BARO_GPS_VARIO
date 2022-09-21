@@ -7,7 +7,6 @@ varioDisplayIIR [90,99] 95
 
 # Kalman Filter
 accelVariance [50,150] 120
-zMeasVariance [80,500] 150
 
 # Miscellaneous
 backlitSecs [5,60] 30
