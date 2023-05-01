@@ -7,7 +7,7 @@ static const char* TAG = "ringbuf";
 static RINGBUF RingBuf;
 
 void ringbuf_init() {
-   memset(RingBuf.buffer,0,RINGBUF_SIZE);
+   memset(RingBuf.buffer, 0, RINGBUF_SIZE * sizeof(float));
    RingBuf.head = RINGBUF_SIZE-1;
    }
 
