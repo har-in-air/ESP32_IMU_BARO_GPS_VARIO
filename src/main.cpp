@@ -559,11 +559,11 @@ static void main_task(void* pvParameter) {
             }
         vario_taskConfig();   	
         // vario task on core 1 needs to complete all processing within 2mS IMU data sampling period,
-        // given highest priority on core 1
-	    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
+        // given high priority on core 1
+	    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, configMAX_PRIORITIES-2, NULL, CORE_1);
         IsGpsInitComplete = false;
-        // gps task on core 0 given max priority
-	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, configMAX_PRIORITIES-1, NULL, CORE_0);
+        // gps task on core 0 given high priority
+	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, configMAX_PRIORITIES-2, NULL, CORE_0);
         while(!IsGpsInitComplete){
             delayMs(10);
             }
