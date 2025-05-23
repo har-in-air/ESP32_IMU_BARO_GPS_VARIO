@@ -110,21 +110,19 @@ detach the power bank and use it for other purposes, e.g. recharging my phone. A
 my hand-wired gpsvario in checked-in luggage (no battery => no problem), with the power bank in my carry-on 
 luggage as per airline requirements.
 * Current draw from a 5V power bank is < 100mA in gpsvario mode with bluetooth transmission and volume set to 1, and < 150mA in wifi access point mode.
-* I don't have a circuit schematic because I used  off-the-shelf modules. 
-  * The project file `/include/config.h` defines all ESP32 gpio pin <> sensor interface connections. 
-  * The USB 5V pin supplies power for the GPS, MPU9250, MS5611 and LCD modules. These modules have onboard 3.3V regulators.
-  * The LCD module PCB has a footprint for an SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. 
-  * The USB 5V pin supplies power to the NS8002 audio amplifier. 
-  * The ESP32 VCC pin (3.3V) supplies power for the 128Mb SPI flash.  
-  * Signal interfaces between the ESP32 and other components are at 3.3V level. The exception is the NS8002 amplifier - the enable/shutdown pin is pulled up to 5V with a 100K resistor. The ESP32 gpio pin enabling the NS8002 is configured as output open-drain (external pullup).
+* I used an off-the-shelf esp32 dev board & MPU9250 module and made my own breakout boards for the MS5611 and W25Q128FVSG chips. 
+* The project file `/include/config.h` defines all ESP32 gpio  <> sensor interface connections. 
+* The LCD module PCB I purchased had a footprint for an SOT23 type regulator. I soldered a 3.3V XC6203 regulator along with input and output bypass 10uF caps. 
+* Signal interfaces between the ESP32 and other components are at 3.3V level. The exception is the NS8002 amplifier - the enable/shutdown pin is pulled up to 5V with a 100K resistor. The ESP32 gpio pin enabling the NS8002 is configured as output open-drain (external pullup).
 * There are different versions of the 128x64 LCD module that may need 
 modifications to the initialization code. See the `lcd_init()` function in `/ui/lcd7565.c`. You may have to choose a different option for lcd bias and display orientation. 
 * I added a 0.5A resettable polyfuse and a 470uF 10V bypass capacitor on the USB 5V supply
 before the power switch. 
-The easiest way to do this is to desolder the schottky diode that is normally placed between the ESP32 dev board micro-usb connector 5V pin and the rest of the circuit. Connect the  polyfuse, capacitor to ground and power switch in its place.
+The easiest way to do this is to desolder the schottky diode that is normally placed between the ESP32 dev board USB connector 5V pin and the rest of the circuit. Connect the  polyfuse, capacitor to ground and power switch in its place.
 * I am now using an [NS8002 module](docs/ns8002_pinout.jpg) for the audio amplifier . To avoid
 overdriving the speaker, replace the 47K resistor with a 10k to 15k resistor.  You also need to pull up the mute/enable pin to
 the 5V line with a 100k resistor.
+* [Here's an example schematic](docs/esp32-gps-vario-schematic.pdf) using an ESP32-WROOM-32E module, CJMCU-117 module (MPU9250 + MS5611) that uses the same pin connections as the source code.  Note that this schematic omits the ESP32 uart0 circuitry for debug and programming. If you use an ESP32 dev board, a USB-uart chip will be included on the board. If not, you can always connect an external USB-uart module when required for programming and debug. 
 
 # Usage
 ## Buttons
